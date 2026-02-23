@@ -66,7 +66,7 @@ describe('Integration Factory', () => {
         info: (msg: string) => logs.push(msg),
       };
 
-      const doneHook = integration.hooks['astro:config:done'] as (params: {
+      const doneHook = integration.hooks['astro:config:done'] as unknown as (params: {
         logger: typeof mockLogger;
       }) => void;
       doneHook({ logger: mockLogger });
