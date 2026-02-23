@@ -4,6 +4,7 @@
     "outDir": "./dist",
     "rootDir": ".",
     "baseUrl": ".",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "paths": {
       "@utils/*": ["./src/utils/*"],
       "@components/*": ["./src/components/*"],

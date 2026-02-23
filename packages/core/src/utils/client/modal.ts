@@ -40,7 +40,7 @@ export async function openArticleModal(articleId: string): Promise<void> {
 
     try {
         const response = await fetch(`/api/v1/articles?limit=1&article_id=${articleId}`);
-        const data = await response.json();
+        const data = await response.json() as { data?: ArticleData[] };
 
         if (!data.data || data.data.length === 0) {
             console.error('[community-rss] Article not found:', articleId);
@@ -94,17 +94,20 @@ export function closeArticleModal(): void {
     }
 }
 
-/**
- * Renders the article modal into the DOM.
- */
-function renderModal(article: {
+/** Article data shape returned by the articles API. */
+interface ArticleData {
     id: string;
     title: string;
     content?: string;
     authorName?: string;
     publishedAt?: string;
     originalLink?: string;
-}): void {
+}
+
+/**
+ * Renders the article modal into the DOM.
+ */
+function renderModal(article: ArticleData): void {
     // Remove existing modal if present
     const existing = document.getElementById('article-modal-container');
     if (existing) {
@@ -150,7 +153,7 @@ function renderModal(article: {
     container.querySelector('[data-modal-close]')?.addEventListener('click', closeArticleModal);
     container.querySelector('[data-modal-prev]')?.addEventListener('click', () => navigateArticle('prev'));
     container.querySelector('[data-modal-next]')?.addEventListener('click', () => navigateArticle('next'));
-    container.querySelector('.crss-modal-overlay')?.addEventListener('click', (e) => {
+    container.querySelector('.crss-modal-overlay')?.addEventListener('click', (e: Event) => {
         if ((e.target as HTMLElement).classList.contains('crss-modal-overlay')) {
             closeArticleModal();
         }
@@ -173,8 +176,8 @@ function renderModal(article: {
  */
 export function initModalHandlers(): void {
     // Handle popstate (browser back/forward)
-    window.addEventListener('popstate', (event) => {
-        if (event.state?.articleId) {
+    window.addEventListener('popstate', (event: PopStateEvent) => {
+        if ((event.state as { articleId?: string } | null)?.articleId) {
             openArticleModal(event.state.articleId);
         } else {
             closeArticleModal();
@@ -191,7 +194,7 @@ export function initModalHandlers(): void {
             ids.push(id);
             const link = card.querySelector('[data-article-link]');
             if (link) {
-                link.addEventListener('click', (e) => {
+                link.addEventListener('click', (e: Event) => {
                     e.preventDefault();
                     openArticleModal(id);
                 });

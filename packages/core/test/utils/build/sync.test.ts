@@ -21,7 +21,7 @@ const mockEnv: Env = {
     DB: {} as D1Database,
     ARTICLE_QUEUE: mockQueue,
     MEDIA_BUCKET: {} as R2Bucket,
-} as Env;
+} as unknown as Env;
 
 const server = setupServer(
     http.get('https://freshrss.example.com/api/greader.php/reader/api/0/subscription/list', () => {

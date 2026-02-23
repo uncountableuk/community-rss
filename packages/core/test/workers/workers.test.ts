@@ -42,7 +42,7 @@ describe('Worker Exports', () => {
       await expect(
         scheduled(
           {} as ScheduledController,
-          { FRESHRSS_URL: 'https://rss.example.com', FRESHRSS_USER: 'user', FRESHRSS_PASSWORD: 'pass' } as Parameters<typeof scheduled>[1],
+          { FRESHRSS_URL: 'https://rss.example.com', FRESHRSS_USER: 'user', FRESHRSS_PASSWORD: 'pass' } as unknown as Parameters<typeof scheduled>[1],
           { waitUntil: waitUntilFn, passThroughOnException: vi.fn() } as unknown as ExecutionContext,
         ),
       ).resolves.toBeUndefined();
@@ -56,7 +56,7 @@ describe('Worker Exports', () => {
 
       await scheduled(
         {} as ScheduledController,
-        { FRESHRSS_URL: 'https://rss.example.com', FRESHRSS_USER: 'user', FRESHRSS_PASSWORD: 'pass' } as Parameters<typeof scheduled>[1],
+        { FRESHRSS_URL: 'https://rss.example.com', FRESHRSS_USER: 'user', FRESHRSS_PASSWORD: 'pass' } as unknown as Parameters<typeof scheduled>[1],
         { waitUntil: waitUntilFn, passThroughOnException: vi.fn() } as unknown as ExecutionContext,
       );
 
@@ -72,8 +72,8 @@ describe('Worker Exports', () => {
     it('should execute without error with empty batch', async () => {
       await expect(
         queue(
-          { messages: [] } as unknown as MessageBatch,
-          { DB: {} } as Parameters<typeof queue>[1],
+          { messages: [] } as unknown as Parameters<typeof queue>[0],
+          { DB: {} } as unknown as Parameters<typeof queue>[1],
           { waitUntil: vi.fn(), passThroughOnException: vi.fn() } as unknown as ExecutionContext,
         ),
       ).resolves.toBeUndefined();
@@ -97,11 +97,11 @@ describe('Worker Exports', () => {
             retry: vi.fn(),
           },
         ],
-      } as unknown as MessageBatch;
+      } as unknown as Parameters<typeof queue>[0];
 
       await queue(
         mockBatch,
-        { DB: {} } as Parameters<typeof queue>[1],
+        { DB: {} } as unknown as Parameters<typeof queue>[1],
         { waitUntil: vi.fn(), passThroughOnException: vi.fn() } as unknown as ExecutionContext,
       );
 

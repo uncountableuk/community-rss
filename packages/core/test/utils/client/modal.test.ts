@@ -4,14 +4,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
     setArticleList,
-    navigateArticle,
     closeArticleModal,
     initModalHandlers,
 } from '@utils/client/modal';
 
 // Mock window/document APIs for client-side testing
 const mockPushState = vi.fn();
-const mockAddEventListener = vi.fn();
 
 beforeEach(() => {
     vi.restoreAllMocks();

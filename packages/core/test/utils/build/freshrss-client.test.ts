@@ -11,7 +11,7 @@ const mockEnv: Env = {
     FRESHRSS_API_PASSWORD: 'password123',
     CF_ACCESS_CLIENT_ID: 'client-id',
     CF_ACCESS_CLIENT_SECRET: 'client-secret',
-} as Env;
+} as unknown as Env;
 
 const server = setupServer(
     http.get('https://freshrss.example.com/api/greader.php/reader/api/0/subscription/list', ({ request }) => {
@@ -21,7 +21,7 @@ const server = setupServer(
         }
         return HttpResponse.json(mockFeedsResponse);
     }),
-    http.get('https://freshrss.example.com/api/greader.php/reader/api/0/stream/contents/:feedId', ({ request, params }) => {
+    http.get('https://freshrss.example.com/api/greader.php/reader/api/0/stream/contents/:feedId', ({ request }) => {
         const auth = request.headers.get('Authorization');
         if (auth !== 'GoogleLogin auth=admin/password123') {
             return new HttpResponse(null, { status: 401 });

@@ -49,7 +49,7 @@ describe('GET /api/v1/articles', () => {
     it('returns articles with default pagination', async () => {
         const ctx = createMockContext('http://localhost:4321/api/v1/articles');
         const response = await GET(ctx);
-        const body = await response.json();
+        const body = await response.json() as { data: unknown[]; pagination: { page: number; limit: number; hasMore: boolean } };
 
         expect(response.status).toBe(200);
         expect(body.data).toHaveLength(2);
@@ -60,7 +60,7 @@ describe('GET /api/v1/articles', () => {
     it('respects page and limit parameters', async () => {
         const ctx = createMockContext('http://localhost:4321/api/v1/articles?page=2&limit=10');
         const response = await GET(ctx);
-        const body = await response.json();
+        const body = await response.json() as { data: unknown[]; pagination: { page: number; limit: number; hasMore: boolean } };
 
         expect(response.status).toBe(200);
         expect(body.pagination.page).toBe(2);
@@ -70,7 +70,7 @@ describe('GET /api/v1/articles', () => {
     it('clamps limit to maximum 100', async () => {
         const ctx = createMockContext('http://localhost:4321/api/v1/articles?limit=500');
         const response = await GET(ctx);
-        const body = await response.json();
+        const body = await response.json() as { data: unknown[]; pagination: { page: number; limit: number; hasMore: boolean } };
 
         expect(body.pagination.limit).toBe(100);
     });

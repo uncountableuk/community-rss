@@ -91,7 +91,10 @@ export function createInfiniteScroll(options: InfiniteScrollOptions): {
             const separator = apiUrl.includes('?') ? '&' : '?';
             const url = `${apiUrl}${separator}page=${state.currentPage}&limit=${limit}`;
             const response = await fetch(url);
-            const data = await response.json();
+            const data = await response.json() as {
+                data?: Record<string, unknown>[];
+                pagination?: { hasMore?: boolean };
+            };
 
             if (data.data && data.data.length > 0) {
                 const fragment = document.createDocumentFragment();
