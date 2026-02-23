@@ -53,6 +53,12 @@ export function createIntegration(options: CommunityRssOptions = {}): AstroInteg
           pattern: '/article/[id]',
           entrypoint: new URL('./routes/pages/article/[id].astro', import.meta.url).pathname,
         });
+
+        // Admin: manual sync trigger (local dev / operator use)
+        injectRoute({
+          pattern: '/api/v1/admin/sync',
+          entrypoint: new URL('./routes/api/v1/admin/sync.ts', import.meta.url).pathname,
+        });
       },
 
       'astro:config:done': ({ logger }) => {

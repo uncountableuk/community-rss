@@ -140,3 +140,39 @@
 - DB query unit tests deferred to when Miniflare pool workers are set up; queries covered via module-level mocks in sync/worker tests.
 - Infinite scroll uses offset-based pagination (page/limit) rather than cursor-based, matching the articles API design. Can be migrated to cursor-based in a future release if needed.
 - `env.d.ts` extended with optional `CF_ACCESS_CLIENT_ID` and `CF_ACCESS_CLIENT_SECRET` fields for Zero Trust support.
+
+### End-to-End Testing (Post-Implementation)
+
+#### TypeScript Error Fixes
+- Added `"DOM"` and `"DOM.Iterable"` to `"lib"` in `packages/core/tsconfig.json` — root cause of all `document`/`window`/`IntersectionObserver` type errors in client utils.
+- `modal.ts`: Extracted `ArticleData` interface, typed `response.json() as { data?: ArticleData[] }`, added explicit `Event`/`PopStateEvent` types to all event handler parameters.
+- `infinite-scroll.ts`: Typed `response.json()` return as `{ data?: Record<string, unknown>[]; pagination?: { hasMore?: boolean } }`.
+- Test files: Applied `as unknown as Env` casts in `sync.test.ts` and `freshrss-client.test.ts`; applied `as Parameters<typeof queue>[0]` in `workers.test.ts`; removed unused imports from `modal.test.ts`.
+- After fixes: 102 tests across 11 files, all passing, zero TypeScript errors.
+
+#### Local Dev Environment Setup (`wrangler pages dev`)
+- `wrangler dev` is not the correct command for Pages projects — must use `wrangler pages dev`. Astro's Cloudflare adapter outputs `dist/_worker.js/` which `wrangler pages dev` consumes.
+- Added `"wrangler:dev": "astro build && wrangler pages dev --port 4321 --ip 0.0.0.0"` to `playground/package.json`. No hot reload — requires a rebuild on code changes.
+- Deleted `playground/src/pages/index.astro` (0.1.0 placeholder) — was causing a route collision warning with the framework-injected homepage at `/`.
+- Applied D1 migrations: `npx wrangler d1 migrations apply community_db --local` — executed 25 SQL commands successfully. All tables now exist in local D1.
+
+#### Cron Triggers — Cloudflare Pages Limitation
+- **Cloudflare Pages does not support Cron Triggers.** The `scheduled` handler is a Workers-only feature. `wrangler pages dev` never calls `scheduled`, and the `cdn-cgi/handler/scheduled` compat endpoint also does not work with Pages.
+- A custom `workerEntryPoint` (`playground/src/worker.ts`) was created to wrap Astro SSR exports with `scheduled`/`queue` handlers from `@community-rss/core/workers`. This is a no-op in Pages dev but is scaffolded for a future migration to Cloudflare Workers.
+- `playground/wrangler.toml` has `[triggers] crons = ["*/30 * * * *"]` added for when the project runs as a Worker.
+
+#### Manual Sync Endpoint (Workaround)
+- Created `packages/core/src/routes/api/v1/admin/sync.ts` — `POST /api/v1/admin/sync` — as a local dev workaround for the Pages cron limitation.
+- Calls `syncFeeds(env)` directly and returns `{ ok, feedsProcessed, articlesEnqueued }` on success or `{ ok: false, error }` on failure.
+- Registered in `packages/core/src/integration.ts` as the 5th injected route. Updated `integration-factory.test.ts` to expect 5 routes.
+- Astro's CSRF protection blocks cross-site POST requests — must include `Origin: http://localhost:4321` header: `curl -s -X POST http://localhost:4321/api/v1/admin/sync -H "Origin: http://localhost:4321"`.
+
+#### FreshRSS Authorisation — Blocked (401)
+- The manual sync endpoint returns `{"ok":false,"error":"FreshRSS API error: 401 Unauthorized"}`.
+- FreshRSS requires **two separate steps** to enable API access:
+  1. **Administration → Authentication**: tick "Allow API access (by password)" and save.
+  2. **User Profile → API management**: set a dedicated API password (different from the login password).
+- The auth header format used by `freshrss-client.ts` is `GoogleLogin auth=USER/API_PASSWORD` (Google Reader API format).
+- `FRESHRSS_URL` in `.dev.vars` must be `http://freshrss:80` (Docker Compose service name), not `http://localhost:8080` — the playground runs inside the dev container which shares the Docker network with the `freshrss` service.
+- The user has confirmed the password is set in `.dev.vars` but the 401 persists. Further investigation is needed — likely the FreshRSS admin-level "Allow API access" checkbox has not been enabled, or the API password in the profile differs from what is in `.dev.vars`.
+- **TODO (return to this):** Verify FreshRSS API access is enabled at the admin level; test credentials directly against FreshRSS at `http://localhost:8080/api/greader.php/accounts/ClientLogin`; confirm the sync returns 200 before marking end-to-end testing complete.

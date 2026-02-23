@@ -54,11 +54,12 @@ describe('Integration Factory', () => {
       }) => void;
       setupHook({ injectRoute: mockInjectRoute });
 
-      expect(injectedRoutes).toHaveLength(4);
+      expect(injectedRoutes).toHaveLength(5);
 
       const patterns = injectedRoutes.map((r) => r.pattern);
       expect(patterns).toContain('/api/v1/health');
       expect(patterns).toContain('/api/v1/articles');
+      expect(patterns).toContain('/api/v1/admin/sync');
       expect(patterns).toContain('/');
       expect(patterns).toContain('/article/[id]');
 
