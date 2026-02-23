@@ -41,7 +41,7 @@ describe('Integration Factory', () => {
       expect(integration.name).toBe('community-rss');
     });
 
-    it('should inject the health route via astro:config:setup', () => {
+    it('should inject all routes via astro:config:setup', () => {
       const integration = createIntegration();
       const injectedRoutes: Array<{ pattern: string; entrypoint: string }> = [];
       const mockInjectRoute = (route: { pattern: string; entrypoint: string }) => {
@@ -54,9 +54,16 @@ describe('Integration Factory', () => {
       }) => void;
       setupHook({ injectRoute: mockInjectRoute });
 
-      expect(injectedRoutes).toHaveLength(1);
-      expect(injectedRoutes[0].pattern).toBe('/api/v1/health');
-      expect(injectedRoutes[0].entrypoint).toContain('health.ts');
+      expect(injectedRoutes).toHaveLength(4);
+
+      const patterns = injectedRoutes.map((r) => r.pattern);
+      expect(patterns).toContain('/api/v1/health');
+      expect(patterns).toContain('/api/v1/articles');
+      expect(patterns).toContain('/');
+      expect(patterns).toContain('/article/[id]');
+
+      const healthRoute = injectedRoutes.find((r) => r.pattern === '/api/v1/health');
+      expect(healthRoute?.entrypoint).toContain('health.ts');
     });
 
     it('should log config via astro:config:done', () => {

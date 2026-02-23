@@ -35,6 +35,24 @@ export function createIntegration(options: CommunityRssOptions = {}): AstroInteg
           pattern: '/api/v1/health',
           entrypoint: new URL('./routes/api/v1/health.ts', import.meta.url).pathname,
         });
+
+        // Articles API route
+        injectRoute({
+          pattern: '/api/v1/articles',
+          entrypoint: new URL('./routes/api/v1/articles.ts', import.meta.url).pathname,
+        });
+
+        // Homepage
+        injectRoute({
+          pattern: '/',
+          entrypoint: new URL('./routes/pages/index.astro', import.meta.url).pathname,
+        });
+
+        // Article detail page (direct URL access / SEO)
+        injectRoute({
+          pattern: '/article/[id]',
+          entrypoint: new URL('./routes/pages/article/[id].astro', import.meta.url).pathname,
+        });
       },
 
       'astro:config:done': ({ logger }) => {

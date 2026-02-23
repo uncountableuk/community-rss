@@ -1,22 +1,49 @@
 import type { Env } from '../types/env';
+import { processArticle } from '../utils/build/article-processor';
+import { upsertArticle } from '../db/queries/articles';
+import type { ArticleQueueMessage } from '../utils/build/sync';
 
 /**
- * Cloudflare Queue consumer handler (stub).
+ * Cloudflare Queue consumer handler.
  *
  * This handler processes articles enqueued by the sync worker.
  * It handles HTML sanitisation, metadata extraction, and
- * image caching pipeline triggers.
+ * stores processed articles in D1.
  *
- * @param _batch - Cloudflare message batch
- * @param _env - Cloudflare environment bindings
+ * @param batch - Cloudflare message batch
+ * @param env - Cloudflare environment bindings
  * @param _ctx - Execution context
  * @since 0.1.0
  */
 export async function queue(
-  _batch: MessageBatch,
-  _env: Env,
+  batch: MessageBatch<ArticleQueueMessage>,
+  env: Env,
   _ctx: ExecutionContext,
 ): Promise<void> {
-  // Stub — article processing implemented in 0.2.0
-  console.log('[community-rss] Queue consumer triggered (stub)');
+  for (const message of batch.messages) {
+    try {
+      const processed = processArticle(message.body);
+
+      await upsertArticle(env.DB, {
+        id: crypto.randomUUID(),
+        feedId: processed.feedId,
+        freshrssItemId: processed.freshrssItemId,
+        title: processed.title,
+        content: processed.content,
+        summary: processed.summary,
+        originalLink: processed.originalLink,
+        authorName: processed.authorName,
+        publishedAt: processed.publishedAt,
+        mediaPending: true,
+      });
+
+      message.ack();
+    } catch (error) {
+      console.error(
+        `[community-rss] Failed to process article ${message.body.freshrssItemId}:`,
+        error,
+      );
+      message.retry();
+    }
+  }
 }

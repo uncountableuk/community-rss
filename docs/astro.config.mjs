@@ -25,6 +25,14 @@ export default defineConfig({
           items: [
             { label: 'Integration', slug: 'api-reference/integration' },
             { label: 'Options', slug: 'api-reference/options' },
+            { label: 'Articles API', slug: 'api-reference/articles' },
+          ],
+        },
+        {
+          label: 'Guides',
+          items: [
+            { label: 'Feed Synchronisation', slug: 'guides/feed-sync' },
+            { label: 'Customising Feed Cards', slug: 'guides/theming' },
           ],
         },
         {

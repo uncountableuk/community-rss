@@ -1,40 +1,66 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { scheduled } from '../../src/workers/scheduled';
 import { queue } from '../../src/workers/queue';
 
+// Mock the sync module
+vi.mock('../../src/utils/build/sync', () => ({
+  syncFeeds: vi.fn().mockResolvedValue({ feedsProcessed: 2, articlesEnqueued: 5 }),
+}));
+
+// Mock the article processor
+vi.mock('../../src/utils/build/article-processor', () => ({
+  processArticle: vi.fn().mockReturnValue({
+    feedId: 'feed-1',
+    freshrssItemId: 'item-1',
+    title: 'Test Article',
+    content: '<p>Content</p>',
+    summary: 'Content',
+    originalLink: 'https://example.com/article',
+    authorName: 'Author',
+    publishedAt: new Date(),
+  }),
+}));
+
+// Mock the articles DB queries
+vi.mock('../../src/db/queries/articles', () => ({
+  upsertArticle: vi.fn().mockResolvedValue(undefined),
+}));
+
 describe('Worker Exports', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   describe('scheduled', () => {
     it('should be a function', () => {
       expect(typeof scheduled).toBe('function');
     });
 
     it('should execute without error', async () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      const waitUntilFn = vi.fn((p: Promise<unknown>) => p.catch(() => { }));
 
       await expect(
         scheduled(
           {} as ScheduledController,
-          {} as Parameters<typeof scheduled>[1],
-          { waitUntil: vi.fn(), passThroughOnException: vi.fn() } as unknown as ExecutionContext,
+          { FRESHRSS_URL: 'https://rss.example.com', FRESHRSS_USER: 'user', FRESHRSS_PASSWORD: 'pass' } as Parameters<typeof scheduled>[1],
+          { waitUntil: waitUntilFn, passThroughOnException: vi.fn() } as unknown as ExecutionContext,
         ),
       ).resolves.toBeUndefined();
 
-      consoleSpy.mockRestore();
+      // Wait for the waitUntil promise to resolve
+      await waitUntilFn.mock.calls[0]?.[0];
     });
 
-    it('should log a message when triggered', async () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    it('should call syncFeeds via ctx.waitUntil', async () => {
+      const waitUntilFn = vi.fn((p: Promise<unknown>) => p.catch(() => { }));
 
       await scheduled(
         {} as ScheduledController,
-        {} as Parameters<typeof scheduled>[1],
-        { waitUntil: vi.fn(), passThroughOnException: vi.fn() } as unknown as ExecutionContext,
+        { FRESHRSS_URL: 'https://rss.example.com', FRESHRSS_USER: 'user', FRESHRSS_PASSWORD: 'pass' } as Parameters<typeof scheduled>[1],
+        { waitUntil: waitUntilFn, passThroughOnException: vi.fn() } as unknown as ExecutionContext,
       );
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Scheduled handler triggered'),
-      );
-      consoleSpy.mockRestore();
+      expect(waitUntilFn).toHaveBeenCalledOnce();
     });
   });
 
@@ -43,33 +69,43 @@ describe('Worker Exports', () => {
       expect(typeof queue).toBe('function');
     });
 
-    it('should execute without error', async () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-
+    it('should execute without error with empty batch', async () => {
       await expect(
         queue(
-          {} as MessageBatch,
-          {} as Parameters<typeof queue>[1],
+          { messages: [] } as unknown as MessageBatch,
+          { DB: {} } as Parameters<typeof queue>[1],
           { waitUntil: vi.fn(), passThroughOnException: vi.fn() } as unknown as ExecutionContext,
         ),
       ).resolves.toBeUndefined();
-
-      consoleSpy.mockRestore();
     });
 
-    it('should log a message when triggered', async () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    it('should process messages and ack them', async () => {
+      const ackFn = vi.fn();
+      const mockBatch = {
+        messages: [
+          {
+            body: {
+              freshrssItemId: 'item-1',
+              feedId: 'feed-1',
+              title: 'Test',
+              content: '<p>Test</p>',
+              link: 'https://example.com',
+              author: 'Author',
+              published: Date.now() / 1000,
+            },
+            ack: ackFn,
+            retry: vi.fn(),
+          },
+        ],
+      } as unknown as MessageBatch;
 
       await queue(
-        {} as MessageBatch,
-        {} as Parameters<typeof queue>[1],
+        mockBatch,
+        { DB: {} } as Parameters<typeof queue>[1],
         { waitUntil: vi.fn(), passThroughOnException: vi.fn() } as unknown as ExecutionContext,
       );
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Queue consumer triggered'),
-      );
-      consoleSpy.mockRestore();
+      expect(ackFn).toHaveBeenCalledOnce();
     });
   });
 });
