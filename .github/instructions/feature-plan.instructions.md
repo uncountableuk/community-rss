@@ -128,6 +128,12 @@ during implementation and serves as the living record of progress.
      deviations from the plan, or anything noteworthy
   4. Append any new problems or constraints to the
      **Problems & Constraints** section at the bottom
+  5. **Review `.github/` directives** — if implementation revealed that any
+     rule in `copilot-instructions.md` or `instructions/*.instructions.md`
+     is incorrect, incomplete, or missing, note the required changes in the
+     Implementation Notes and propose them to the user for approval before
+     applying. Common triggers: import conventions, new tooling, stack
+     additions, workflow changes.
 - Phases not yet started should be listed as "Not Started"
 - Phases currently being worked on should be marked 🔄 In Progress
 - This section must never be deleted or overwritten — it is append-only

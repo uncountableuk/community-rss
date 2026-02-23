@@ -1,0 +1,38 @@
+{
+  "name": "community-rss",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "playground",
+    "docs"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=playground & npm run dev -w @community-rss/docs & wait",
+    "build": "npm run build --workspace=playground",
+    "build:all": "npm run build --workspace=playground && npm run build --workspace=@community-rss/docs",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc -b",
+    "test": "cd packages/core && npx vitest",
+    "test:run": "cd packages/core && npx vitest run",
+    "test:coverage": "cd packages/core && npx vitest run --coverage"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.3",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "@vitest/coverage-v8": "^3.2.4",
+    "eslint": "^9.0.0",
+    "eslint-plugin-astro": "^1.0.0",
+    "prettier": "^3.0.0",
+    "prettier-plugin-astro": "^0.14.0",
+    "typescript": "^5.6.0",
+    "typescript-eslint": "^8.56.0",
+    "vitest": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

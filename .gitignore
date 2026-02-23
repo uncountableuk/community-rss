@@ -137,3 +137,16 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Astro
+.astro/
+
+# Wrangler
+.wrangler/
+.dev.vars
+
+# Drizzle
+drizzle/meta/
+
+# Build output
+dist/

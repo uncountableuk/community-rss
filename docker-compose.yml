@@ -8,6 +8,7 @@ services:
     working_dir: /app
     ports:
       - "4321:4321" # Astro dev server (Playground)
+      - "4322:4322" # Starlight docs
     command: sleep infinity
     environment:
       - CHOKIDAR_USEPOLLING=true # Helps Astro watch for file changes in Docker volumes
