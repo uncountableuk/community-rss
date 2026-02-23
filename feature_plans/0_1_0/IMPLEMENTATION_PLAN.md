@@ -313,5 +313,17 @@ All tables from Spec Section 6: `users`, `sessions`, `accounts`,
 3. **Extra test files** — Added `health.test.ts` and `workers.test.ts` beyond the original plan to ensure all runtime code has test coverage.
 4. **Package exports expansion** — Added `./layouts/*`, `./components/*`, `./styles/*` to exports map so playground (and consumers) can import layouts and styles directly.
 5. **Root test scripts use `cd packages/core &&`** — NPM 10 propagates `npm run` to all workspaces by default. Using `cd packages/core && npx vitest` instead of `vitest --project core` avoids workspace propagation issues and ensures coverage scoping is correct. Root `vitest.config.ts` removed as unnecessary.
-6. **Starlight content.config.ts** — Astro 5 + Starlight 0.33 requires explicit `src/content.config.ts` with `docsLoader()` and `docsSchema()` for content collection discovery. Stale `.astro/` cache can prevent file discovery — clearing it resolves the issue.
+6. **Starlight content.config.ts** — Astro 5 + Starlight 0.33 requires explicit `src/content.config.ts` with `docsLoader()` and `docsSchema()` for content collection discovery. Stale `.astro/` cache can prevent file discovery — clearing it resolves the issue. Added `npm run clean` script to root for convenience.
+
+### Reviewer Observations (Post-Implementation)
+
+The following observations were raised by an independent review of the 0.1.0 codebase.
+Items that affect future releases have been added to the PROJECT_PLAN.md Risk Register.
+
+1. **Relative import scalability** — As `src/` grows (especially nested `utils/build/` vs `utils/client/`), relative imports may become visually long (e.g., `../../../../utils/shared/interactions.ts`). If this becomes problematic, consider compiling via `tsup` before publishing (which can resolve aliases at build time). For now, relative imports are the correct approach and folder hierarchy should be kept shallow.
+2. **`import.meta.url` route resolution** — Vite dev and Rollup production builds may treat `import.meta.url` differently with workspace symlinks vs real `node_modules`. Must test production build in 0.2.0 when real API routes are injected. *(Added to Risk Register)*
+3. **Package exports wildcard and `.astro` extensions** — Modern Node/Vite enforce strict export resolution. The `"./components/*"` wildcard must capture `.astro` extensions. Verify in 0.4.0 when components ship. *(Added to Risk Register)*
+4. **D1 composite key `ON CONFLICT` quirks** — D1's custom SQLite parser has historically had issues with `INSERT ... ON CONFLICT` on composite keys and `RETURNING *`. Test thoroughly in 0.4.0 when `toggleHeart` is implemented. *(Added to Risk Register)*
+5. **Monorepo test runner scaling** — Current `cd packages/core && npx vitest` approach works but won't scale to E2E tests or docs build validation. May need `turbo`/`wireit` in future. *(Added to Risk Register)*
+6. **Stale `.astro/` cache** — Known Astro 5 Content Layer quirk. Added `npm run clean` script to root. *(Added to Risk Register)*
 

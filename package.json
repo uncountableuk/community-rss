@@ -17,7 +17,8 @@
     "typecheck": "tsc -b",
     "test": "cd packages/core && npx vitest",
     "test:run": "cd packages/core && npx vitest run",
-    "test:coverage": "cd packages/core && npx vitest run --coverage"
+    "test:coverage": "cd packages/core && npx vitest run --coverage",
+    "clean": "rm -rf packages/core/.astro playground/.astro docs/.astro playground/dist docs/dist packages/core/coverage"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.3",
