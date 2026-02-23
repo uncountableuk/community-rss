@@ -33,11 +33,14 @@ Before creating a new utility:
 - Provide sensible visual defaults that consumers can override
 
 ## Import Standards
-- **MANDATORY**: Always use path aliases for ALL cross-directory imports
-- Never use relative paths (`../`) for cross-directory imports
+- **Source code** (`src/`): Use **relative imports** for all cross-directory
+  imports (e.g., `../types/options`). Path aliases in source code break
+  consumers because Astro/Vite cannot resolve the core package's internal
+  tsconfig aliases when consumed as a workspace dependency.
 - Same-directory imports may use relative paths (`./sibling`)
+- **Test code** uses path aliases — see the testing instructions for details.
 
-### Path Alias Reference
+### Path Alias Reference (Test Code Only)
 | Path Alias | Maps To | Usage |
 |------------|---------|-------|
 | `@utils/*` | `src/utils/*` | Utility function imports |

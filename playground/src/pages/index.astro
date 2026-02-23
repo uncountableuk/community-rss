@@ -1,0 +1,35 @@
+---
+import BaseLayout from '@community-rss/core/layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Community RSS — Playground">
+  <main>
+    <h1>Community RSS Playground</h1>
+    <p>The framework is installed and running.</p>
+    <p>
+      This is the reference implementation of
+      <code>@community-rss/core</code>.
+    </p>
+  </main>
+</BaseLayout>
+
+<style>
+  main {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+    font-family: var(--crss-font-family, system-ui, sans-serif);
+    color: var(--crss-text-primary, #1a1a1a);
+  }
+
+  h1 {
+    color: var(--crss-brand-primary, #4f46e5);
+  }
+
+  code {
+    background: var(--crss-surface-1, #f3f4f6);
+    padding: 0.2em 0.4em;
+    border-radius: var(--crss-radius-sm, 4px);
+    font-size: 0.9em;
+  }
+</style>

@@ -1,0 +1,23 @@
+{
+  "editor.formatOnSave": true,
+  "eslint.useFlatConfig": true,
+  "eslint.validate": [
+    "typescript",
+    "javascript",
+    "astro"
+  ],
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "chat.tools.terminal.autoApprove": {
+    "npm install": true,
+    "npm -w docs": true,
+    "/^cat /app/docs/\\.astro/data-store\\.json 2>/dev/null \\| python3 -c \"import sys, json; d = json\\.load\\(sys\\.stdin\\); \\[print\\(k\\) for k in list\\(d\\.keys\\(\\)\\)\\[:20\\]\\]\" 2>/dev/null \\|\\| echo \"No data store\"; find /app/docs/\\.astro -type f -name \"\\*\\.json\" \\| head -5$/": {
+      "approve": true,
+      "matchCommandLine": true
+    },
+    "/^npm run --include-workspace-root 2>&1 \\| head -30$/": {
+      "approve": true,
+      "matchCommandLine": true
+    },
+    "npm config": true
+  }
+}

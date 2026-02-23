@@ -1,0 +1,21 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": ".",
+    "baseUrl": ".",
+    "paths": {
+      "@utils/*": ["./src/utils/*"],
+      "@components/*": ["./src/components/*"],
+      "@routes/*": ["./src/routes/*"],
+      "@db/*": ["./src/db/*"],
+      "@core-types/*": ["./src/types/*"],
+      "@layouts/*": ["./src/layouts/*"],
+      "@fixtures/*": ["./test/fixtures/*"],
+      "@test/*": ["./test/*"]
+    },
+    "types": ["@cloudflare/workers-types"]
+  },
+  "include": ["src/**/*", "index.ts", "test/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

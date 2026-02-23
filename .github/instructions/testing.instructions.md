@@ -29,8 +29,10 @@ import type { Article } from '@core-types/models';
 import { functionToTest } from '../../../src/utils/shared/scoring';
 ```
 
-**Note**: Source code also uses path aliases for all cross-directory imports.
-Test import patterns must match source code patterns for consistency.
+**Note**: Source code uses **relative imports** (not path aliases) because
+Astro/Vite cannot resolve the core package's internal tsconfig aliases when
+consumed as a workspace dependency. Only test code uses path aliases, resolved
+via the Vitest config.
 
 ## Test Structure
 ```typescript

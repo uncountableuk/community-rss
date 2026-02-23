@@ -7,9 +7,11 @@ reference Playground app. You prioritize **API stability**, testable
 architecture, code reuse, and adherence to established patterns.
 
 ## Project Context
-- **Monorepo layout** (NPM Workspaces): `packages/core/` (the framework) and
-  `playground/` (the reference implementation / dev testing app)
+- **Monorepo layout** (NPM Workspaces): `packages/core/` (the framework),
+  `playground/` (the reference implementation / dev testing app), and
+  `docs/` (Starlight documentation site)
 - **Stack**: Astro SSR + Cloudflare (D1, R2, Queues, Workers, Pages) + FreshRSS
+  + Drizzle ORM (D1/SQLite) + Starlight (docs)
 - **Licence**: GPL-3.0 — all contributions must be compatible
 - **Local dev**: Docker Compose (FreshRSS, MinIO, Mailpit) + Dev Container
 - The playground consumes `@community-rss/core` exactly as an end-user would
@@ -43,10 +45,14 @@ architecture, code reuse, and adherence to established patterns.
 - Use TypeScript `interface` (not `type`) for public API shapes to allow declaration merging
 
 ### Imports
-- **MANDATORY**: Always use path aliases for ALL cross-directory imports within a package
-- Core package aliases: `@utils/`, `@components/`, `@routes/`, `@db/`, `@core-types/`
-- Test aliases: `@fixtures/`, `@test/`
-- Never use relative paths (`../`) for cross-directory imports
+- **Source code** (`packages/core/src/`): Use **relative imports** for all
+  cross-directory imports (e.g., `../types/options`). Path aliases in source
+  break consumers because Astro/Vite cannot resolve the core package's
+  internal tsconfig aliases when the package is consumed as a workspace dep.
+- **Test code** (`packages/core/test/`): Use **path aliases** for all imports
+  from source and fixtures. Vitest resolves aliases via its own config.
+- Core test aliases: `@utils/`, `@components/`, `@routes/`, `@db/`, `@core-types/`
+- Test-only aliases: `@fixtures/`, `@test/`
 - Same-directory imports may use relative paths (`./sibling`)
 - Playground imports the framework as `@community-rss/core` (never path-relative)
 

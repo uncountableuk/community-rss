@@ -1,0 +1,45 @@
+{
+  "name": "@community-rss/core",
+  "version": "0.0.0",
+  "description": "White-label Astro Integration framework for community content aggregation",
+  "type": "module",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./workers": "./src/workers/index.ts",
+    "./layouts/*": "./src/layouts/*",
+    "./components/*": "./src/components/*",
+    "./styles/*": "./src/styles/*"
+  },
+  "files": [
+    "index.ts",
+    "src/"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.38.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.0.0",
+    "astro": "^5.0.0",
+    "drizzle-kit": "^0.30.0",
+    "wrangler": "^4.0.0"
+  },
+  "peerDependencies": {
+    "astro": "^5.0.0"
+  },
+  "license": "GPL-3.0",
+  "keywords": [
+    "astro",
+    "astro-integration",
+    "rss",
+    "community",
+    "cloudflare"
+  ]
+}

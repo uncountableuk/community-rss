@@ -1,0 +1,72 @@
+/**
+ * Community RSS — Default Design Tokens
+ *
+ * All themeable values are defined as CSS custom properties.
+ * Consumers override these tokens via their own stylesheets
+ * or through the integration's theme configuration.
+ *
+ * Naming convention: --crss-{category}-{name}
+ *
+ * @since 0.1.0
+ */
+
+:root {
+  /* ─── Surface Colours ─────────────────────────────── */
+  --crss-surface-0: #ffffff;
+  --crss-surface-1: #f3f4f6;
+  --crss-surface-2: #e5e7eb;
+  --crss-surface-3: #d1d5db;
+
+  /* ─── Text Colours ────────────────────────────────── */
+  --crss-text-primary: #1a1a2e;
+  --crss-text-secondary: #4b5563;
+  --crss-text-muted: #9ca3af;
+  --crss-text-inverse: #ffffff;
+
+  /* ─── Brand Colours ───────────────────────────────── */
+  --crss-brand-primary: #4f46e5;
+  --crss-brand-accent: #7c3aed;
+
+  /* ─── Interaction Colours ─────────────────────────── */
+  --crss-heart: #ef4444;
+  --crss-star: #f59e0b;
+  --crss-comment: #3b82f6;
+
+  /* ─── Typography ──────────────────────────────────── */
+  --crss-font-family: system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  --crss-font-family-mono: ui-monospace, 'Cascadia Code', 'Source Code Pro',
+    Menlo, Consolas, monospace;
+  --crss-font-size-xs: 0.75rem;
+  --crss-font-size-sm: 0.875rem;
+  --crss-font-size-base: 1rem;
+  --crss-font-size-lg: 1.125rem;
+  --crss-font-size-xl: 1.25rem;
+  --crss-font-size-2xl: 1.5rem;
+  --crss-font-size-3xl: 1.875rem;
+
+  /* ─── Spacing ─────────────────────────────────────── */
+  --crss-space-xs: 0.25rem;
+  --crss-space-sm: 0.5rem;
+  --crss-space-md: 1rem;
+  --crss-space-lg: 1.5rem;
+  --crss-space-xl: 2rem;
+  --crss-space-2xl: 3rem;
+  --crss-space-3xl: 4rem;
+
+  /* ─── Border Radius ───────────────────────────────── */
+  --crss-radius-sm: 4px;
+  --crss-radius-md: 8px;
+  --crss-radius-lg: 12px;
+  --crss-radius-full: 9999px;
+
+  /* ─── Shadows ─────────────────────────────────────── */
+  --crss-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --crss-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --crss-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+
+  /* ─── Transitions ─────────────────────────────────── */
+  --crss-transition-fast: 150ms ease;
+  --crss-transition-base: 250ms ease;
+  --crss-transition-slow: 350ms ease;
+}
