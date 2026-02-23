@@ -81,10 +81,12 @@ export default function communityRss(
 All injected API routes live under a versioned namespace:
 - `GET /api/v1/articles`
 - `POST /api/v1/interactions`
-- `POST /api/v1/auth/magic-link`
+- `ALL /api/auth/[...all]` — better-auth catch-all (uses its own native router; not versioned)
 
 If a breaking route change is needed post-1.0.0, introduce `/api/v2/`
 and keep `/api/v1/` working with a deprecation notice.
+Auth routes (`/api/auth/*`) are managed entirely by better-auth's native
+router via a single catch-all endpoint — do not create manual wrapper routes.
 
 ### SemVer Rules
 
