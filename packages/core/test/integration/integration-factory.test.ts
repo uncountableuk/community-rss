@@ -54,7 +54,7 @@ describe('Integration Factory', () => {
       }) => void;
       setupHook({ injectRoute: mockInjectRoute });
 
-      expect(injectedRoutes).toHaveLength(10);
+      expect(injectedRoutes).toHaveLength(16);
 
       const patterns = injectedRoutes.map((r) => r.pattern);
       expect(patterns).toContain('/api/v1/health');
@@ -67,6 +67,12 @@ describe('Integration Factory', () => {
       expect(patterns).toContain('/auth/signin');
       expect(patterns).toContain('/auth/verify');
       expect(patterns).toContain('/api/dev/seed');
+      expect(patterns).toContain('/auth/signup');
+      expect(patterns).toContain('/api/v1/auth/check-email');
+      expect(patterns).toContain('/api/v1/auth/signup');
+      expect(patterns).toContain('/profile');
+      expect(patterns).toContain('/api/v1/profile');
+      expect(patterns).toContain('/terms');
 
       const healthRoute = injectedRoutes.find((r) => r.pattern === '/api/v1/health');
       expect(healthRoute?.entrypoint).toContain('health.ts');

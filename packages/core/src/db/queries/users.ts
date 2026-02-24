@@ -151,3 +151,27 @@ export function isAdmin(user: { role: string }): boolean {
 export function isSystemUser(user: { role: string }): boolean {
     return user.role === 'system';
 }
+
+/**
+ * Updates mutable fields on a user record.
+ *
+ * @param db - D1 database binding
+ * @param id - User ID to update
+ * @param data - Partial user fields to update
+ * @returns The updated user record or null if not found
+ * @since 0.3.0
+ */
+export async function updateUser(
+    db: D1Database,
+    id: string,
+    data: { name?: string; bio?: string; termsAcceptedAt?: Date },
+) {
+    const d1 = drizzle(db);
+    const result = await d1
+        .update(users)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(users.id, id))
+        .returning()
+        .all();
+    return result[0] || null;
+}

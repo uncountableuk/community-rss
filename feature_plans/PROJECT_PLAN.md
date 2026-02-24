@@ -458,133 +458,88 @@ browsable homepage showing articles in a masonry grid layout.
 
 ### Release 0.3.0 — Authentication, User System & Admin Feeds
 
-**Goal:** Working auth system with magic-link sign-in, guest consent
-flow, account migration from guest to registered user, formalized
-System User concept, and admin feed management (bypassing domain
-verification).
+**Goal:** Working auth system with magic-link sign-in, sign-up with
+email pre-check, guest consent flow, account migration from guest to
+registered user, user profile page (view + edit), formalized System
+User concept, and admin feed management (bypassing domain verification).
 
 #### Phase 1: System User Formalization & Database Updates
-- [ ] Formalize System User concept: seed `system` user during DB setup
+- [x] Formalize System User concept: seed `system` user during DB setup
   (not just lazily in `syncFeeds()`)
-- [ ] Add `role` column to `users` table (`'user' | 'admin' | 'system'`)
+- [x] Add `role` column to `users` table (`'user' | 'admin' | 'system'`)
   to distinguish user types (additive migration)
-- [ ] Create seed helper `packages/core/src/db/seed.ts` — run after
+- [x] Create seed helper `packages/core/src/db/seed.ts` — run after
   migrations to ensure System User exists
-- [ ] Update `ensureSystemUser()` to set `role: 'system'`
-- [ ] Run `npx drizzle-kit generate` for the migration
-- [ ] Test: `test/db/seed.test.ts`
+- [x] Update `ensureSystemUser()` to set `role: 'system'`
+- [x] Run `npx drizzle-kit generate` for the migration
+- [x] Test: `test/db/seed.test.ts`
 
 #### Phase 2: better-auth Integration
-- [ ] Install `better-auth` and `@better-auth/client` in `packages/core`
-- [ ] Create `packages/core/src/utils/build/auth.ts`
-  - Configure `betterAuth()` with D1 via Drizzle adapter (SQLite provider)
-  - Enable magic-link plugin
-  - Configure session settings (cookie name, expiry, secure flags)
-  - **CRITICAL:** Set `baseURL: process.env.PUBLIC_SITE_URL`
-    (`http://localhost:4321` in local dev). Without this, magic-link
-    generation and cookie setting fail silently because better-auth
-    misidentifies the request origin as internal Docker networking.
-- [ ] Generate better-auth schema additions via CLI:
-  1. Run `npx @better-auth/cli generate` — outputs Drizzle TypeScript
-     for `users`, `sessions`, `accounts`, and `verifications` tables
-  2. Copy the generated TypeScript into
-     `packages/core/src/db/schema.ts`, merging with existing tables
-  3. Adjust any foreign-key relationships to custom tables
-     (e.g., `interactions`, `feeds`, `followers`)
-  4. Run `npx drizzle-kit generate` to produce the migration
-  This keeps the single-source-of-truth workflow intact.
-- [ ] Integrate with framework's existing `users` table or map better-auth's user table
-- [ ] Create `packages/core/src/utils/build/email.ts`
-  - `sendMagicLink(email, url)` — uses Resend in prod, SMTP to Mailpit locally
-  - `sendCommentNotification(email, approveUrl, rejectUrl)` — for 0.4.0
-- [ ] Test: `test/utils/build/auth.test.ts`
-- [ ] Test: `test/utils/build/email.test.ts` (mocked SMTP)
+- [x] Install `better-auth` and `@better-auth/client` in `packages/core`
+- [x] Create `packages/core/src/utils/build/auth.ts`
+- [x] Generate better-auth schema additions via CLI and merge into Drizzle schema
+- [x] Create `packages/core/src/utils/build/email.ts`
+- [x] Test: `test/utils/build/auth.test.ts`
+- [x] Test: `test/utils/build/email.test.ts` (mocked SMTP)
 
-#### Phase 2: Auth API Routes (better-auth Native Router)
-
-better-auth runs its own internal router and automatically exposes
-standard endpoints (`/api/auth/sign-in/magic-link`, `/api/auth/sign-out`,
-`/api/auth/get-session`, etc.). Instead of building manual wrapper
-endpoints, the integration injects a single catch-all route.
-
-- [ ] Create `packages/core/src/routes/api/auth/[...all].ts`
-  - Single catch-all handler: passes `context.request` to `auth.handler()`
-  - better-auth automatically exposes all auth endpoints under `/api/auth/*`
-  - No manual route wrappers needed for magic-link, verify, session, sign-out
-- [ ] Install `@better-auth/client` as a dependency of `packages/core`
-  - Frontend UI components use the client SDK (`createAuthClient()`) to
-    call the native `/api/auth/*` routes directly — no custom fetch wrappers
-- [ ] Wire better-auth session middleware for protected `/api/v1/` routes
-  (extract session from request via `auth.api.getSession()`)
-- [ ] Test: `test/routes/api/auth/catch-all.test.ts`
-  - Test magic-link request, verification, session retrieval, sign-out
-  - All via the single catch-all handler
-
-#### Phase 3: Guest Consent Flow
-- [ ] Create `packages/core/src/components/ConsentModal.astro`
-  - Presented on first interaction (Heart, Star, or Comment)
-  - Explains data collection, links to privacy policy
-  - Accept/Decline buttons
-- [ ] Create `packages/core/src/utils/client/guest.ts`
-  - `initGuestSession()` — generate UUID via `crypto.randomUUID()`, set cookie
-  - `getGuestId()` — read UUID from cookie
-  - `isGuest()` — check if current user is guest vs registered
-  - `clearGuestSession()` — remove UUID cookie (called on sign-out)
-- [ ] Create `packages/core/src/utils/build/guest.ts`
-  - `createShadowProfile(guestId)` — insert guest row (`is_guest=true`) in D1
-  - `migrateGuestToUser(guestId, userId)` — move all interactions to real account
-- [ ] Create `packages/core/src/db/queries/users.ts`
-  - User CRUD, guest profile creation, guest migration query
-- [ ] **Guest Sign-Out Lifecycle:**
-  - When a Registered User signs out, **clear the Guest UUID cookie entirely**
-  - Do NOT generate a new Guest UUID on sign-out
-  - A new Guest UUID is only created if the user later attempts an
-    interaction (Heart/Star/Comment) while signed out, re-triggering
-    the consent modal
-  - Wire `clearGuestSession()` into the sign-out handler (Phase 2)
-- [ ] Test: `test/utils/client/guest.test.ts`
-  - Test sign-out clears cookie, new UUID only on next interaction
-- [ ] Test: `test/utils/build/guest.test.ts` (D1 migration of interactions)
-- [ ] Test: `test/db/queries/users.test.ts`
+#### Phase 3: Auth Routes & Guest Consent Flow
+- [x] Create `packages/core/src/routes/api/auth/[...all].ts` — catch-all
+- [x] Create guest utils (client + build)
+- [x] Create `packages/core/src/components/ConsentModal.astro`
+- [x] Test: `test/routes/api/auth/catch-all.test.ts`
+- [x] Test: guest tests (client + build)
+- [x] Test: `test/db/queries/users.test.ts`
 
 #### Phase 4: Auth UI Components
-- [ ] Create `packages/core/src/components/AuthButton.astro`
-  - Sign in / Sign up / Sign out state switching
-- [ ] Create `packages/core/src/components/MagicLinkForm.astro`
-  - Email input + submit for magic link request
-- [ ] Create `packages/core/src/routes/pages/auth/signin.astro`
-- [ ] Create `packages/core/src/routes/pages/auth/verify.astro`
-  - Landing page for magic link clicks
-- [ ] Inject auth routes via integration
+- [x] Create `packages/core/src/components/AuthButton.astro`
+- [x] Create `packages/core/src/components/MagicLinkForm.astro`
+- [x] Create sign-in and verify pages
+- [x] Update `BaseLayout.astro` with AuthButton
+- [x] Inject auth routes via integration
 
 #### Phase 5: Admin Feed Management
-- [ ] Create `packages/core/src/routes/api/v1/admin/feeds.ts`
-  - `POST /api/v1/admin/feeds` — admin submits a feed (no domain
-    verification required). Feed is owned by the admin user, not the
-    system user.
-  - `GET /api/v1/admin/feeds` — list admin-owned feeds
-  - `DELETE /api/v1/admin/feeds/:id` — remove an admin-submitted feed
-  - Protected by admin role check
-- [ ] Create `packages/core/src/utils/build/admin-feeds.ts`
-  - `submitAdminFeed(adminUserId, feedUrl, options)` — validates URL,
-    creates approved feed with `userId: adminUserId`
-  - Reuses existing `upsertFeed()` from `db/queries/feeds.ts`
-- [ ] Update `packages/core/src/integration.ts` to inject admin feed routes
-- [ ] Test: `test/routes/api/v1/admin/feeds.test.ts`
-- [ ] Test: `test/utils/build/admin-feeds.test.ts`
+- [x] Create admin feed routes and utilities
+- [x] Test: admin feed tests
 
-#### Phase 6: Documentation for 0.3.0
-- [ ] Guide: Authentication flow (magic link + guest consent)
-- [ ] API reference: auth endpoints
-- [ ] Guide: Configuring email provider (Resend setup)
-- [ ] Guide: Guest-to-registered migration flow
-- [ ] Guide: Admin feed management (adding feeds without verification)
-- [ ] Document System User concept and admin vs system feed ownership
+#### Phase 6: Sign-Up Flow & Profile Page
+- [ ] Add `pending_signups` table and `termsAcceptedAt` column to users
+  - Database migration via `drizzle-kit generate`
+- [ ] Create `GET /api/v1/auth/check-email` — returns whether email exists
+- [ ] Create `POST /api/v1/auth/signup` — stores pending data, sends
+  welcome magic link
+- [ ] Create `packages/core/src/components/SignUpForm.astro`
+  - Email (pre-filled, read-only), display name, terms checkbox
+- [ ] Create `packages/core/src/routes/pages/auth/signup.astro`
+- [ ] Update `MagicLinkForm.astro` — pre-check email, redirect to sign-up
+  if not registered
+- [ ] Update catch-all route — apply pending signup data after verification
+  (set display name + terms consent, delete pending record)
+- [ ] Update `sendMagicLinkEmail()` with welcome email template variant
+- [ ] Create `packages/core/src/routes/pages/profile.astro` — view + edit
+  name and bio
+- [ ] Create `GET /api/v1/profile` and `PATCH /api/v1/profile` endpoints
+- [ ] Update `AuthButton.astro` — show profile link for signed-in users
+- [ ] Create placeholder `/terms` page
+- [ ] Register new routes in `integration.ts`
+- [ ] Test: `test/routes/api/v1/auth/check-email.test.ts`
+- [ ] Test: `test/routes/api/v1/auth/signup.test.ts`
+- [ ] Test: `test/routes/api/v1/profile.test.ts`
+- [ ] Test: `test/db/queries/pending-signups.test.ts`
 
-#### Phase 7: Tests & Coverage for 0.3.0
-- [ ] Integration test: full magic-link flow (request → email → verify → session)
-- [ ] Integration test: guest consent → interaction → registration → migration
-- [ ] Integration test: admin adds feed → feed appears in All Feeds
+#### Phase 7: Documentation for 0.3.0
+- [x] Guide: Authentication flow (magic link + guest consent)
+- [x] API reference: auth endpoints
+- [x] Guide: Configuring email provider (Resend setup)
+- [x] Guide: Guest-to-registered migration flow
+- [x] Guide: Admin feed management (adding feeds without verification)
+- [x] Document System User concept and admin vs system feed ownership
+- [ ] Update docs: sign-up flow and profile page
+
+#### Phase 8: Tests & Coverage for 0.3.0
+- [x] Integration test: full magic-link flow (request → email → verify → session)
+- [x] Integration test: guest consent → interaction → registration → migration
+- [x] Integration test: admin adds feed → feed appears in All Feeds
+- [ ] Integration test: sign-up flow (pre-check → sign-up → verify → profile)
 - [ ] Verify ≥80% coverage maintained
 - [ ] Verify Mailpit catches magic link emails locally
 
@@ -678,9 +633,15 @@ with My Feed, Trending, and Starred views.
 - [ ] Guide: Customising trending algorithm weights
 - [ ] Guide: Moderation workflow (author email flow)
 
+#### Phase 6.5: Profile Page — Interaction History
+- [ ] Update `/profile` page to display user's hearts, stars, and comments
+- [ ] Create `GET /api/v1/profile/interactions` — paginated interaction history
+- [ ] Test: `test/routes/api/v1/profile-interactions.test.ts`
+
 #### Phase 7: Tests & Coverage for 0.4.0
 - [ ] Integration test: heart → trending score update → trending tab
 - [ ] Integration test: comment submit → email → magic link moderate
+- [ ] Integration test: profile page shows interaction history
 - [ ] Verify ≥80% coverage maintained
 
 ---
@@ -760,6 +721,16 @@ Author profile pages with follow functionality.
   - Checkbox confirming domain ownership and display rights consent
   - Required before feed submission completes
 - [ ] Store consent timestamp in `feeds` table
+
+#### Phase 5.5: Profile Enhancements
+- [ ] Profile page: email change with re-verification flow
+  - `PATCH /api/v1/profile` with `email` field triggers verification email
+  - New email only takes effect after verification
+- [ ] Profile page: avatar upload via R2
+  - `POST /api/v1/profile/avatar` — upload image to R2, update `avatar_url`
+- [ ] Profile page: manage submitted feeds (list, remove)
+- [ ] Test: email re-verification flow
+- [ ] Test: avatar upload + display
 
 #### Phase 6: Documentation for 0.5.0
 - [ ] Guide: Feed submission and verification flow

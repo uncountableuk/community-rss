@@ -21,6 +21,7 @@ import * as schema from '../../db/schema';
 import type { Env } from '../../types/env';
 import type { EmailConfig } from '../../types/options';
 import { sendMagicLinkEmail } from './email';
+import { getPendingSignup } from '../../db/queries/pending-signups';
 
 /**
  * Creates a configured better-auth instance for the current request.
@@ -47,9 +48,18 @@ export function createAuth(env: Env, emailConfig?: EmailConfig) {
             magicLink({
                 sendMagicLink: async ({ email, url }) => {
                     // Transform the URL to go through the verify page instead of directly to the API
-                    // This allows proper client-side handling of the verification process
                     const verifyUrl = url.replace('/api/auth/magic-link/verify', '/auth/verify');
-                    await sendMagicLinkEmail(env, email, verifyUrl, emailConfig);
+
+                    // Check if this email has a pending sign-up to determine email template
+                    let isWelcome = false;
+                    try {
+                        const pending = await getPendingSignup(env.DB, email);
+                        isWelcome = pending !== null;
+                    } catch {
+                        // If lookup fails, default to sign-in template
+                    }
+
+                    await sendMagicLinkEmail(env, email, verifyUrl, emailConfig, isWelcome);
                 },
                 expiresIn: 3600, // 60 minutes (increased from 5 for local dev testing)
             }),

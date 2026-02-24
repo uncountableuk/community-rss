@@ -136,9 +136,28 @@
 
     // Loading state
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Sending...';
+    submitBtn.textContent = 'Checking...';
 
     try {
+      // Pre-check: does this email already have an account?
+      const checkResponse = await fetch(
+        `/api/v1/auth/check-email?email=${encodeURIComponent(email)}`,
+        { credentials: 'include' },
+      );
+
+      if (checkResponse.ok) {
+        const checkData = await checkResponse.json();
+
+        if (!checkData.exists) {
+          // New user — redirect to sign-up page with email pre-filled
+          window.location.href = `/auth/signup?email=${encodeURIComponent(email)}`;
+          return;
+        }
+      }
+
+      // Existing user — send sign-in magic link
+      submitBtn.textContent = 'Sending...';
+
       const response = await fetch('/api/auth/sign-in/magic-link', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

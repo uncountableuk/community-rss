@@ -15,6 +15,13 @@
       "when": 1771936118560,
       "tag": "0001_long_mordo",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1771944131667,
+      "tag": "0002_clear_shaman",
+      "breakpoints": true
     }
   ]
 }

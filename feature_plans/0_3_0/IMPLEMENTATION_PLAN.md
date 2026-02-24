@@ -67,15 +67,29 @@ Local Dev) of the [Framework Spec](../0_0_1/Community-RSS-Framework-Spec.md).
 #### Admin
 - `packages/core/src/utils/build/admin-feeds.ts` — Admin feed submission
 
+#### Sign-Up & Profile (Phase 8)
+- `packages/core/src/db/queries/pending-signups.ts` — Pending signup CRUD
+- `packages/core/src/routes/api/v1/auth/check-email.ts` — Email existence check
+- `packages/core/src/routes/api/v1/auth/signup.ts` — Registration endpoint
+- `packages/core/src/routes/api/v1/profile.ts` — Profile GET/PATCH API
+- `packages/core/src/components/SignUpForm.astro` — Sign-up form
+- `packages/core/src/routes/pages/auth/signup.astro` — Sign-up page
+- `packages/core/src/routes/pages/profile.astro` — Profile page
+- `packages/core/src/routes/pages/terms.astro` — Terms of Service placeholder
+
 #### Tests
 - `packages/core/test/db/seed.test.ts`
 - `packages/core/test/db/queries/users.test.ts`
+- `packages/core/test/db/queries/pending-signups.test.ts`
 - `packages/core/test/utils/build/auth.test.ts`
 - `packages/core/test/utils/build/email.test.ts`
 - `packages/core/test/utils/build/guest.test.ts`
 - `packages/core/test/utils/client/guest.test.ts`
 - `packages/core/test/routes/api/auth/catch-all.test.ts`
 - `packages/core/test/routes/api/v1/admin/feeds.test.ts`
+- `packages/core/test/routes/api/v1/auth/check-email.test.ts`
+- `packages/core/test/routes/api/v1/auth/signup.test.ts`
+- `packages/core/test/routes/api/v1/profile.test.ts`
 - `packages/core/test/utils/build/admin-feeds.test.ts`
 
 #### Documentation
@@ -592,6 +606,72 @@ if needed.
 > (they require Miniflare runtime), but overall coverage remains above
 > threshold. The `node:async_hooks` warning during playground build is
 > expected — better-auth uses it internally and Cloudflare externalises it.
+
+### Phase 8: Sign-Up Flow & Profile Page — ✅ Completed
+- [x] Add `termsAcceptedAt` column to `users` table in `schema.ts`
+- [x] Add `pendingSignups` table to `schema.ts`
+- [x] Generate migration `0002_clear_shaman.sql` and apply to local D1
+- [x] Create `db/queries/pending-signups.ts` (CRUD + cleanup)
+- [x] Add `updateUser()` to `db/queries/users.ts`
+- [x] Create `routes/api/v1/auth/check-email.ts` (email existence check)
+- [x] Create `routes/api/v1/auth/signup.ts` (registration endpoint)
+- [x] Create `routes/api/v1/profile.ts` (GET + PATCH profile API)
+- [x] Create `components/SignUpForm.astro`
+- [x] Create `routes/pages/auth/signup.astro`
+- [x] Create `routes/pages/profile.astro`
+- [x] Create `routes/pages/terms.astro` (placeholder)
+- [x] Update `MagicLinkForm.astro` with email pre-check before magic link
+- [x] Update `AuthButton.astro` with profile link
+- [x] Update `auth.ts` sendMagicLink to detect pending signups (welcome email)
+- [x] Update `email.ts` with welcome email template variant
+- [x] Update `[...all].ts` catch-all to apply pending signup data post-verification
+- [x] Update `integration.ts` with 6 new route injections (16 total)
+- [x] Update user fixtures with `termsAcceptedAt` field
+- [x] Add `updateUser` tests to `users.test.ts`
+- [x] Create `pending-signups.test.ts` (7 tests)
+- [x] Create `check-email.test.ts` (8 tests)
+- [x] Create `signup.test.ts` (10 tests)
+- [x] Create `profile.test.ts` (16 tests)
+- [x] Update integration-factory test (10 → 16 routes)
+- [x] 221 tests passing, 85.15% statement coverage
+
+> **Notes:** Sign-up uses a pre-check pattern: the sign-in form calls
+> `GET /api/v1/auth/check-email` before sending a magic link. If the
+> email is unregistered, the user is redirected to the sign-up form.
+> Sign-up data (name + terms consent) is stored in `pending_signups`
+> table as a bridge between form submission and magic link verification.
+> The catch-all route handler applies pending data after successful
+> verification. Welcome email uses a distinct template with "Verify &
+> Get Started" button text. Profile page supports editing name and bio
+> (avatar deferred to 0.5.0). Terms page is a placeholder that
+> consumers should override with their own `/terms` route.
+
+### Post-Implementation Fixes
+
+#### Magic Link Sign-In Flow (0.3.0 hotfix)
+- **Problem:** First click on magic link redirected to `/api/auth/magic-link/verify` API endpoint directly, causing 500 error. Second click showed `?error=INVALID_TOKEN` due to token consumption.
+- **Root causes identified:**
+  1. Missing database migration: `0001_long_mordo.sql` (role + emailVerified columns) wasn't applied to local D1 — better-auth tried to create user but `role` column didn't exist
+  2. API routing: Email URL went directly to API instead of through client-side landing page
+  3. Session configuration: Problematic 5-minute cookie cache was causing token state persistence issues
+- **Fixes applied:**
+  - Applied pending migration: `npx wrangler d1 migrations apply DB --local`
+  - Redirected magic link URL from `/api/auth/magic-link/verify` to `/auth/verify` page in `auth.ts`
+  - Updated verify page to extract and pass `callbackURL` through API call
+  - Fixed response body double-read in verify page using `res.clone()`
+  - Disabled session cookie cache and increased token TTL to 60 minutes
+  - Enhanced error logging in catch-all route handler with stack traces
+- **Testing:** All 177 tests pass; deployed locally with Mailpit and verified end-to-end sign-in flow
+
+#### Sign-Out Button Not Working (0.3.0 hotfix)
+- **Problem:** Clicking Sign Out button showed brief loading state then reset. Page didn't redirect after sign-out.
+- **Root cause:** better-auth sign-out endpoint requires `Content-Type: application/json` header and non-empty body. Request was missing both, returning 415 Unsupported Media Type error.
+- **Fixes applied:**
+  - Added `Content-Type: application/json` header to sign-out fetch request
+  - Added empty JSON body: `body: JSON.stringify({})`
+  - Added error handling to log failed sign-out attempts
+  - Redirected to home page using `window.location.href = '/'`
+- **Testing:** All 177 tests pass; sign-out now completes successfully and redirects to homepage with sign-in button visible
 
 ---
 

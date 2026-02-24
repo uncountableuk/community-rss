@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { createAuth } from '../../../utils/build/auth';
-import { migrateGuestToUser } from '../../../db/queries/users';
+import { migrateGuestToUser, updateUser } from '../../../db/queries/users';
+import { getPendingSignup, deletePendingSignup } from '../../../db/queries/pending-signups';
 import type { Env } from '../../../types/env';
 
 /**
@@ -14,8 +15,8 @@ import type { Env } from '../../../types/env';
  * - `POST /api/auth/sign-out` — sign out
  * - All other better-auth endpoints
  *
- * No manual route wrappers needed — better-auth manages its own
- * URL namespace.
+ * After magic link verification, applies pending sign-up data (display
+ * name, terms consent) and migrates guest interactions if applicable.
  *
  * @since 0.3.0
  */
@@ -32,8 +33,7 @@ export const ALL: APIRoute = async ({ request, locals }) => {
     try {
         const auth = createAuth(env);
 
-        // Handle guest-to-user migration after magic link verification
-        // Read the guest ID cookie from the request
+        // Read the guest ID cookie from the request for potential migration
         const guestId = getGuestIdFromCookie(request);
 
         let response: Response;
@@ -54,30 +54,68 @@ export const ALL: APIRoute = async ({ request, locals }) => {
             );
         }
 
-        // After successful magic link verification, check if we need to
-        // migrate guest interactions to the newly created/authenticated user
-        if (guestId && request.url.includes('/magic-link/verify')) {
+        // After successful magic link verification, apply pending sign-up data
+        // and migrate guest interactions if applicable
+        if (request.url.includes('/magic-link/verify')) {
             try {
+                // The session cookie is in the response headers, not the request headers
+                const reqHeaders = new Headers(request.headers);
+                const setCookies = response.headers.getSetCookie ? response.headers.getSetCookie() : [];
+                const newCookies: string[] = [];
+                
+                for (const sc of setCookies) {
+                    const match = sc.match(/^([^=]+)=([^;]+)/);
+                    if (match) {
+                        newCookies.push(`${match[1]}=${match[2]}`);
+                    }
+                }
+                
+                if (newCookies.length > 0) {
+                    const existingCookie = reqHeaders.get('cookie');
+                    reqHeaders.set('cookie', (existingCookie ? existingCookie + '; ' : '') + newCookies.join('; '));
+                }
+
                 const session = await auth.api.getSession({
-                    headers: request.headers,
+                    headers: reqHeaders,
                 });
                 if (session?.user) {
-                    await migrateGuestToUser(env.DB, guestId, session.user.id);
+                    const userId = session.user.id;
+                    const userEmail = session.user.email;
+
+                    // Apply pending sign-up data (name + terms consent)
+                    if (userEmail) {
+                        const pending = await getPendingSignup(env.DB, userEmail);
+                        if (pending) {
+                            await updateUser(env.DB, userId, {
+                                name: pending.name,
+                                termsAcceptedAt: pending.termsAcceptedAt,
+                            });
+                            await deletePendingSignup(env.DB, userEmail);
+                        }
+                    }
+
+                    // Migrate guest interactions to the new/authenticated user
+                    if (guestId) {
+                        await migrateGuestToUser(env.DB, guestId, userId);
+                    }
+
                     // Clear the guest cookie by setting it expired in the response
-                    const newResponse = new Response(response.body, {
-                        status: response.status,
-                        statusText: response.statusText,
-                        headers: new Headers(response.headers),
-                    });
-                    newResponse.headers.set(
-                        'Set-Cookie',
-                        'crss_guest=; Path=/; Max-Age=0; SameSite=Lax',
-                    );
-                    return newResponse;
+                    if (guestId) {
+                        const newResponse = new Response(response.body, {
+                            status: response.status,
+                            statusText: response.statusText,
+                            headers: new Headers(response.headers),
+                        });
+                        newResponse.headers.set(
+                            'Set-Cookie',
+                            'crss_guest=; Path=/; Max-Age=0; SameSite=Lax',
+                        );
+                        return newResponse;
+                    }
                 }
             } catch (err) {
-                // Migration failure shouldn't block auth — log and continue
-                console.warn('[community-rss] Guest migration failed for', guestId, ':', err);
+                // Post-verification steps shouldn't block auth — log and continue
+                console.warn('[community-rss] Post-verification processing failed:', err);
             }
         }
 

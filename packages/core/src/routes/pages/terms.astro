@@ -1,0 +1,121 @@
+---
+/**
+ * Terms of Service placeholder page.
+ *
+ * Consumers should override this page with their own terms by
+ * creating a file at `src/pages/terms.astro` in their project.
+ *
+ * @route /terms
+ * @since 0.3.0
+ */
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Terms of Service" description="Terms of Service">
+  <main class="crss-terms-page">
+    <div class="crss-terms-container">
+      <h1 class="crss-terms-title">Terms of Service</h1>
+
+      <div class="crss-terms-content">
+        <p class="crss-terms-notice">
+          This is a placeholder Terms of Service page. The site operator should
+          replace this with their actual terms by overriding the <code>/terms</code>
+          route in their Astro project.
+        </p>
+
+        <h2>1. Acceptance of Terms</h2>
+        <p>
+          By accessing and using this community platform, you agree to be bound
+          by these Terms of Service and all applicable laws and regulations.
+        </p>
+
+        <h2>2. User Accounts</h2>
+        <p>
+          You are responsible for maintaining the confidentiality of your account
+          and for all activities that occur under your account. You agree to
+          provide accurate and complete information when creating your account.
+        </p>
+
+        <h2>3. User Content</h2>
+        <p>
+          You retain ownership of content you submit. By posting content, you
+          grant the platform a non-exclusive license to display and distribute
+          your contributions within the community.
+        </p>
+
+        <h2>4. Acceptable Use</h2>
+        <p>
+          You agree not to use the platform for any unlawful purpose or in any
+          way that could damage, disable, or impair the service.
+        </p>
+
+        <h2>5. Privacy</h2>
+        <p>
+          Your use of the platform is also governed by our Privacy Policy.
+          Guest interactions are tracked via cookies with your consent.
+          Registered users' email addresses are stored securely.
+        </p>
+
+        <h2>6. Modifications</h2>
+        <p>
+          We reserve the right to modify these terms at any time. Continued
+          use of the platform constitutes acceptance of any changes.
+        </p>
+      </div>
+    </div>
+  </main>
+</BaseLayout>
+
+<style>
+  .crss-terms-page {
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+    padding: var(--crss-space-xl);
+  }
+
+  .crss-terms-container {
+    max-width: 700px;
+    width: 100%;
+  }
+
+  .crss-terms-title {
+    font-size: var(--crss-font-size-3xl);
+    font-weight: 700;
+    color: var(--crss-text-primary);
+    margin-bottom: var(--crss-space-xl);
+  }
+
+  .crss-terms-content h2 {
+    font-size: var(--crss-font-size-lg);
+    font-weight: 600;
+    color: var(--crss-text-primary);
+    margin-top: var(--crss-space-xl);
+    margin-bottom: var(--crss-space-sm);
+  }
+
+  .crss-terms-content p {
+    font-size: var(--crss-font-size-base);
+    color: var(--crss-text-secondary);
+    line-height: 1.6;
+    margin-bottom: var(--crss-space-md);
+  }
+
+  .crss-terms-notice {
+    background-color: var(--crss-surface-1);
+    border: 1px solid var(--crss-surface-3);
+    border-radius: var(--crss-radius-md);
+    padding: var(--crss-space-md);
+    font-size: var(--crss-font-size-sm);
+    color: var(--crss-text-secondary);
+    margin-bottom: var(--crss-space-xl);
+  }
+
+  .crss-terms-notice code {
+    background-color: var(--crss-surface-2);
+    padding: 2px 6px;
+    border-radius: var(--crss-radius-sm);
+    font-family: var(--crss-font-family-mono, monospace);
+  }
+</style>

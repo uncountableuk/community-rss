@@ -21,6 +21,9 @@ import MagicLinkForm from '../../../components/MagicLinkForm.astro';
         Enter your email to receive a magic link — no password needed.
       </p>
       <MagicLinkForm />
+      <p class="crss-signin-footer">
+        Don't have an account? Enter your email above and you'll be redirected to sign up.
+      </p>
     </div>
   </main>
 </BaseLayout>
@@ -51,5 +54,11 @@ import MagicLinkForm from '../../../components/MagicLinkForm.astro';
     font-size: var(--crss-font-size-base);
     color: var(--crss-text-secondary);
     margin-bottom: var(--crss-space-xl);
+  }
+
+  .crss-signin-footer {
+    margin-top: var(--crss-space-lg);
+    font-size: var(--crss-font-size-sm);
+    color: var(--crss-text-secondary);
   }
 </style>

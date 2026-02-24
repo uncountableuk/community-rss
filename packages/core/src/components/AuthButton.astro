@@ -12,7 +12,7 @@
 <div class="crss-auth-button" id="crss-auth-button">
   <a href="/auth/signin" class="crss-btn crss-btn--signin" id="crss-signin-btn">Sign In</a>
   <div class="crss-auth-user" id="crss-user-info" style="display: none;">
-    <span class="crss-auth-user__name" id="crss-user-name"></span>
+    <a href="/profile" class="crss-auth-user__name" id="crss-user-name"></a>
     <button class="crss-btn crss-btn--signout" id="crss-signout-btn" type="button">Sign Out</button>
   </div>
 </div>
@@ -64,6 +64,12 @@
   .crss-auth-user__name {
     font-size: var(--crss-font-size-sm);
     color: var(--crss-text-secondary);
+    text-decoration: none;
+    transition: color var(--crss-transition-fast);
+  }
+
+  .crss-auth-user__name:hover {
+    color: var(--crss-brand-primary);
   }
 </style>
 

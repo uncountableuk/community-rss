@@ -19,13 +19,36 @@ The platform supports a progressive engagement model, tracking interactions from
 ### **2.1 User Tiers**
 
 1. **Guest (Cookie-Based):** Unauthenticated users. Upon their first interaction (Heart, Star, or Comment), a consent modal is presented. If accepted, a UUID is generated, stored in a cookie, and a "shadow profile" is created in the database to track their interactions.  
-2. **Registered User:** Users who have created an account via magic-link email.  
+2. **Registered User:** Users who have created an account via the sign-up flow.  
+   * *Sign-Up Flow:* When a user enters an email on the sign-in form that is not already registered, they are redirected to a sign-up page. The sign-up form collects: email address, display name, and consent to the Terms of Service. On submission, a welcome email is sent containing a magic-link verification URL. The user's account is not fully confirmed until they click this link. Only after verification can the user access their profile page.
    * *Upgrade Path:* When a Guest signs up, the system reads their UUID cookie and migrates all previously associated Hearts, Stars, and Comments to their new permanent Registered account.  
    * *Sign-Out Lifecycle:* When a Registered User explicitly signs out, the Guest UUID cookie is cleared entirely. A new Guest UUID is only generated if the user later attempts an interaction (Heart, Star, or Comment) while signed out, triggering the consent modal again.  
+   * *Subsequent Sign-In:* Returning users enter their email on the sign-in form and receive a magic-link to authenticate. Once signed in, the header displays a link to their profile page alongside the sign-out button.
 3. **Verified Author:** A Registered User who has submitted an RSS feed and successfully verified domain ownership.  
 4. **Admin:** Platform owner who configures categories, visual themes, and manages instance-wide settings.
 
-### **2.2 Global Settings & Permissions**
+### **2.3 Sign-Up & Registration**
+
+The sign-up process follows a pre-check pattern to distinguish new users from returning ones:
+
+1. **Email Pre-Check:** When a user enters an email on the sign-in form, the system checks if the email is already registered. If the email is found, a standard sign-in magic link is sent. If not found, the user is redirected to the sign-up page with their email pre-filled.
+2. **Sign-Up Form:** Collects the email (read-only, pre-filled), a display name, and a mandatory Terms of Service consent checkbox. On submission, the registration data is stored in a pending state and a welcome magic-link email is sent.
+3. **Welcome Email & Verification:** The user receives a welcome email with a verification link. Clicking the link verifies the email, creates the user account (applying the display name and recording the terms consent timestamp), and establishes an authenticated session.
+4. **Guest Migration:** If the signing-up user has an active guest cookie (from prior interactions), all their Hearts, Stars, and Comments are migrated to the new Registered account during verification. The guest shadow profile is deleted.
+5. **Profile Access:** After successful verification, the user is redirected to their profile page. The header AuthButton updates to show their display name and a link to the profile page alongside a sign-out button.
+
+### **2.4 User Profile**
+
+Each Registered User has a profile page (`/profile`) that is accessible only after email verification:
+
+* **View:** Displays display name, email, bio, and (when available) avatar.
+* **Edit:** Users can edit their display name and bio. Changes are saved via API and reflected immediately.
+* **Email Change:** Users may update their email address, but the change requires re-verification before it takes effect. *(Deferred to a future release.)*
+* **Avatar:** Profile picture upload via R2 storage. *(Deferred until media pipeline is available.)*
+* **Interactions:** View history of Hearts, Stars, and Comments. *(Available once the interactions system is implemented.)*
+* **Feeds:** Manage submitted RSS feeds. *(Available once feed submission is implemented.)*
+
+### **2.5 Global Settings & Permissions**
 
 * **Comment Permissions:** Framework configuration allows the instance admin to restrict commenting to Verified Authors only, or open it up to Registered Users and Guests (all comments remain strictly moderated).  
 * **Feed Limits:** Admin-configurable limit on the number of feeds a Verified Author can submit (e.g., default 5).
@@ -146,8 +169,9 @@ The framework adopts a **Drizzle-First** workflow for all database schema manage
 
 All tables below are defined in Drizzle ORM TypeScript (`packages/core/src/db/schema.ts`). SQL migrations are generated — never hand-written.
 
-* users: id, email (nullable for guests), is\_guest (boolean), name, bio, avatar\_url, created\_at, updated\_at.  
+* users: id, email (nullable for guests), is\_guest (boolean), name, bio, avatar\_url, terms\_accepted\_at (timestamp, nullable), created\_at, updated\_at.  
 * sessions, accounts, verifications: managed by better-auth (schema generated via CLI and merged into the Drizzle schema).  
+* pending\_signups: email (PK), name, terms\_accepted\_at, created\_at. Temporary storage for sign-up data between form submission and magic-link verification.  
 * verified\_domains: id, user\_id, domain\_name, verified\_at.  
 * feeds: id, user\_id, feed\_url, title, description, category, status, consent\_at, created\_at.  
 * articles: id, feed\_id, freshrss\_item\_id (UNIQUE — sync idempotency key), title, content, summary, original\_link, author\_name, published\_at, synced\_at, media\_pending (boolean, default true).  

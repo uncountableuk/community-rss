@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // Must use vi.hoisted() for variables referenced in vi.mock() factories
 const {
     mockAll, mockOnConflictDoNothing, mockRun,
-    mockValues, mockInsert, mockUpdate, mockDelete, mockDrizzle,
+    mockValues, mockInsert, mockUpdate, mockDelete, mockSet, mockDrizzle,
 } = vi.hoisted(() => {
     const mockRun = vi.fn().mockResolvedValue(undefined);
     const mockAll = vi.fn().mockResolvedValue([]);
@@ -11,7 +11,7 @@ const {
     const mockOnConflictDoNothing = vi.fn(() => ({ returning: mockReturning, run: mockRun }));
     const mockValues = vi.fn(() => ({ onConflictDoNothing: mockOnConflictDoNothing }));
     const mockInsert = vi.fn(() => ({ values: mockValues }));
-    const mockWhere = vi.fn(() => ({ all: mockAll, run: mockRun }));
+    const mockWhere = vi.fn(() => ({ all: mockAll, run: mockRun, returning: mockReturning }));
     const mockSet = vi.fn(() => ({ where: mockWhere }));
     const mockFrom = vi.fn(() => ({ where: mockWhere }));
     const mockSelect = vi.fn(() => ({ from: mockFrom }));
@@ -25,7 +25,7 @@ const {
     }));
     return {
         mockAll, mockOnConflictDoNothing, mockRun,
-        mockValues, mockInsert, mockUpdate, mockDelete, mockDrizzle,
+        mockValues, mockInsert, mockUpdate, mockDelete, mockSet, mockDrizzle,
     };
 });
 
@@ -44,6 +44,7 @@ import {
     getUserByEmail,
     createGuestUser,
     migrateGuestToUser,
+    updateUser,
     isAdmin,
     isSystemUser,
 } from '@db/queries/users';
@@ -138,6 +139,47 @@ describe('users queries', () => {
             // Should call update twice (interactions + comments) and delete once
             expect(mockUpdate).toHaveBeenCalledTimes(2);
             expect(mockDelete).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('updateUser', () => {
+        it('should update name and bio and return updated user', async () => {
+            const updated = { ...mockUsers.registered, name: 'New Name', bio: 'New bio' };
+            mockAll.mockResolvedValueOnce([updated]);
+            const result = await updateUser(mockDb, 'user-registered-1', {
+                name: 'New Name',
+                bio: 'New bio',
+            });
+
+            expect(mockUpdate).toHaveBeenCalled();
+            expect(mockSet).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    name: 'New Name',
+                    bio: 'New bio',
+                }),
+            );
+            expect(result).toEqual(updated);
+        });
+
+        it('should update termsAcceptedAt', async () => {
+            const now = new Date();
+            const updated = { ...mockUsers.registered, termsAcceptedAt: now };
+            mockAll.mockResolvedValueOnce([updated]);
+            const result = await updateUser(mockDb, 'user-registered-1', {
+                termsAcceptedAt: now,
+            });
+
+            expect(mockUpdate).toHaveBeenCalled();
+            expect(mockSet).toHaveBeenCalledWith(
+                expect.objectContaining({ termsAcceptedAt: now }),
+            );
+            expect(result).toEqual(updated);
+        });
+
+        it('should return null if user not found', async () => {
+            mockAll.mockResolvedValueOnce([]);
+            const result = await updateUser(mockDb, 'nonexistent', { name: 'Test' });
+            expect(result).toBeNull();
         });
     });
 

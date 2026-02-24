@@ -17,10 +17,14 @@ import type { EmailConfig } from '../../types/options';
  * - **Resend API** when `env.RESEND_API_KEY` is present
  * - **SMTP** (Mailpit in dev) when Resend is not configured
  *
+ * When `isWelcome` is true, uses a welcome email template for new
+ * user sign-ups instead of the standard sign-in template.
+ *
  * @param env - Cloudflare environment bindings
  * @param email - Recipient email address
  * @param url - Magic link URL (includes token)
  * @param emailConfig - Optional email configuration from integration options
+ * @param isWelcome - If true, use welcome email template for new sign-ups
  * @since 0.3.0
  */
 export async function sendMagicLinkEmail(
@@ -28,26 +32,43 @@ export async function sendMagicLinkEmail(
     email: string,
     url: string,
     emailConfig?: EmailConfig,
+    isWelcome: boolean = false,
 ): Promise<void> {
     const from = emailConfig?.from ?? env.SMTP_FROM ?? 'noreply@localhost';
     const appName = emailConfig?.appName ?? 'Community RSS';
 
-    const subject = `Sign in to ${appName}`;
-    const textBody = `Click this link to sign in to ${appName}:\n\n${url}\n\nThis link expires in 5 minutes.\n\nIf you didn't request this, you can safely ignore this email.`;
+    const subject = isWelcome
+        ? `Welcome to ${appName}! Verify your account`
+        : `Sign in to ${appName}`;
+
+    const actionLabel = isWelcome ? 'Verify & Get Started' : 'Sign In';
+
+    const textBody = isWelcome
+        ? `Welcome to ${appName}!\n\nClick this link to verify your account and get started:\n\n${url}\n\nThis link expires in 60 minutes.\n\nIf you didn't create this account, you can safely ignore this email.`
+        : `Click this link to sign in to ${appName}:\n\n${url}\n\nThis link expires in 60 minutes.\n\nIf you didn't request this, you can safely ignore this email.`;
+
+    const htmlHeading = isWelcome
+        ? `Welcome to ${appName}!`
+        : `Sign in to ${appName}`;
+
+    const htmlIntro = isWelcome
+        ? 'Your account is almost ready. Click the button below to verify your email and get started:'
+        : 'Click the button below to sign in:';
+
     const htmlBody = `
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"></head>
 <body style="font-family: system-ui, -apple-system, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <h2 style="color: #4f46e5;">Sign in to ${appName}</h2>
-  <p>Click the button below to sign in:</p>
+  <h2 style="color: #4f46e5;">${htmlHeading}</h2>
+  <p>${htmlIntro}</p>
   <p style="margin: 24px 0;">
     <a href="${url}" style="background-color: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block;">
-      Sign In
+      ${actionLabel}
     </a>
   </p>
-  <p style="color: #6b7280; font-size: 14px;">This link expires in 5 minutes.</p>
-  <p style="color: #6b7280; font-size: 14px;">If you didn't request this, you can safely ignore this email.</p>
+  <p style="color: #6b7280; font-size: 14px;">This link expires in 60 minutes.</p>
+  <p style="color: #6b7280; font-size: 14px;">If you didn't ${isWelcome ? 'create this account' : 'request this'}, you can safely ignore this email.</p>
 </body>
 </html>`.trim();
 

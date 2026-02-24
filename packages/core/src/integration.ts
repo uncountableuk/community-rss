@@ -79,8 +79,43 @@ export function createIntegration(options: CommunityRssOptions = {}): AstroInteg
         });
 
         injectRoute({
+          pattern: '/auth/signup',
+          entrypoint: new URL('./routes/pages/auth/signup.astro', import.meta.url).pathname,
+        });
+
+        injectRoute({
           pattern: '/auth/verify',
           entrypoint: new URL('./routes/pages/auth/verify.astro', import.meta.url).pathname,
+        });
+
+        // Auth API: email pre-check for sign-in/sign-up routing
+        injectRoute({
+          pattern: '/api/v1/auth/check-email',
+          entrypoint: new URL('./routes/api/v1/auth/check-email.ts', import.meta.url).pathname,
+        });
+
+        // Auth API: sign-up endpoint
+        injectRoute({
+          pattern: '/api/v1/auth/signup',
+          entrypoint: new URL('./routes/api/v1/auth/signup.ts', import.meta.url).pathname,
+        });
+
+        // User profile page
+        injectRoute({
+          pattern: '/profile',
+          entrypoint: new URL('./routes/pages/profile.astro', import.meta.url).pathname,
+        });
+
+        // User profile API
+        injectRoute({
+          pattern: '/api/v1/profile',
+          entrypoint: new URL('./routes/api/v1/profile.ts', import.meta.url).pathname,
+        });
+
+        // Terms of Service page (placeholder — consumers override)
+        injectRoute({
+          pattern: '/terms',
+          entrypoint: new URL('./routes/pages/terms.astro', import.meta.url).pathname,
         });
 
         // Dev-only seed endpoint
