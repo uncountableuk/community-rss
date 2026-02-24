@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { createAuth } from '../../../../utils/build/auth';
 import { createPendingSignup } from '../../../../db/queries/pending-signups';
+import { getUserByEmail } from '../../../../db/queries/users';
 import type { Env } from '../../../../types/env';
 
 /**
@@ -69,6 +70,34 @@ export const POST: APIRoute = async ({ request, locals }) => {
     }
 
     try {
+        // Check if this email already belongs to a registered (non-guest) user.
+        // If so, send a sign-in magic link rather than a welcome link so the
+        // existing account data is never overwritten.
+        const existingUser = await getUserByEmail(env.DB, email);
+        if (existingUser && !existingUser.isGuest) {
+            const auth = createAuth(env);
+            await auth.handler(
+                new Request(`${env.PUBLIC_SITE_URL}/api/auth/sign-in/magic-link`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, callbackURL: '/profile' }),
+                }),
+            ).catch((err: unknown) => {
+                // Non-fatal — log but still return exists:true so the UI shows
+                // "check your email". The response is indistinguishable from a
+                // successful new sign-up, which avoids account enumeration.
+                console.warn('[community-rss] Sign-in link send failed for existing account:', err);
+            });
+
+            return new Response(
+                JSON.stringify({
+                    exists: true,
+                    message: 'An account with this email already exists. We\'ve sent a sign-in link to your email.',
+                }),
+                { status: 200, headers: { 'Content-Type': 'application/json' } },
+            );
+        }
+
         // Store pending sign-up data (will be applied after magic link verification)
         await createPendingSignup(env.DB, email, name);
 

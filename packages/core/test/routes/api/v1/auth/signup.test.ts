@@ -4,11 +4,16 @@ const mocks = vi.hoisted(() => {
     return {
         mockCreatePendingSignup: vi.fn(),
         mockCreateAuth: vi.fn(),
+        mockGetUserByEmail: vi.fn(),
     };
 });
 
 vi.mock('@db/queries/pending-signups', () => ({
     createPendingSignup: mocks.mockCreatePendingSignup,
+}));
+
+vi.mock('@db/queries/users', () => ({
+    getUserByEmail: mocks.mockGetUserByEmail,
 }));
 
 vi.mock('@utils/build/auth', () => ({
@@ -47,6 +52,9 @@ describe('POST /api/v1/auth/signup', () => {
         vi.restoreAllMocks();
         mocks.mockCreatePendingSignup.mockReset();
         mocks.mockCreateAuth.mockReset();
+        mocks.mockGetUserByEmail.mockReset();
+        // Default: no existing user
+        mocks.mockGetUserByEmail.mockResolvedValue(null);
     });
 
     it('should return 503 when DB is not available', async () => {
@@ -112,6 +120,70 @@ describe('POST /api/v1/auth/signup', () => {
 
         const data = (await response.json()) as Record<string, string>;
         expect(data.code).toBe('TERMS_REQUIRED');
+    });
+
+    it('should send sign-in link and return exists:true when account already exists', async () => {
+        mocks.mockGetUserByEmail.mockResolvedValue({
+            id: 'existing-id',
+            email: 'existing@example.com',
+            isGuest: false,
+            name: 'Existing User',
+        });
+
+        const mockHandler = vi.fn().mockResolvedValue(
+            new Response(JSON.stringify({ ok: true }), { status: 200 }),
+        );
+        mocks.mockCreateAuth.mockReturnValue({ handler: mockHandler });
+
+        const request = createPostRequest({
+            email: 'existing@example.com',
+            name: 'New Name Attempt',
+            termsAccepted: true,
+        });
+        const response = await POST(createContext(request));
+        expect(response.status).toBe(200);
+
+        const data = (await response.json()) as Record<string, unknown>;
+        expect(data.exists).toBe(true);
+
+        // Should NOT create a pending signup (avoids overwriting existing profile)
+        expect(mocks.mockCreatePendingSignup).not.toHaveBeenCalled();
+        // Should have sent a sign-in magic link instead
+        expect(mockHandler).toHaveBeenCalled();
+        const handlerCallArg = mockHandler.mock.calls[0][0] as Request;
+        const body = await handlerCallArg.json() as Record<string, unknown>;
+        expect(body.email).toBe('existing@example.com');
+    });
+
+    it('should not overwrite guest user — treat as new signup if isGuest is true', async () => {
+        mocks.mockGetUserByEmail.mockResolvedValue({
+            id: 'guest-id',
+            email: 'guest@example.com',
+            isGuest: true,
+        });
+
+        mocks.mockCreatePendingSignup.mockResolvedValue({
+            email: 'guest@example.com',
+            name: 'Guest Upgrading',
+        });
+
+        const mockHandler = vi.fn().mockResolvedValue(
+            new Response(JSON.stringify({ ok: true }), { status: 200 }),
+        );
+        mocks.mockCreateAuth.mockReturnValue({ handler: mockHandler });
+
+        const request = createPostRequest({
+            email: 'guest@example.com',
+            name: 'Guest Upgrading',
+            termsAccepted: true,
+        });
+        const response = await POST(createContext(request));
+        expect(response.status).toBe(200);
+
+        const data = (await response.json()) as Record<string, unknown>;
+        expect(data.exists).toBeUndefined();
+        expect(data.success).toBe(true);
+        expect(mocks.mockCreatePendingSignup).toHaveBeenCalled();
     });
 
     it('should create pending signup and send magic link on success', async () => {

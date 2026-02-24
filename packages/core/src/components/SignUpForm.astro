@@ -70,11 +70,11 @@
       <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
     </svg>
   </div>
-  <h2 class="crss-signup-confirm__heading">Thanks for signing up!</h2>
-  <p class="crss-signup-confirm__detail">
+  <h2 class="crss-signup-confirm__heading" id="crss-confirm-heading">Thanks for signing up!</h2>
+  <p class="crss-signup-confirm__detail" id="crss-confirm-name-para">
     Welcome, <strong id="crss-confirm-name"></strong>.
   </p>
-  <p class="crss-signup-confirm__detail">
+  <p class="crss-signup-confirm__detail" id="crss-confirm-action">
     We've sent a verification link to <strong id="crss-confirm-email"></strong>.
     Click it to complete creating your account.
   </p>
@@ -285,13 +285,30 @@
       });
 
       if (response.ok) {
-        // Replace form with confirmation panel
+        const respData = await response.json().catch(() => ({})) as { exists?: boolean };
+
         form.style.display = 'none';
         const confirm = document.getElementById('crss-signup-confirm');
-        const confirmName = document.getElementById('crss-confirm-name');
+        const confirmHeading = document.getElementById('crss-confirm-heading');
+        const confirmNamePara = document.getElementById('crss-confirm-name-para');
         const confirmEmail = document.getElementById('crss-confirm-email');
-        if (confirmName) confirmName.textContent = name;
-        if (confirmEmail) confirmEmail.textContent = email;
+        const confirmAction = document.getElementById('crss-confirm-action');
+
+        if (respData.exists) {
+          // Existing account — surface a sign-in prompt instead
+          if (confirmHeading) confirmHeading.textContent = 'Check your email';
+          if (confirmNamePara) confirmNamePara.style.display = 'none';
+          if (confirmAction) {
+            confirmAction.innerHTML =
+              `You already have an account. We've sent a sign-in link to <strong>${email}</strong>.`;
+          }
+        } else {
+          // New account — fill in the name and email
+          const confirmName = document.getElementById('crss-confirm-name');
+          if (confirmName) confirmName.textContent = name;
+          if (confirmEmail) confirmEmail.textContent = email;
+        }
+
         if (confirm) confirm.style.display = 'flex';
       } else {
         const data = await response.json().catch(() => ({}));
