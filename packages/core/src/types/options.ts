@@ -23,6 +23,33 @@ export interface CommunityRssOptions {
    * @since 0.1.0
    */
   commentTier?: 'verified' | 'registered' | 'guest';
+
+  /**
+   * Email configuration for magic links and notifications.
+   * @since 0.3.0
+   */
+  email?: EmailConfig;
+}
+
+/**
+ * Email configuration for transactional emails.
+ *
+ * @since 0.3.0
+ */
+export interface EmailConfig {
+  /**
+   * Email sender address (e.g., 'noreply@example.com').
+   * Falls back to `env.SMTP_FROM` if not set.
+   * @since 0.3.0
+   */
+  from?: string;
+
+  /**
+   * Application name shown in email subject/body.
+   * @default 'Community RSS'
+   * @since 0.3.0
+   */
+  appName?: string;
 }
 
 /**
@@ -37,5 +64,9 @@ export function resolveOptions(options: CommunityRssOptions = {}): Required<Comm
   return {
     maxFeeds: options.maxFeeds ?? 5,
     commentTier: options.commentTier ?? 'registered',
+    email: {
+      from: options.email?.from,
+      appName: options.email?.appName ?? 'Community RSS',
+    },
   };
 }

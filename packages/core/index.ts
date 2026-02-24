@@ -33,10 +33,11 @@ export default function communityRss(options?: CommunityRssOptions): AstroIntegr
 }
 
 // Public type exports
-export type { CommunityRssOptions } from './src/types/options';
+export type { CommunityRssOptions, EmailConfig } from './src/types/options';
 export type { Env } from './src/types/env';
 export type {
   UserTier,
+  UserRole,
   FeedStatus,
   CommentStatus,
   InteractionType,

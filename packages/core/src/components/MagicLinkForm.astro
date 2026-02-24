@@ -1,0 +1,168 @@
+---
+/**
+ * Magic link email form component.
+ *
+ * Collects the user's email and sends a magic link request
+ * to `/api/auth/sign-in/magic-link`. Shows loading state and
+ * success/error messages.
+ *
+ * @since 0.3.0
+ */
+---
+
+<form class="crss-magic-link-form" id="crss-magic-link-form">
+  <div class="crss-form-group">
+    <label for="crss-email-input" class="crss-form-label">Email address</label>
+    <input
+      type="email"
+      id="crss-email-input"
+      name="email"
+      class="crss-form-input"
+      placeholder="you@example.com"
+      required
+      autocomplete="email"
+    />
+  </div>
+
+  <button type="submit" class="crss-btn crss-btn--primary" id="crss-submit-btn">
+    Send Magic Link
+  </button>
+
+  <div class="crss-form-message crss-form-message--success" id="crss-success-msg" style="display: none;">
+    ✓ Check your email for a magic link!
+  </div>
+
+  <div class="crss-form-message crss-form-message--error" id="crss-error-msg" style="display: none;">
+  </div>
+</form>
+
+<style>
+  .crss-magic-link-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--crss-space-md);
+    max-width: 400px;
+    width: 100%;
+  }
+
+  .crss-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--crss-space-xs);
+  }
+
+  .crss-form-label {
+    font-size: var(--crss-font-size-sm);
+    font-weight: 500;
+    color: var(--crss-text-primary);
+  }
+
+  .crss-form-input {
+    padding: var(--crss-space-sm) var(--crss-space-md);
+    border: 1px solid var(--crss-surface-3);
+    border-radius: var(--crss-radius-md);
+    font-size: var(--crss-font-size-base);
+    font-family: var(--crss-font-family);
+    color: var(--crss-text-primary);
+    background-color: var(--crss-surface-0);
+    transition: border-color var(--crss-transition-fast);
+  }
+
+  .crss-form-input:focus {
+    outline: none;
+    border-color: var(--crss-brand-primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+  }
+
+  .crss-btn--primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--crss-space-sm) var(--crss-space-lg);
+    background-color: var(--crss-brand-primary);
+    color: var(--crss-text-inverse);
+    border: none;
+    border-radius: var(--crss-radius-md);
+    font-size: var(--crss-font-size-base);
+    font-family: var(--crss-font-family);
+    cursor: pointer;
+    transition: background-color var(--crss-transition-fast);
+  }
+
+  .crss-btn--primary:hover {
+    background-color: var(--crss-brand-accent);
+  }
+
+  .crss-btn--primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .crss-form-message {
+    padding: var(--crss-space-sm) var(--crss-space-md);
+    border-radius: var(--crss-radius-md);
+    font-size: var(--crss-font-size-sm);
+  }
+
+  .crss-form-message--success {
+    background-color: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+  }
+
+  .crss-form-message--error {
+    background-color: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+  }
+</style>
+
+<script>
+  const form = document.getElementById('crss-magic-link-form') as HTMLFormElement;
+  const submitBtn = document.getElementById('crss-submit-btn') as HTMLButtonElement;
+  const successMsg = document.getElementById('crss-success-msg') as HTMLDivElement;
+  const errorMsg = document.getElementById('crss-error-msg') as HTMLDivElement;
+  const emailInput = document.getElementById('crss-email-input') as HTMLInputElement;
+
+  form?.addEventListener('submit', async (e: Event) => {
+    e.preventDefault();
+
+    const email = emailInput.value.trim();
+    if (!email) return;
+
+    // Reset messages
+    successMsg.style.display = 'none';
+    errorMsg.style.display = 'none';
+
+    // Loading state
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sending...';
+
+    try {
+      const response = await fetch('/api/auth/sign-in/magic-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          callbackURL: '/',
+        }),
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        successMsg.style.display = 'block';
+        emailInput.value = '';
+      } else {
+        const data = await response.json().catch(() => ({}));
+        errorMsg.textContent = data.message || 'Failed to send magic link. Please try again.';
+        errorMsg.style.display = 'block';
+      }
+    } catch {
+      errorMsg.textContent = 'Network error. Please try again.';
+      errorMsg.style.display = 'block';
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Send Magic Link';
+    }
+  });
+</script>

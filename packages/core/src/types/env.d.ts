@@ -95,4 +95,11 @@ export interface Env {
    * Base URL for rewritten media URLs.
    */
   MEDIA_BASE_URL: string;
+
+  /**
+   * Resend API key for production transactional email.
+   * Optional — when absent, emails are sent via SMTP (Mailpit in local dev).
+   * @since 0.3.0
+   */
+  RESEND_API_KEY?: string;
 }

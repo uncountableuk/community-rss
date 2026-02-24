@@ -59,6 +59,35 @@ export function createIntegration(options: CommunityRssOptions = {}): AstroInteg
           pattern: '/api/v1/admin/sync',
           entrypoint: new URL('./routes/api/v1/admin/sync.ts', import.meta.url).pathname,
         });
+
+        // Admin: feed management (CRUD)
+        injectRoute({
+          pattern: '/api/v1/admin/feeds',
+          entrypoint: new URL('./routes/api/v1/admin/feeds.ts', import.meta.url).pathname,
+        });
+
+        // better-auth catch-all — handles sign-in, sign-out, session, magic link
+        injectRoute({
+          pattern: '/api/auth/[...all]',
+          entrypoint: new URL('./routes/api/auth/[...all].ts', import.meta.url).pathname,
+        });
+
+        // Auth pages
+        injectRoute({
+          pattern: '/auth/signin',
+          entrypoint: new URL('./routes/pages/auth/signin.astro', import.meta.url).pathname,
+        });
+
+        injectRoute({
+          pattern: '/auth/verify',
+          entrypoint: new URL('./routes/pages/auth/verify.astro', import.meta.url).pathname,
+        });
+
+        // Dev-only seed endpoint
+        injectRoute({
+          pattern: '/api/dev/seed',
+          entrypoint: new URL('./routes/api/dev/seed.ts', import.meta.url).pathname,
+        });
       },
 
       'astro:config:done': ({ logger }) => {

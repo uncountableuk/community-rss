@@ -33,9 +33,12 @@ export const users = sqliteTable(
     id: text('id').primaryKey(),
     email: text('email'),
     isGuest: integer('is_guest', { mode: 'boolean' }).notNull().default(false),
+    /** User privilege level: 'user' | 'admin' | 'system'. @since 0.3.0 */
+    role: text('role').notNull().default('user'),
     name: text('name'),
     bio: text('bio'),
     avatarUrl: text('avatar_url'),
+    emailVerified: integer('email_verified', { mode: 'boolean' }).notNull().default(false),
     ...timestamps,
   },
   (table) => [

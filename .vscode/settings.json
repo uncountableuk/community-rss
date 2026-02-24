@@ -19,6 +19,10 @@
       "matchCommandLine": true
     },
     "npm config": true,
-    "docker compose": true
+    "docker compose": true,
+    "/^cat /app/node_modules/better-auth/package\\.json \\| grep -A2 '\"exports\"' \\| head -10 && echo \"---\" && cat /app/node_modules/better-auth/package\\.json \\| python3 -c \"import json,sys; d=json\\.load\\(sys\\.stdin\\); \\[print\\(k\\) for k in d\\.get\\('exports',\\{\\}\\)\\]\" 2>/dev/null \\| head -20$/": {
+      "approve": true,
+      "matchCommandLine": true
+    }
   }
 }
