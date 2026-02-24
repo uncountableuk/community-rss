@@ -88,6 +88,17 @@ and keep `/api/v1/` working with a deprecation notice.
 Auth routes (`/api/auth/*`) are managed entirely by better-auth's native
 router via a single catch-all endpoint — do not create manual wrapper routes.
 
+### Database Layer
+Public API routes that touch D1 must use Drizzle ORM query helpers from
+`src/db/queries/` — never expose raw SQL or construct queries inline in
+route handlers. This ensures type safety and keeps business logic testable.
+
+### Admin Routes
+Admin-only routes use the `/api/v1/admin/` namespace and must verify the
+requesting user has an admin role before processing. Admin users bypass
+domain verification for feed operations but still use the same API
+contracts as regular users.
+
 ### SemVer Rules
 
 #### Pre-1.0.0 (Current Phase)

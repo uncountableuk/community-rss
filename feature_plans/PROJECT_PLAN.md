@@ -456,13 +456,26 @@ browsable homepage showing articles in a masonry grid layout.
 
 ---
 
-### Release 0.3.0 — Authentication & User System
+### Release 0.3.0 — Authentication, User System & Admin Feeds
 
 **Goal:** Working auth system with magic-link sign-in, guest consent
-flow, and account migration from guest to registered user.
+flow, account migration from guest to registered user, formalized
+System User concept, and admin feed management (bypassing domain
+verification).
 
-#### Phase 1: better-auth Integration
-- [ ] Install `better-auth` and `drizzle-orm` in `packages/core`
+#### Phase 1: System User Formalization & Database Updates
+- [ ] Formalize System User concept: seed `system` user during DB setup
+  (not just lazily in `syncFeeds()`)
+- [ ] Add `role` column to `users` table (`'user' | 'admin' | 'system'`)
+  to distinguish user types (additive migration)
+- [ ] Create seed helper `packages/core/src/db/seed.ts` — run after
+  migrations to ensure System User exists
+- [ ] Update `ensureSystemUser()` to set `role: 'system'`
+- [ ] Run `npx drizzle-kit generate` for the migration
+- [ ] Test: `test/db/seed.test.ts`
+
+#### Phase 2: better-auth Integration
+- [ ] Install `better-auth` and `@better-auth/client` in `packages/core`
 - [ ] Create `packages/core/src/utils/build/auth.ts`
   - Configure `betterAuth()` with D1 via Drizzle adapter (SQLite provider)
   - Enable magic-link plugin
@@ -544,15 +557,34 @@ endpoints, the integration injects a single catch-all route.
   - Landing page for magic link clicks
 - [ ] Inject auth routes via integration
 
-#### Phase 5: Documentation for 0.3.0
+#### Phase 5: Admin Feed Management
+- [ ] Create `packages/core/src/routes/api/v1/admin/feeds.ts`
+  - `POST /api/v1/admin/feeds` — admin submits a feed (no domain
+    verification required). Feed is owned by the admin user, not the
+    system user.
+  - `GET /api/v1/admin/feeds` — list admin-owned feeds
+  - `DELETE /api/v1/admin/feeds/:id` — remove an admin-submitted feed
+  - Protected by admin role check
+- [ ] Create `packages/core/src/utils/build/admin-feeds.ts`
+  - `submitAdminFeed(adminUserId, feedUrl, options)` — validates URL,
+    creates approved feed with `userId: adminUserId`
+  - Reuses existing `upsertFeed()` from `db/queries/feeds.ts`
+- [ ] Update `packages/core/src/integration.ts` to inject admin feed routes
+- [ ] Test: `test/routes/api/v1/admin/feeds.test.ts`
+- [ ] Test: `test/utils/build/admin-feeds.test.ts`
+
+#### Phase 6: Documentation for 0.3.0
 - [ ] Guide: Authentication flow (magic link + guest consent)
 - [ ] API reference: auth endpoints
 - [ ] Guide: Configuring email provider (Resend setup)
 - [ ] Guide: Guest-to-registered migration flow
+- [ ] Guide: Admin feed management (adding feeds without verification)
+- [ ] Document System User concept and admin vs system feed ownership
 
-#### Phase 6: Tests & Coverage for 0.3.0
+#### Phase 7: Tests & Coverage for 0.3.0
 - [ ] Integration test: full magic-link flow (request → email → verify → session)
 - [ ] Integration test: guest consent → interaction → registration → migration
+- [ ] Integration test: admin adds feed → feed appears in All Feeds
 - [ ] Verify ≥80% coverage maintained
 - [ ] Verify Mailpit catches magic link emails locally
 
@@ -1152,7 +1184,7 @@ applyTo: "docs/**/*"
 |---------|-----------------|---------------|
 | **0.1.0** | Foundation & Scaffold | `npm run dev` starts playground + docs; CI green; D1 schema applied |
 | **0.2.0** | Feed Sync & Reader | Articles sync from FreshRSS and display in a grid on the homepage |
-| **0.3.0** | Auth & Users | Users can sign in via magic link; guests get shadow profiles |
+| **0.3.0** | Auth, Users & Admin Feeds | Users can sign in via magic link; guests get shadow profiles; admin can add feeds |
 | **0.4.0** | Interactions | Hearts, Stars, Comments work; Trending and Following tabs active |
 | **0.5.0** | Feed Submission | Authors can submit, verify, and manage their own feeds |
 | **0.6.0** | Media & Polish | Image caching pipeline; production deployment guide; theme system |
@@ -1186,3 +1218,7 @@ Each release follows the branching model defined in the release prompt:
 | Drizzle ORM version conflicts with better-auth | Build failures | Pin compatible versions; test upgrades in CI before merging |
 | CSS custom property browser support | Older browser breakage | Provide fallback values in token definitions; document minimum browser versions |
 | Guest UUID cookie cleared on sign-out leaves orphaned shadow profile | Wasted DB rows | Periodic cleanup job for guest profiles with no interactions older than N days (future optimisation) |
+| Offset-based pagination with active syncing | Duplicate items shown to users when new articles shift offsets between page requests | Migrate to cursor-based pagination (`WHERE published_at < ?`) before 0.4.0 — natively optimised in D1/SQLite. Flagged as high-priority tech debt from 0.2.0 review |
+| Cloudflare Pages cron/queue in production | Local dev workaround (inline sync) risks breaching 30s HTTP timeout if used in production with large feeds | Before 0.6.0, deploy to a real CF Pages Preview environment to verify `scheduled` and `queue` handlers work. Do not migrate to raw Workers — keep Astro's static asset hosting |
+| Admin sync endpoint used in production accidentally | 30-second Cloudflare HTTP request timeout breach with large feed syncs (500+ articles) | Mark admin sync endpoint as dev-only; add warnings in response headers and documentation |
+| System/admin feed ownership ambiguity | UI confusion when 0.5.0 introduces user-submitted feeds alongside system feeds | 0.5.0 must distinguish "Global/System Feeds" (system user), "Admin Feeds" (admin user), and "Personal Feeds" (verified author) in the UI and API |
