@@ -10,6 +10,10 @@ vi.mock('../../../src/db/queries/feeds', () => ({
     upsertFeed: vi.fn().mockResolvedValue([]),
 }));
 
+vi.mock('../../../src/db/queries/users', () => ({
+    ensureSystemUser: vi.fn().mockResolvedValue(undefined),
+}));
+
 const mockQueue = {
     send: vi.fn().mockResolvedValue(undefined),
 };
@@ -23,7 +27,16 @@ const mockEnv: Env = {
     MEDIA_BUCKET: {} as R2Bucket,
 } as unknown as Env;
 
+const MOCK_AUTH_TOKEN = 'admin/abc123synctoken';
+
 const server = setupServer(
+    // ClientLogin endpoint for auth
+    http.post('https://freshrss.example.com/api/greader.php/accounts/ClientLogin', () => {
+        return new HttpResponse(
+            `SID=${MOCK_AUTH_TOKEN}\nLSID=null\nAuth=${MOCK_AUTH_TOKEN}`,
+            { status: 200, headers: { 'Content-Type': 'text/plain' } }
+        );
+    }),
     http.get('https://freshrss.example.com/api/greader.php/reader/api/0/subscription/list', () => {
         return HttpResponse.json(mockFeedsResponse);
     }),
@@ -90,11 +103,11 @@ describe('syncFeeds', () => {
 
     it('handles FreshRSS API errors', async () => {
         server.use(
-            http.get('https://freshrss.example.com/api/greader.php/reader/api/0/subscription/list', () => {
-                return new HttpResponse(null, { status: 500 });
+            http.post('https://freshrss.example.com/api/greader.php/accounts/ClientLogin', () => {
+                return new HttpResponse('Error=BadAuthentication', { status: 403 });
             }),
         );
 
-        await expect(syncFeeds(mockEnv)).rejects.toThrow('FreshRSS API error');
+        await expect(syncFeeds(mockEnv)).rejects.toThrow('FreshRSS login failed');
     });
 });

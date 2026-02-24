@@ -18,6 +18,7 @@
       "approve": true,
       "matchCommandLine": true
     },
-    "npm config": true
+    "npm config": true,
+    "docker compose": true
   }
 }

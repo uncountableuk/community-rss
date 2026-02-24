@@ -56,7 +56,7 @@ The following environment variables must be set in your `.dev.vars` file
 |----------|----------|-------------|
 | `FRESHRSS_URL` | Yes | FreshRSS instance URL (e.g., `http://freshrss:80`) |
 | `FRESHRSS_USER` | Yes | FreshRSS admin username |
-| `FRESHRSS_API_PASSWORD` | Yes | FreshRSS API password |
+| `FRESHRSS_API_PASSWORD` | Yes | FreshRSS **API** password (set in Profile → API management; not the login password) |
 | `CF_ACCESS_CLIENT_ID` | No | Cloudflare Zero Trust client ID |
 | `CF_ACCESS_CLIENT_SECRET` | No | Cloudflare Zero Trust client secret |
 

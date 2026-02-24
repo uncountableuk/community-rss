@@ -84,7 +84,7 @@
 - [x] Updated integration-factory test to expect 4 injected routes (was 1).
 - [x] Updated workers tests with proper mocks for real implementations.
 - [x] Verify ≥80% coverage maintained.
-- [ ] Playground displays real articles from local FreshRSS. *(Requires running Docker Compose stack; verified playground builds successfully.)*
+- [x] Playground displays real articles from local FreshRSS.
 
 ## Implementation Notes
 
@@ -167,12 +167,29 @@
 - Registered in `packages/core/src/integration.ts` as the 5th injected route. Updated `integration-factory.test.ts` to expect 5 routes.
 - Astro's CSRF protection blocks cross-site POST requests — must include `Origin: http://localhost:4321` header: `curl -s -X POST http://localhost:4321/api/v1/admin/sync -H "Origin: http://localhost:4321"`.
 
-#### FreshRSS Authorisation — Blocked (401)
-- The manual sync endpoint returns `{"ok":false,"error":"FreshRSS API error: 401 Unauthorized"}`.
-- FreshRSS requires **two separate steps** to enable API access:
-  1. **Administration → Authentication**: tick "Allow API access (by password)" and save.
-  2. **User Profile → API management**: set a dedicated API password (different from the login password).
-- The auth header format used by `freshrss-client.ts` is `GoogleLogin auth=USER/API_PASSWORD` (Google Reader API format).
-- `FRESHRSS_URL` in `.dev.vars` must be `http://freshrss:80` (Docker Compose service name), not `http://localhost:8080` — the playground runs inside the dev container which shares the Docker network with the `freshrss` service.
-- The user has confirmed the password is set in `.dev.vars` but the 401 persists. Further investigation is needed — likely the FreshRSS admin-level "Allow API access" checkbox has not been enabled, or the API password in the profile differs from what is in `.dev.vars`.
-- **TODO (return to this):** Verify FreshRSS API access is enabled at the admin level; test credentials directly against FreshRSS at `http://localhost:8080/api/greader.php/accounts/ClientLogin`; confirm the sync returns 200 before marking end-to-end testing complete.
+#### FreshRSS Authorisation — ✅ Resolved
+- The 401 error was caused by **incorrect auth flow**, not missing FreshRSS config.
+- FreshRSS Google Reader API requires a **two-step ClientLogin flow**:
+  1. POST `Email` + `Passwd` to `/api/greader.php/accounts/ClientLogin`.
+  2. Parse the `Auth=<token>` line from the response.
+  3. Use the token (a hash, e.g. `admin/581b...`) in `Authorization: GoogleLogin auth=<token>`.
+- The original `freshrss-client.ts` was using the raw password (`user/apipassword`) directly as the auth header — FreshRSS rejects this with 401 because the token is a hash, not the raw password.
+- **Fix:** Rewrote `FreshRssClient` to call `login()` (ClientLogin endpoint) before API requests. The auth token is cached for the lifetime of the client instance.
+- Updated `freshrss-client.test.ts` — added ClientLogin mock handler, 3 new tests (token caching, direct login, auth error now expects `FreshRSS login failed`).
+- Updated `sync.test.ts` — added ClientLogin mock handler and `ensureSystemUser` mock.
+
+#### Foreign Key Constraint — ✅ Resolved
+- After fixing auth, sync failed with `FOREIGN KEY constraint failed` on feed upsert.
+- Root cause: `feeds.user_id` has a FK to `users.id`, but sync inserts feeds with `userId: 'system'` and no `system` user row existed.
+- **Fix:** Created `ensureSystemUser()` in `packages/core/src/db/queries/users.ts` using `INSERT OR IGNORE`. Called at the start of `syncFeeds()` to guarantee the system user exists.
+
+#### Queue Consumer — Workaround Applied
+- `wrangler pages dev` does not recognise the `queue()` export from the Astro-built worker, despite it being correctly exported on the default object and as a named export. This appears to be a `wrangler pages dev` limitation with Pages projects.
+- **Workaround:** The admin sync endpoint (`POST /api/v1/admin/sync`) now processes articles **inline** — after `syncFeeds()` enqueues messages, the endpoint intercepts them, runs `processArticle()` + `upsertArticle()` directly, and returns `articlesProcessed` in the response.
+- Queue consumer code remains correct and will work when deployed to Cloudflare Workers (non-Pages).
+
+#### End-to-End Sync — ✅ Verified
+- `POST /api/v1/admin/sync` → `{"ok":true,"feedsProcessed":3,"articlesEnqueued":40,"articlesProcessed":40}`
+- `GET /api/v1/articles` → returns real articles from FreshRSS with titles, content, summaries.
+- Homepage (`/`) renders feed cards with real article data from local FreshRSS.
+- All 104 tests across 11 files pass.

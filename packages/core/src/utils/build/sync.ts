@@ -1,6 +1,7 @@
 import type { Env } from '../../types/env';
 import { FreshRssClient } from './freshrss-client';
 import { upsertFeed } from '../../db/queries/feeds';
+import { ensureSystemUser } from '../../db/queries/users';
 import type { FreshRssItem } from '../../types/freshrss';
 
 /**
@@ -67,6 +68,9 @@ export async function syncFeeds(env: Env): Promise<{
     articlesEnqueued: number;
 }> {
     const client = new FreshRssClient(env);
+
+    // 0. Ensure the system user exists for feed ownership
+    await ensureSystemUser(env.DB);
 
     // 1. Fetch all subscribed feeds
     const { subscriptions } = await client.fetchFeeds();
