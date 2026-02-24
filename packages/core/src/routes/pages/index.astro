@@ -199,18 +199,71 @@ if (env?.DB) {
                 const card = document.createElement('article');
                 card.className = 'crss-feed-card';
                 card.dataset.articleId = article.id;
-                card.innerHTML = `
-                  <a href="/article/${article.id}" class="crss-feed-card__link" data-article-link>
-                    <header class="crss-feed-card__header">
-                      <time class="crss-feed-card__date">${article.publishedAt ? new Date(article.publishedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : ''}</time>
-                    </header>
-                    <h3 class="crss-feed-card__title">${article.title}</h3>
-                    ${article.summary ? `<p class="crss-feed-card__summary">${article.summary}</p>` : ''}
-                    <footer class="crss-feed-card__footer">
-                      <span class="crss-feed-card__author">${article.authorName || 'Unknown'}</span>
-                    </footer>
-                  </a>
-                `;
+                
+                const link = document.createElement('a');
+                link.href = `/article/${article.id}`;
+                link.className = 'crss-feed-card__link';
+                link.setAttribute('data-article-link', '');
+                
+                const header = document.createElement('header');
+                header.className = 'crss-feed-card__header';
+                
+                if (article.feedTitle) {
+                  const source = document.createElement('span');
+                  source.className = 'crss-feed-card__source';
+                  source.textContent = article.feedTitle;
+                  header.appendChild(source);
+                }
+                
+                if (article.publishedAt) {
+                  const time = document.createElement('time');
+                  time.className = 'crss-feed-card__date';
+                  time.textContent = new Date(article.publishedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+                  header.appendChild(time);
+                }
+                
+                const title = document.createElement('h3');
+                title.className = 'crss-feed-card__title';
+                title.textContent = article.title;
+                
+                link.appendChild(header);
+                link.appendChild(title);
+                
+                if (article.summary) {
+                  const summary = document.createElement('p');
+                  summary.className = 'crss-feed-card__summary';
+                  summary.textContent = article.summary;
+                  link.appendChild(summary);
+                }
+                
+                const footer = document.createElement('footer');
+                footer.className = 'crss-feed-card__footer';
+                
+                const author = document.createElement('span');
+                author.className = 'crss-feed-card__author';
+                author.textContent = article.authorName || 'Unknown';
+                
+                const interactions = document.createElement('div');
+                interactions.className = 'crss-feed-card__interactions';
+                
+                const heartsSpan = document.createElement('span');
+                heartsSpan.className = 'crss-feed-card__hearts';
+                heartsSpan.setAttribute('title', 'Hearts');
+                heartsSpan.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg><span>${article.heartCount || 0}</span>`;
+                
+                const starsSpan = document.createElement('span');
+                starsSpan.className = 'crss-feed-card__stars';
+                starsSpan.setAttribute('title', 'Stars');
+                starsSpan.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg><span>${article.starCount || 0}</span>`;
+                
+                interactions.appendChild(heartsSpan);
+                interactions.appendChild(starsSpan);
+                
+                footer.appendChild(author);
+                footer.appendChild(interactions);
+                link.appendChild(footer);
+                
+                card.appendChild(link);
                 grid.appendChild(card);
               }
               hasMore = data.pagination.hasMore;
