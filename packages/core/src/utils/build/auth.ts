@@ -46,15 +46,19 @@ export function createAuth(env: Env, emailConfig?: EmailConfig) {
         plugins: [
             magicLink({
                 sendMagicLink: async ({ email, url }) => {
-                    await sendMagicLinkEmail(env, email, url, emailConfig);
+                    // Transform the URL to go through the verify page instead of directly to the API
+                    // This allows proper client-side handling of the verification process
+                    const verifyUrl = url.replace('/api/auth/magic-link/verify', '/auth/verify');
+                    await sendMagicLinkEmail(env, email, verifyUrl, emailConfig);
                 },
-                expiresIn: 300, // 5 minutes
+                expiresIn: 3600, // 60 minutes (increased from 5 for local dev testing)
             }),
         ],
         session: {
+            expiresIn: 60 * 60 * 24 * 30, // 30 days
+            updateAge: 60 * 60 * 24, // Update session cookie once per day
             cookieCache: {
-                enabled: true,
-                maxAge: 300, // 5 minutes
+                enabled: false, // Disable cache to prevent token consumption on failed requests
             },
         },
         advanced: {

@@ -29,38 +29,66 @@ export const ALL: APIRoute = async ({ request, locals }) => {
         );
     }
 
-    const auth = createAuth(env);
+    try {
+        const auth = createAuth(env);
 
-    // Handle guest-to-user migration after magic link verification
-    // Read the guest ID cookie from the request
-    const guestId = getGuestIdFromCookie(request);
+        // Handle guest-to-user migration after magic link verification
+        // Read the guest ID cookie from the request
+        const guestId = getGuestIdFromCookie(request);
 
-    const response = await auth.handler(request);
-
-    // After successful magic link verification, check if we need to
-    // migrate guest interactions to the newly created/authenticated user
-    if (guestId && request.url.includes('/magic-link/verify')) {
+        let response: Response;
         try {
-            const session = await auth.api.getSession({
-                headers: request.headers,
+            response = await auth.handler(request);
+        } catch (err) {
+            const errorMsg = err instanceof Error ? err.message : String(err);
+            const errorStack = err instanceof Error ? err.stack : undefined;
+            console.error('[community-rss] Auth handler error:', {
+                message: errorMsg,
+                stack: errorStack,
+                url: request.url,
+                method: request.method,
             });
-            if (session?.user) {
-                await migrateGuestToUser(env.DB, guestId, session.user.id);
-                // Clear the guest cookie by setting it expired in the response
-                const newResponse = new Response(response.body, response);
-                newResponse.headers.append(
-                    'Set-Cookie',
-                    'crss_guest=; Path=/; Max-Age=0; SameSite=Lax',
-                );
-                return newResponse;
-            }
-        } catch {
-            // Migration failure shouldn't block auth — log and continue
-            console.warn('[community-rss] Guest migration failed for', guestId);
+            return new Response(
+                JSON.stringify({ error: 'Authentication failed', details: errorMsg }),
+                { status: 500, headers: { 'Content-Type': 'application/json' } },
+            );
         }
-    }
 
-    return response;
+        // After successful magic link verification, check if we need to
+        // migrate guest interactions to the newly created/authenticated user
+        if (guestId && request.url.includes('/magic-link/verify')) {
+            try {
+                const session = await auth.api.getSession({
+                    headers: request.headers,
+                });
+                if (session?.user) {
+                    await migrateGuestToUser(env.DB, guestId, session.user.id);
+                    // Clear the guest cookie by setting it expired in the response
+                    const newResponse = new Response(response.body, {
+                        status: response.status,
+                        statusText: response.statusText,
+                        headers: new Headers(response.headers),
+                    });
+                    newResponse.headers.set(
+                        'Set-Cookie',
+                        'crss_guest=; Path=/; Max-Age=0; SameSite=Lax',
+                    );
+                    return newResponse;
+                }
+            } catch (err) {
+                // Migration failure shouldn't block auth — log and continue
+                console.warn('[community-rss] Guest migration failed for', guestId, ':', err);
+            }
+        }
+
+        return response;
+    } catch (err) {
+        console.error('[community-rss] Unexpected auth error:', err);
+        return new Response(
+            JSON.stringify({ error: 'Unexpected authentication error' }),
+            { status: 500, headers: { 'Content-Type': 'application/json' } },
+        );
+    }
 };
 
 // Also handle GET, POST, etc. individually for Astro route matching

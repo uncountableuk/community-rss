@@ -38,6 +38,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
   async function verifyMagicLink() {
     const params = new URLSearchParams(window.location.search);
     const token = params.get('token');
+    const callbackURL = params.get('callbackURL') || '/';
 
     if (!token) {
       showError('No verification token found. Please request a new magic link.');
@@ -45,21 +46,41 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
     }
 
     try {
-      const res = await fetch(`/api/auth/magic-link/verify?token=${encodeURIComponent(token)}`, {
+      const verifyUrl = `/api/auth/magic-link/verify?token=${encodeURIComponent(token)}&callbackURL=${encodeURIComponent(callbackURL)}`;
+      console.log('[verify] Calling:', verifyUrl);
+      
+      const res = await fetch(verifyUrl, {
         method: 'GET',
         credentials: 'include',
         redirect: 'manual',
       });
 
+      console.log('[verify] Response status:', res.status, 'type:', res.type);
+
       if (res.ok || res.type === 'opaqueredirect' || (res.status >= 300 && res.status < 400)) {
-        // Verification succeeded — redirect to homepage
-        window.location.href = params.get('callbackURL') || '/';
+        // Verification succeeded — redirect to homepage or callback URL
+        console.log('[verify] Verification successful, redirecting to:', callbackURL);
+        window.location.href = callbackURL;
         return;
       }
 
-      const data = await res.json().catch(() => null);
-      showError(data?.message || 'This link is invalid or has expired.');
-    } catch {
+      // Try to parse error details from the response
+      let errorMessage = 'This link is invalid or has expired.';
+      
+      // Clone the response so we can read it once for error handling
+      const errorText = await res.clone().text().catch(() => '');
+      console.log('[verify] Error response (status ' + res.status + '):', errorText);
+      
+      try {
+        const data = JSON.parse(errorText);
+        errorMessage = data?.message || data?.error || errorMessage;
+      } catch {
+        errorMessage = errorText || `Server error (${res.status})`;
+      }
+      
+      showError(errorMessage);
+    } catch (err) {
+      console.error('[verify] Exception during verification:', err);
       showError('An unexpected error occurred. Please try again.');
     }
   }
