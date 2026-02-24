@@ -92,24 +92,38 @@
 
   async function signOut() {
     try {
-      await fetch('/api/auth/sign-out', {
+      const response = await fetch('/api/auth/sign-out', {
         method: 'POST',
         credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
       });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[community-rss] Sign-out failed with status', response.status, ':', errorText);
+        return;
+      }
 
       // Clear guest cookie on sign-out
       document.cookie = 'crss_guest=; path=/; max-age=0; samesite=lax';
-
-      window.location.reload();
-    } catch {
-      console.error('[community-rss] Sign-out failed');
+      
+      // Redirect to home
+      window.location.href = '/';
+    } catch (err) {
+      console.error('[community-rss] Sign-out failed:', err);
     }
   }
 
   // Wire up sign-out button
   const signOutBtn = document.getElementById('crss-signout-btn');
   if (signOutBtn) {
-    signOutBtn.addEventListener('click', signOut);
+    signOutBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      signOut();
+    });
   }
 
   // Check session on page load
