@@ -15,6 +15,7 @@ import type {
     EmailUserProfile,
     EmailTemplateContext,
     EmailTemplateFunction,
+    EmailTypeDataMap,
 } from '../../types/email';
 import { defaultTemplates } from './email-templates';
 import { createResendTransport, createSmtpTransport } from './email-transports';
@@ -123,7 +124,9 @@ export function createEmailService(
         async send<K extends string>(
             type: K,
             to: string,
-            data: Record<string, unknown>,
+            data: K extends keyof EmailTypeDataMap
+                ? EmailTypeDataMap[K]
+                : Record<string, unknown>,
             profile?: EmailUserProfile,
         ): Promise<void> {
             if (!transport) {
@@ -147,7 +150,8 @@ export function createEmailService(
                 profile,
             };
 
-            const content = template(context, data);
+            // Cast data as any since template function is generic but data is type-specific
+            const content = template(context, data as any);
 
             await transport.send({
                 from,

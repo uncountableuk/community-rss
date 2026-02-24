@@ -136,15 +136,11 @@ export type EmailType = keyof EmailTypeDataMap;
  * Map of email type names to their template functions.
  *
  * Used in `EmailConfig.templates` to override default templates.
+ * Allows any template function to be registered for custom email types.
  *
  * @since 0.3.0
  */
-export interface EmailTemplateMap {
-    'sign-in'?: EmailTemplateFunction<SignInEmailData>;
-    'welcome'?: EmailTemplateFunction<WelcomeEmailData>;
-    'email-change'?: EmailTemplateFunction<EmailChangeData>;
-    [key: string]: EmailTemplateFunction<Record<string, unknown>> | undefined;
-}
+export type EmailTemplateMap = Record<string, EmailTemplateFunction<any>>;
 
 // ─── Transport Layer ─────────────────────────────────────────
 

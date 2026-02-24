@@ -15,6 +15,7 @@ import type {
     SignInEmailData,
     WelcomeEmailData,
     EmailChangeData,
+    EmailTemplateMap,
 } from '../../types/email';
 
 // ─── Shared Layout ───────────────────────────────────────────
@@ -180,8 +181,8 @@ export const emailChangeTemplate: EmailTemplateFunction<EmailChangeData> = (
  *
  * @since 0.3.0
  */
-export const defaultTemplates: Record<string, EmailTemplateFunction<Record<string, unknown>>> = {
-    'sign-in': signInTemplate as EmailTemplateFunction<Record<string, unknown>>,
-    'welcome': welcomeTemplate as EmailTemplateFunction<Record<string, unknown>>,
-    'email-change': emailChangeTemplate as EmailTemplateFunction<Record<string, unknown>>,
+export const defaultTemplates: EmailTemplateMap = {
+    'sign-in': signInTemplate,
+    'welcome': welcomeTemplate,
+    'email-change': emailChangeTemplate,
 };
