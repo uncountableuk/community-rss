@@ -62,14 +62,14 @@ export const ALL: APIRoute = async ({ request, locals }) => {
                 const reqHeaders = new Headers(request.headers);
                 const setCookies = response.headers.getSetCookie ? response.headers.getSetCookie() : [];
                 const newCookies: string[] = [];
-                
+
                 for (const sc of setCookies) {
                     const match = sc.match(/^([^=]+)=([^;]+)/);
                     if (match) {
                         newCookies.push(`${match[1]}=${match[2]}`);
                     }
                 }
-                
+
                 if (newCookies.length > 0) {
                     const existingCookie = reqHeaders.get('cookie');
                     reqHeaders.set('cookie', (existingCookie ? existingCookie + '; ' : '') + newCookies.join('; '));
