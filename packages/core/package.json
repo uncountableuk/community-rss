@@ -23,12 +23,17 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "drizzle-orm": "^0.38.0"
+    "@types/sanitize-html": "^2.16.0",
+    "cheerio": "^1.2.0",
+    "drizzle-orm": "^0.38.0",
+    "sanitize-html": "^2.17.1"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.0.0",
     "astro": "^5.0.0",
     "drizzle-kit": "^0.30.0",
+    "jsdom": "^28.1.0",
+    "msw": "^2.12.10",
     "wrangler": "^4.0.0"
   },
   "peerDependencies": {

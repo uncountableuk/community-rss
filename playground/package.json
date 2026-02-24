@@ -5,6 +5,7 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "astro dev --host 0.0.0.0",
+    "wrangler:dev": "astro build && wrangler pages dev --port 4321 --ip 0.0.0.0",
     "build": "astro build",
     "preview": "astro preview",
     "typecheck": "astro check && tsc --noEmit"

@@ -28,3 +28,7 @@ queue = "article-processing"
 queue = "article-processing"
 max_batch_size = 10
 max_retries = 3
+
+# Cron Triggers (feed sync every 30 minutes)
+[triggers]
+crons = ["*/30 * * * *"]

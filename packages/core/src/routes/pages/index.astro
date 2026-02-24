@@ -1,0 +1,140 @@
+---
+/**
+ * Homepage — displays the article feed grid with tab navigation.
+ *
+ * Server-side renders the initial article list. Client-side
+ * infinite scrolling loads additional pages.
+ *
+ * @since 0.2.0
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import TabBar from '../../components/TabBar.astro';
+import FeedGrid from '../../components/FeedGrid.astro';
+
+const env = (Astro.locals as { runtime?: { env?: { DB?: D1Database } } }).runtime?.env;
+
+let articles: any[] = [];
+let error = '';
+
+if (env?.DB) {
+  try {
+    const { getArticles } = await import('../../db/queries/articles');
+    const rows = await getArticles(env.DB, 20, 0);
+    articles = rows;
+  } catch (e) {
+    console.error('[community-rss] Failed to load articles:', e);
+    error = 'Failed to load articles. Please try again later.';
+  }
+} else {
+  error = 'Database not configured.';
+}
+---
+
+<BaseLayout title="Community RSS">
+  <main class="crss-homepage">
+    <header class="crss-homepage__header">
+      <h1 class="crss-homepage__title">Community RSS</h1>
+    </header>
+
+    <TabBar />
+
+    {error ? (
+      <div class="crss-homepage__error">
+        <p>{error}</p>
+      </div>
+    ) : articles.length === 0 ? (
+      <div class="crss-homepage__empty">
+        <p>No articles yet. Articles will appear here once feeds have been synced.</p>
+      </div>
+    ) : (
+      <FeedGrid articles={articles} />
+    )}
+
+    <div id="infinite-scroll-sentinel" class="crss-homepage__sentinel"></div>
+  </main>
+</BaseLayout>
+
+<style>
+  .crss-homepage {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--crss-space-lg) var(--crss-space-md);
+  }
+
+  .crss-homepage__header {
+    margin-bottom: var(--crss-space-lg);
+  }
+
+  .crss-homepage__title {
+    font-size: var(--crss-font-size-3xl);
+    font-weight: 700;
+    color: var(--crss-text-primary);
+  }
+
+  .crss-homepage__error,
+  .crss-homepage__empty {
+    text-align: center;
+    padding: var(--crss-space-3xl) var(--crss-space-md);
+    color: var(--crss-text-muted);
+    font-size: var(--crss-font-size-lg);
+  }
+
+  .crss-homepage__sentinel {
+    height: 1px;
+  }
+</style>
+
+<script>
+  // Infinite scroll script — loads more articles as user scrolls
+  const sentinel = document.getElementById('infinite-scroll-sentinel');
+  const grid = document.getElementById('feed-grid');
+  let currentPage = 1;
+  let loading = false;
+  let hasMore = true;
+
+  if (sentinel && grid) {
+    const observer = new IntersectionObserver(
+      async (entries) => {
+        if (entries[0].isIntersecting && !loading && hasMore) {
+          loading = true;
+          currentPage++;
+
+          try {
+            const response = await fetch(`/api/v1/articles?page=${currentPage}&limit=20`);
+            const data = await response.json();
+
+            if (data.data && data.data.length > 0) {
+              for (const article of data.data) {
+                const card = document.createElement('article');
+                card.className = 'crss-feed-card';
+                card.dataset.articleId = article.id;
+                card.innerHTML = `
+                  <a href="/article/${article.id}" class="crss-feed-card__link" data-article-link>
+                    <header class="crss-feed-card__header">
+                      <time class="crss-feed-card__date">${article.publishedAt ? new Date(article.publishedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : ''}</time>
+                    </header>
+                    <h3 class="crss-feed-card__title">${article.title}</h3>
+                    ${article.summary ? `<p class="crss-feed-card__summary">${article.summary}</p>` : ''}
+                    <footer class="crss-feed-card__footer">
+                      <span class="crss-feed-card__author">${article.authorName || 'Unknown'}</span>
+                    </footer>
+                  </a>
+                `;
+                grid.appendChild(card);
+              }
+              hasMore = data.pagination.hasMore;
+            } else {
+              hasMore = false;
+            }
+          } catch (e) {
+            console.error('[community-rss] Failed to load more articles:', e);
+          }
+
+          loading = false;
+        }
+      },
+      { threshold: 0.1 },
+    );
+    observer.observe(sentinel);
+  }
+</script>

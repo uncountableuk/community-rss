@@ -41,6 +41,16 @@ export interface Env {
   FRESHRSS_API_PASSWORD: string;
 
   /**
+   * Cloudflare Access Client ID for Zero Trust (optional).
+   */
+  CF_ACCESS_CLIENT_ID?: string;
+
+  /**
+   * Cloudflare Access Client Secret for Zero Trust (optional).
+   */
+  CF_ACCESS_CLIENT_SECRET?: string;
+
+  /**
    * Public site URL — must match the externally-accessible origin.
    * Critical for better-auth magic link generation and cookie setting.
    */

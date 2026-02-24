@@ -4,18 +4,48 @@
     "outDir": "./dist",
     "rootDir": ".",
     "baseUrl": ".",
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "paths": {
-      "@utils/*": ["./src/utils/*"],
-      "@components/*": ["./src/components/*"],
-      "@routes/*": ["./src/routes/*"],
-      "@db/*": ["./src/db/*"],
-      "@core-types/*": ["./src/types/*"],
-      "@layouts/*": ["./src/layouts/*"],
-      "@fixtures/*": ["./test/fixtures/*"],
-      "@test/*": ["./test/*"]
+      "@utils/*": [
+        "./src/utils/*"
+      ],
+      "@components/*": [
+        "./src/components/*"
+      ],
+      "@routes/*": [
+        "./src/routes/*"
+      ],
+      "@db/*": [
+        "./src/db/*"
+      ],
+      "@core-types/*": [
+        "./src/types/*"
+      ],
+      "@layouts/*": [
+        "./src/layouts/*"
+      ],
+      "@fixtures/*": [
+        "./test/fixtures/*"
+      ],
+      "@test/*": [
+        "./test/*"
+      ]
     },
-    "types": ["@cloudflare/workers-types"]
+    "types": [
+      "@cloudflare/workers-types"
+    ]
   },
-  "include": ["src/**/*", "index.ts", "test/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    "src/**/*",
+    "index.ts",
+    "test/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

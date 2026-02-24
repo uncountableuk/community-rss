@@ -1,0 +1,61 @@
+---
+/**
+ * FeedGrid component — masonry/grid layout for article feed cards.
+ *
+ * Uses CSS Grid for responsive column layout. Renders FeedCard
+ * components for each article passed in.
+ *
+ * @since 0.2.0
+ */
+
+interface Article {
+  id: string;
+  title: string;
+  summary?: string;
+  authorName?: string;
+  publishedAt?: Date;
+  originalLink?: string;
+  feedTitle?: string;
+  heartCount?: number;
+  starCount?: number;
+}
+
+interface Props {
+  articles: Article[];
+}
+
+const { articles } = Astro.props;
+
+import FeedCard from './FeedCard.astro';
+---
+
+<div class="crss-feed-grid" id="feed-grid">
+  {articles.map((article) => (
+    <FeedCard
+      id={article.id}
+      title={article.title}
+      summary={article.summary}
+      authorName={article.authorName}
+      publishedAt={article.publishedAt}
+      originalLink={article.originalLink}
+      feedTitle={article.feedTitle}
+      heartCount={article.heartCount}
+      starCount={article.starCount}
+    />
+  ))}
+</div>
+
+<style>
+  .crss-feed-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--crss-space-lg);
+    padding: var(--crss-space-md) 0;
+  }
+
+  @media (max-width: 640px) {
+    .crss-feed-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

@@ -8,6 +8,10 @@ export default defineConfig({
     platformProxy: {
       enabled: true,
     },
+    workerEntryPoint: {
+      path: './src/worker.ts',
+      namedExports: ['scheduled', 'queue'],
+    },
   }),
   integrations: [
     communityRss({
