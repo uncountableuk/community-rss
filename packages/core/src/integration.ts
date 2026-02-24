@@ -112,6 +112,24 @@ export function createIntegration(options: CommunityRssOptions = {}): AstroInteg
           entrypoint: new URL('./routes/api/v1/profile.ts', import.meta.url).pathname,
         });
 
+        // Email change request
+        injectRoute({
+          pattern: '/api/v1/profile/change-email',
+          entrypoint: new URL('./routes/api/v1/profile/change-email.ts', import.meta.url).pathname,
+        });
+
+        // Email change confirmation
+        injectRoute({
+          pattern: '/api/v1/profile/confirm-email-change',
+          entrypoint: new URL('./routes/api/v1/profile/confirm-email-change.ts', import.meta.url).pathname,
+        });
+
+        // Email change verification page
+        injectRoute({
+          pattern: '/auth/verify-email-change',
+          entrypoint: new URL('./routes/pages/auth/verify-email-change.astro', import.meta.url).pathname,
+        });
+
         // Terms of Service page (placeholder — consumers override)
         injectRoute({
           pattern: '/terms',

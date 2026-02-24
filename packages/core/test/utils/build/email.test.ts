@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { sendMagicLinkEmail } from '@utils/build/email';
+import { sendMagicLinkEmail, sendEmailChangeEmail } from '@utils/build/email';
 import type { Env } from '@core-types/env';
 
 // Mock global fetch
@@ -127,6 +127,61 @@ describe('email', () => {
             const body = JSON.parse(mockFetch.mock.calls[0][1].body);
             expect(body.text).toContain(url);
             expect(body.html).toContain(url);
+        });
+    });
+
+    describe('sendEmailChangeEmail', () => {
+        it('should send via Resend when RESEND_API_KEY is set', async () => {
+            mockFetch.mockResolvedValueOnce({ ok: true });
+
+            const env = { ...baseEnv, RESEND_API_KEY: 'key' };
+            await sendEmailChangeEmail(env, 'new@example.com', 'https://example.com/verify-change?token=abc');
+
+            expect(mockFetch).toHaveBeenCalledWith(
+                'https://api.resend.com/emails',
+                expect.objectContaining({ method: 'POST' }),
+            );
+
+            const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+            expect(body.to).toBe('new@example.com');
+            expect(body.subject).toContain('Confirm');
+        });
+
+        it('should send via SMTP when no RESEND_API_KEY', async () => {
+            mockFetch.mockResolvedValueOnce({ ok: true });
+
+            await sendEmailChangeEmail(baseEnv, 'new@example.com', 'https://example.com/verify-change?token=abc');
+
+            expect(mockFetch).toHaveBeenCalledWith(
+                'http://mailpit:8025/api/v1/send',
+                expect.objectContaining({ method: 'POST' }),
+            );
+        });
+
+        it('should include verification URL in email body', async () => {
+            mockFetch.mockResolvedValueOnce({ ok: true });
+
+            const env = { ...baseEnv, RESEND_API_KEY: 'key' };
+            const url = 'https://example.com/verify-change?token=tok123';
+            await sendEmailChangeEmail(env, 'new@example.com', url);
+
+            const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+            expect(body.text).toContain(url);
+            expect(body.html).toContain(url);
+        });
+
+        it('should use emailConfig.appName in subject when provided', async () => {
+            mockFetch.mockResolvedValueOnce({ ok: true });
+
+            const env = { ...baseEnv, RESEND_API_KEY: 'key' };
+            await sendEmailChangeEmail(env, 'new@example.com', 'https://example.com/verify', {
+                from: 'hello@myapp.com',
+                appName: 'My App',
+            });
+
+            const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+            expect(body.subject).toContain('My App');
+            expect(body.from).toBe('hello@myapp.com');
         });
     });
 });

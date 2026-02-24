@@ -723,14 +723,14 @@ Author profile pages with follow functionality.
 - [ ] Store consent timestamp in `feeds` table
 
 #### Phase 5.5: Profile Enhancements
-- [ ] Profile page: email change with re-verification flow
-  - `PATCH /api/v1/profile` with `email` field triggers verification email
-  - New email only takes effect after verification
 - [ ] Profile page: avatar upload via R2
   - `POST /api/v1/profile/avatar` — upload image to R2, update `avatar_url`
 - [ ] Profile page: manage submitted feeds (list, remove)
-- [ ] Test: email re-verification flow
 - [ ] Test: avatar upload + display
+
+> **Note:** Email change with verification flow was implemented in 0.3.0
+> (Phase 9) to allow users to manage their account email. This feature is
+> no longer needed in 0.5.0.
 
 #### Phase 6: Documentation for 0.5.0
 - [ ] Guide: Feed submission and verification flow

@@ -41,6 +41,12 @@ export const users = sqliteTable(
     emailVerified: integer('email_verified', { mode: 'boolean' }).notNull().default(false),
     /** Timestamp when user accepted Terms of Service. @since 0.3.0 */
     termsAcceptedAt: integer('terms_accepted_at', { mode: 'timestamp' }),
+    /** Pending new email address awaiting verification. @since 0.3.0 */
+    pendingEmail: text('pending_email'),
+    /** One-time token used to confirm a pending email change. @since 0.3.0 */
+    pendingEmailToken: text('pending_email_token'),
+    /** Expiry for the pending email change token. @since 0.3.0 */
+    pendingEmailExpiresAt: integer('pending_email_expires_at', { mode: 'timestamp' }),
     ...timestamps,
   },
   (table) => [

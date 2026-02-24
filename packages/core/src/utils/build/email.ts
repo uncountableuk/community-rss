@@ -80,6 +80,56 @@ export async function sendMagicLinkEmail(
 }
 
 /**
+ * Sends an email change verification email to the new email address.
+ *
+ * The recipient must click the confirmation link to activate the new address.
+ * The original address remains active until the change is confirmed.
+ *
+ * @param env - Cloudflare environment bindings
+ * @param newEmail - The new email address to verify
+ * @param verificationUrl - URL the user must visit to confirm the change
+ * @param emailConfig - Optional email configuration from integration options
+ * @since 0.3.0
+ */
+export async function sendEmailChangeEmail(
+    env: Env,
+    newEmail: string,
+    verificationUrl: string,
+    emailConfig?: EmailConfig,
+): Promise<void> {
+    const from = emailConfig?.from ?? env.SMTP_FROM ?? 'noreply@localhost';
+    const appName = emailConfig?.appName ?? 'Community RSS';
+
+    const subject = `Confirm your new email address — ${appName}`;
+
+    const textBody = `You requested an email address change on ${appName}.\n\nClick the link below to confirm your new address:\n\n${verificationUrl}\n\nThis link expires in 24 hours.\n\nIf you did not request this change, you can safely ignore this email. Your current email remains active.`;
+
+    const htmlBody = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: system-ui, -apple-system, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <h2 style="color: #4f46e5;">Confirm your new email address</h2>
+  <p>You requested an email address change on <strong>${appName}</strong>.</p>
+  <p>Click the button below to confirm your new address:</p>
+  <p style="margin: 24px 0;">
+    <a href="${verificationUrl}" style="background-color: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block;">
+      Confirm Email Change
+    </a>
+  </p>
+  <p style="color: #6b7280; font-size: 14px;">This link expires in 24 hours.</p>
+  <p style="color: #6b7280; font-size: 14px;">If you did not request this change, you can safely ignore this email. Your current email remains active.</p>
+</body>
+</html>`.trim();
+
+    if (env.RESEND_API_KEY) {
+        await sendViaResend(env.RESEND_API_KEY, from, newEmail, subject, textBody, htmlBody);
+    } else {
+        await sendViaSmtp(env, from, newEmail, subject, textBody, htmlBody);
+    }
+}
+
+/**
  * Sends email via the Resend API (production).
  *
  * @since 0.3.0

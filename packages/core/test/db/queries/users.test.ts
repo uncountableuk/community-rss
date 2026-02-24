@@ -45,6 +45,9 @@ import {
     createGuestUser,
     migrateGuestToUser,
     updateUser,
+    getUserByPendingEmailToken,
+    setPendingEmail,
+    confirmEmailChange,
     isAdmin,
     isSystemUser,
 } from '@db/queries/users';
@@ -208,6 +211,115 @@ describe('users queries', () => {
 
         it('should return false for admin role', () => {
             expect(isSystemUser({ role: 'admin' })).toBe(false);
+        });
+    });
+
+    describe('getUserByPendingEmailToken', () => {
+        it('should return user when matching token is found', async () => {
+            const token = 'token-abc-123';
+            mockAll.mockResolvedValueOnce([{ ...mockUsers.registered, pendingEmailToken: token }]);
+            const result = await getUserByPendingEmailToken(mockDb, token);
+            expect(result?.pendingEmailToken).toBe(token);
+        });
+
+        it('should return null when no matching token exists', async () => {
+            mockAll.mockResolvedValueOnce([]);
+            const result = await getUserByPendingEmailToken(mockDb, 'nonexistent-token');
+            expect(result).toBeNull();
+        });
+    });
+
+    describe('setPendingEmail', () => {
+        it('should set pending email fields on the user', async () => {
+            const expiresAt = new Date(Date.now() + 86400000);
+            const updated = {
+                ...mockUsers.registered,
+                pendingEmail: 'new@example.com',
+                pendingEmailToken: 'tok-xyz',
+                pendingEmailExpiresAt: expiresAt,
+            };
+            mockAll.mockResolvedValueOnce([updated]);
+            const result = await setPendingEmail(
+                mockDb,
+                mockUsers.registered.id,
+                'new@example.com',
+                'tok-xyz',
+                expiresAt,
+            );
+            expect(mockUpdate).toHaveBeenCalled();
+            expect(mockSet).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    pendingEmail: 'new@example.com',
+                    pendingEmailToken: 'tok-xyz',
+                    pendingEmailExpiresAt: expiresAt,
+                }),
+            );
+            expect(result).toEqual(updated);
+        });
+
+        it('should return null if user not found', async () => {
+            mockAll.mockResolvedValueOnce([]);
+            const result = await setPendingEmail(
+                mockDb,
+                'nonexistent',
+                'new@example.com',
+                'tok-xyz',
+                new Date(),
+            );
+            expect(result).toBeNull();
+        });
+    });
+
+    describe('confirmEmailChange', () => {
+        it('should return null when no matching token', async () => {
+            mockAll.mockResolvedValueOnce([]);
+            const result = await confirmEmailChange(mockDb, 'bad-token');
+            expect(result).toBeNull();
+        });
+
+        it('should return null when user has no pendingEmail', async () => {
+            mockAll.mockResolvedValueOnce([{ ...mockUsers.registered, pendingEmailToken: 'tok', pendingEmail: null, pendingEmailExpiresAt: new Date(Date.now() + 1000) }]);
+            const result = await confirmEmailChange(mockDb, 'tok');
+            expect(result).toBeNull();
+        });
+
+        it('should return { expired: true } when token is expired', async () => {
+            mockAll.mockResolvedValueOnce([{
+                ...mockUsers.registered,
+                pendingEmailToken: 'tok',
+                pendingEmail: 'new@example.com',
+                pendingEmailExpiresAt: new Date(Date.now() - 1000),
+            }]);
+            const result = await confirmEmailChange(mockDb, 'tok');
+            expect(result).toEqual({ expired: true });
+        });
+
+        it('should update email and clear pending fields on valid token', async () => {
+            const expiresAt = new Date(Date.now() + 86400000);
+            mockAll
+                .mockResolvedValueOnce([{
+                    ...mockUsers.registered,
+                    pendingEmailToken: 'valid-tok',
+                    pendingEmail: 'new@example.com',
+                    pendingEmailExpiresAt: expiresAt,
+                }])
+                .mockResolvedValueOnce([{
+                    ...mockUsers.registered,
+                    email: 'new@example.com',
+                    pendingEmail: null,
+                    pendingEmailToken: null,
+                    pendingEmailExpiresAt: null,
+                }]);
+            const result = await confirmEmailChange(mockDb, 'valid-tok');
+            expect(mockSet).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    email: 'new@example.com',
+                    pendingEmail: null,
+                    pendingEmailToken: null,
+                    pendingEmailExpiresAt: null,
+                }),
+            );
+            expect(result).toMatchObject({ email: 'new@example.com' });
         });
     });
 });

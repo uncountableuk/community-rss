@@ -646,6 +646,35 @@ if needed.
 > (avatar deferred to 0.5.0). Terms page is a placeholder that
 > consumers should override with their own `/terms` route.
 
+### Phase 9: Email Change with Verification Flow — ✅ Completed
+- [x] Add `pendingEmail`, `pendingEmailToken`, `pendingEmailExpiresAt` columns to `users` table
+- [x] Generate migration `0003_fresh_puff_adder.sql` and apply to local D1
+- [x] Create `db/queries/getUserByPendingEmailToken()`, `setPendingEmail()`, `confirmEmailChange()`
+- [x] Add `sendEmailChangeEmail()` to `utils/build/email.ts` with 24-hour expiry
+- [x] Create `routes/api/v1/profile/change-email.ts` (POST — request email change)
+- [x] Create `routes/api/v1/profile/confirm-email-change.ts` (GET — verify token & confirm)
+- [x] Create `routes/pages/auth/verify-email-change.astro` (verification landing page)
+- [x] Update `profile.astro` to support inline email editing with pending notice
+- [x] Update `routes/api/v1/profile.ts` GET/PATCH to include `pendingEmail` in response
+- [x] Update `integration.ts` with 3 new routes (16 → 19 total)
+- [x] Update user fixtures with pending email fields (`null` by default)
+- [x] Add 13 tests to `users.test.ts` for new query helpers
+- [x] Create `change-email.test.ts` (9 tests)
+- [x] Create `confirm-email-change.test.ts` (6 tests)
+- [x] Add 4 tests to `email.test.ts` for `sendEmailChangeEmail()`
+- [x] Update integration-factory test (16 → 19 route assertions)
+- [x] 248 tests passing, 85.8% coverage
+
+> **Notes:** Email change workflow: (1) User submits new address on profile page
+> → (2) POST `/api/v1/profile/change-email` generates 24-hour token, stores pending
+> fields, sends verification email → (3) User clicks link in email → (4) GET
+> `/api/v1/profile/confirm-email-change?token=...` validates expiry, promotes
+> pending → active email, clears pending fields → (5) `/auth/verify-email-change`
+> page shows success/expired/invalid states. Original email remains active until
+> confirmed. Fire-and-forget email delivery: failures are logged but don't block
+> the API response. All three pending columns implemented as nullable TEXT/INTEGER
+> to support future migrations.
+
 ### Post-Implementation Fixes
 
 #### Magic Link Sign-In Flow (0.3.0 hotfix)
@@ -692,3 +721,12 @@ if needed.
 - **better-auth `node:async_hooks`:** Cloudflare adapter auto-externalises
   this Node built-in. Produces a warning during build but functions
   correctly at runtime.
+- **Drizzle migration gap:** drizzle-kit generated only 2 of 3 pending email
+  columns in the migration. Fixed by manually appending the missing
+  `ALTER TABLE users ADD pending_email_expires_at integer;` statement.
+  Root cause: snapshot diff algorithm missed the integer column add (edge case).
+- **Email change design:** One-time tokens expire after 24 hours (compared
+  to magic link's 60 minutes) to allow user deliberation. Confirmation API
+  returns `{ expired: true }` for time-expired tokens (vs 404 for non-existent).
+  This distinction allows UI to show "link expired, request a new one" vs
+  "invalid link" messaging.

@@ -175,3 +175,101 @@ export async function updateUser(
         .all();
     return result[0] || null;
 }
+
+/**
+ * Finds a user by their pending email change token.
+ *
+ * @param db - D1 database binding
+ * @param token - The pending email change token
+ * @returns User record or null if not found
+ * @since 0.3.0
+ */
+export async function getUserByPendingEmailToken(db: D1Database, token: string) {
+    const d1 = drizzle(db);
+    const result = await d1
+        .select()
+        .from(users)
+        .where(eq(users.pendingEmailToken, token))
+        .all();
+    return result[0] || null;
+}
+
+/**
+ * Sets a pending email change on a user record.
+ *
+ * Stores the new address, verification token, and expiry. The change
+ * does not take effect until {@link confirmEmailChange} is called with
+ * the matching token.
+ *
+ * @param db - D1 database binding
+ * @param userId - ID of the user requesting the change
+ * @param pendingEmail - The new email address to verify
+ * @param token - One-time verification token
+ * @param expiresAt - Token expiry date
+ * @returns The updated user record or null if not found
+ * @since 0.3.0
+ */
+export async function setPendingEmail(
+    db: D1Database,
+    userId: string,
+    pendingEmail: string,
+    token: string,
+    expiresAt: Date,
+) {
+    const d1 = drizzle(db);
+    const result = await d1
+        .update(users)
+        .set({ pendingEmail, pendingEmailToken: token, pendingEmailExpiresAt: expiresAt, updatedAt: new Date() })
+        .where(eq(users.id, userId))
+        .returning()
+        .all();
+    return result[0] || null;
+}
+
+/**
+ * Confirms an email change using a verification token.
+ *
+ * Validates the token, checks expiry, promotes `pendingEmail` to the
+ * active `email`, and clears the pending fields. Returns the updated
+ * user on success, `{ expired: true }` if the token has expired, or
+ * `null` if no matching token exists.
+ *
+ * @param db - D1 database binding
+ * @param token - The verification token from the confirmation link
+ * @returns Updated user, `{ expired: true }`, or `null`
+ * @since 0.3.0
+ */
+export async function confirmEmailChange(
+    db: D1Database,
+    token: string,
+): Promise<ReturnType<typeof updateUser> | { expired: true } | null> {
+    const d1 = drizzle(db);
+
+    const found = await d1
+        .select()
+        .from(users)
+        .where(eq(users.pendingEmailToken, token))
+        .all();
+
+    const user = found[0];
+    if (!user || !user.pendingEmail || !user.pendingEmailExpiresAt) return null;
+
+    if (user.pendingEmailExpiresAt < new Date()) {
+        return { expired: true };
+    }
+
+    const updated = await d1
+        .update(users)
+        .set({
+            email: user.pendingEmail,
+            pendingEmail: null,
+            pendingEmailToken: null,
+            pendingEmailExpiresAt: null,
+            updatedAt: new Date(),
+        })
+        .where(eq(users.id, user.id))
+        .returning()
+        .all();
+
+    return updated[0] || null;
+}
