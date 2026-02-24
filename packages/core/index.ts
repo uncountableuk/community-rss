@@ -43,6 +43,42 @@ export type {
   InteractionType,
   CommunityRssError,
 } from './src/types/models';
+export type {
+  EmailTransport,
+  EmailMessage,
+  EmailTemplateContext,
+  EmailContent,
+  EmailUserProfile,
+  EmailType,
+  EmailTemplateFunction,
+  EmailTemplateMap,
+  EmailTypeDataMap,
+  EmailService,
+  SignInEmailData,
+  WelcomeEmailData,
+  EmailChangeData,
+} from './src/types/email';
+
+// Default email templates (consumers can import to extend/wrap)
+export {
+  signInTemplate,
+  welcomeTemplate,
+  emailChangeTemplate,
+  emailLayout,
+  greeting,
+  actionButton,
+  disclaimer,
+  defaultTemplates,
+} from './src/utils/build/email-templates';
+
+// Built-in email transport factories
+export {
+  createResendTransport,
+  createSmtpTransport,
+} from './src/utils/build/email-transports';
+
+// Email service factory
+export { createEmailService } from './src/utils/build/email-service';
 
 // Worker exports (stubs in 0.1.0)
 export { scheduled } from './src/workers/scheduled';

@@ -24,17 +24,19 @@ const baseEnv: Env = {
     MEDIA_BASE_URL: 'http://localhost:9000/bucket',
 };
 
-describe('email', () => {
+describe('email (facade)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
 
     describe('sendMagicLinkEmail', () => {
-        it('should use Resend API when RESEND_API_KEY is set', async () => {
+        it('should send via Resend when transport is "resend" and RESEND_API_KEY is set', async () => {
             mockFetch.mockResolvedValueOnce({ ok: true });
 
             const env = { ...baseEnv, RESEND_API_KEY: 'test-key-123' };
-            await sendMagicLinkEmail(env, 'user@example.com', 'https://example.com/verify?token=abc');
+            await sendMagicLinkEmail(env, 'user@example.com', 'https://example.com/verify?token=abc', {
+                transport: 'resend',
+            });
 
             expect(mockFetch).toHaveBeenCalledWith(
                 'https://api.resend.com/emails',
@@ -51,16 +53,30 @@ describe('email', () => {
             expect(body.subject).toContain('Sign in');
         });
 
-        it('should use SMTP/Mailpit when no RESEND_API_KEY', async () => {
+        it('should send via SMTP when transport is "smtp"', async () => {
             mockFetch.mockResolvedValueOnce({ ok: true });
 
-            await sendMagicLinkEmail(baseEnv, 'user@example.com', 'https://example.com/verify?token=abc');
+            await sendMagicLinkEmail(baseEnv, 'user@example.com', 'https://example.com/verify?token=abc', {
+                transport: 'smtp',
+            });
 
             expect(mockFetch).toHaveBeenCalledWith(
                 'http://mailpit:8025/api/v1/send',
                 expect.objectContaining({
                     method: 'POST',
                 }),
+            );
+        });
+
+        it('should use EMAIL_TRANSPORT env var as fallback', async () => {
+            mockFetch.mockResolvedValueOnce({ ok: true });
+
+            const env = { ...baseEnv, EMAIL_TRANSPORT: 'smtp' };
+            await sendMagicLinkEmail(env, 'user@example.com', 'https://example.com/verify');
+
+            expect(mockFetch).toHaveBeenCalledWith(
+                'http://mailpit:8025/api/v1/send',
+                expect.any(Object),
             );
         });
 
@@ -71,6 +87,7 @@ describe('email', () => {
             await sendMagicLinkEmail(env, 'user@example.com', 'https://example.com/verify', {
                 from: 'custom@example.com',
                 appName: 'My App',
+                transport: 'resend',
             });
 
             const body = JSON.parse(mockFetch.mock.calls[0][1].body);
@@ -82,7 +99,9 @@ describe('email', () => {
             mockFetch.mockResolvedValueOnce({ ok: true });
 
             const env = { ...baseEnv, RESEND_API_KEY: 'key' };
-            await sendMagicLinkEmail(env, 'user@example.com', 'https://example.com/verify');
+            await sendMagicLinkEmail(env, 'user@example.com', 'https://example.com/verify', {
+                transport: 'resend',
+            });
 
             const body = JSON.parse(mockFetch.mock.calls[0][1].body);
             expect(body.from).toBe('noreply@localhost');
@@ -98,22 +117,22 @@ describe('email', () => {
             const env = { ...baseEnv, RESEND_API_KEY: 'key' };
 
             await expect(
-                sendMagicLinkEmail(env, 'bad', 'https://example.com/verify'),
+                sendMagicLinkEmail(env, 'bad', 'https://example.com/verify', { transport: 'resend' }),
             ).rejects.toThrow('Resend email failed (422)');
         });
 
-        it('should not throw on SMTP failure in dev (graceful degradation)', async () => {
+        it('should not throw on SMTP failure (graceful degradation)', async () => {
             mockFetch.mockRejectedValueOnce(new Error('Connection refused'));
             const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => { });
 
-            // Should not throw
-            await sendMagicLinkEmail(baseEnv, 'user@example.com', 'https://example.com/verify');
+            await sendMagicLinkEmail(baseEnv, 'user@example.com', 'https://example.com/verify', {
+                transport: 'smtp',
+            });
 
             expect(consoleSpy).toHaveBeenCalledWith(
                 expect.stringContaining('Email delivery failed'),
                 expect.any(Error),
             );
-
             consoleSpy.mockRestore();
         });
 
@@ -122,20 +141,68 @@ describe('email', () => {
 
             const env = { ...baseEnv, RESEND_API_KEY: 'key' };
             const url = 'https://example.com/verify?token=secret123';
-            await sendMagicLinkEmail(env, 'user@example.com', url);
+            await sendMagicLinkEmail(env, 'user@example.com', url, { transport: 'resend' });
 
             const body = JSON.parse(mockFetch.mock.calls[0][1].body);
             expect(body.text).toContain(url);
             expect(body.html).toContain(url);
         });
-    });
 
-    describe('sendEmailChangeEmail', () => {
-        it('should send via Resend when RESEND_API_KEY is set', async () => {
+        it('should use welcome template when isWelcome is true', async () => {
             mockFetch.mockResolvedValueOnce({ ok: true });
 
             const env = { ...baseEnv, RESEND_API_KEY: 'key' };
-            await sendEmailChangeEmail(env, 'new@example.com', 'https://example.com/verify-change?token=abc');
+            await sendMagicLinkEmail(
+                env,
+                'user@example.com',
+                'https://example.com/verify',
+                { transport: 'resend' },
+                true,
+            );
+
+            const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+            expect(body.subject).toContain('Welcome');
+        });
+
+        it('should pass profile data for email personalisation', async () => {
+            mockFetch.mockResolvedValueOnce({ ok: true });
+
+            const env = { ...baseEnv, RESEND_API_KEY: 'key' };
+            await sendMagicLinkEmail(
+                env,
+                'jim@example.com',
+                'https://example.com/verify',
+                { transport: 'resend' },
+                false,
+                { name: 'Jim', email: 'jim@example.com' },
+            );
+
+            const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+            expect(body.html).toContain('Hi Jim,');
+            expect(body.text).toContain('Hi Jim,');
+        });
+
+        it('should skip sending when no transport configured', async () => {
+            const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => { });
+
+            await sendMagicLinkEmail(baseEnv, 'user@example.com', 'https://example.com/verify');
+
+            expect(mockFetch).not.toHaveBeenCalled();
+            expect(warnSpy).toHaveBeenCalledWith(
+                expect.stringContaining('No email transport configured'),
+            );
+            warnSpy.mockRestore();
+        });
+    });
+
+    describe('sendEmailChangeEmail', () => {
+        it('should send via Resend when transport is "resend"', async () => {
+            mockFetch.mockResolvedValueOnce({ ok: true });
+
+            const env = { ...baseEnv, RESEND_API_KEY: 'key' };
+            await sendEmailChangeEmail(env, 'new@example.com', 'https://example.com/confirm?token=abc', {
+                transport: 'resend',
+            });
 
             expect(mockFetch).toHaveBeenCalledWith(
                 'https://api.resend.com/emails',
@@ -147,10 +214,12 @@ describe('email', () => {
             expect(body.subject).toContain('Confirm');
         });
 
-        it('should send via SMTP when no RESEND_API_KEY', async () => {
+        it('should send via SMTP when transport is "smtp"', async () => {
             mockFetch.mockResolvedValueOnce({ ok: true });
 
-            await sendEmailChangeEmail(baseEnv, 'new@example.com', 'https://example.com/verify-change?token=abc');
+            await sendEmailChangeEmail(baseEnv, 'new@example.com', 'https://example.com/confirm', {
+                transport: 'smtp',
+            });
 
             expect(mockFetch).toHaveBeenCalledWith(
                 'http://mailpit:8025/api/v1/send',
@@ -162,8 +231,8 @@ describe('email', () => {
             mockFetch.mockResolvedValueOnce({ ok: true });
 
             const env = { ...baseEnv, RESEND_API_KEY: 'key' };
-            const url = 'https://example.com/verify-change?token=tok123';
-            await sendEmailChangeEmail(env, 'new@example.com', url);
+            const url = 'https://example.com/confirm?token=tok123';
+            await sendEmailChangeEmail(env, 'new@example.com', url, { transport: 'resend' });
 
             const body = JSON.parse(mockFetch.mock.calls[0][1].body);
             expect(body.text).toContain(url);
@@ -177,11 +246,29 @@ describe('email', () => {
             await sendEmailChangeEmail(env, 'new@example.com', 'https://example.com/verify', {
                 from: 'hello@myapp.com',
                 appName: 'My App',
+                transport: 'resend',
             });
 
             const body = JSON.parse(mockFetch.mock.calls[0][1].body);
             expect(body.subject).toContain('My App');
             expect(body.from).toBe('hello@myapp.com');
+        });
+
+        it('should pass profile data for email personalisation', async () => {
+            mockFetch.mockResolvedValueOnce({ ok: true });
+
+            const env = { ...baseEnv, RESEND_API_KEY: 'key' };
+            await sendEmailChangeEmail(
+                env,
+                'new@example.com',
+                'https://example.com/verify',
+                { transport: 'resend' },
+                { name: 'Sarah', email: 'sarah@example.com' },
+            );
+
+            const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+            expect(body.html).toContain('Hi Sarah,');
+            expect(body.text).toContain('Hi Sarah,');
         });
     });
 });

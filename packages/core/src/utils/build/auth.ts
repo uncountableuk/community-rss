@@ -22,6 +22,8 @@ import type { Env } from '../../types/env';
 import type { EmailConfig } from '../../types/options';
 import { sendMagicLinkEmail } from './email';
 import { getPendingSignup } from '../../db/queries/pending-signups';
+import { getUserByEmail } from '../../db/queries/users';
+import type { EmailUserProfile } from '../../types/email';
 
 /**
  * Creates a configured better-auth instance for the current request.
@@ -52,14 +54,34 @@ export function createAuth(env: Env, emailConfig?: EmailConfig) {
 
                     // Check if this email has a pending sign-up to determine email template
                     let isWelcome = false;
+                    let profile: EmailUserProfile | undefined;
                     try {
                         const pending = await getPendingSignup(env.DB, email);
                         isWelcome = pending !== null;
+                        if (pending?.name) {
+                            profile = { name: pending.name, email };
+                        }
                     } catch {
                         // If lookup fails, default to sign-in template
                     }
 
-                    await sendMagicLinkEmail(env, email, verifyUrl, emailConfig, isWelcome);
+                    // For returning users, look up their profile for personalisation
+                    if (!profile) {
+                        try {
+                            const user = await getUserByEmail(env.DB, email);
+                            if (user?.name) {
+                                profile = {
+                                    name: user.name,
+                                    email,
+                                    avatarUrl: user.avatarUrl ?? undefined,
+                                };
+                            }
+                        } catch {
+                            // Profile lookup failure is non-critical
+                        }
+                    }
+
+                    await sendMagicLinkEmail(env, email, verifyUrl, emailConfig, isWelcome, profile);
                 },
                 expiresIn: 3600, // 60 minutes (increased from 5 for local dev testing)
             }),

@@ -177,6 +177,10 @@ describe('POST /api/v1/profile/change-email', () => {
             mockEnv,
             'new@example.com',
             expect.stringContaining('/auth/verify-email-change?token=test-uuid-1234'),
+            undefined,
+            expect.objectContaining({
+                name: mockUsers.registered.name,
+            }),
         );
 
         const data = (await response.json()) as Record<string, string>;

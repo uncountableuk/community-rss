@@ -3,6 +3,7 @@ import { requireAuth } from '../../../../utils/build/auth';
 import { getUserByEmail, setPendingEmail } from '../../../../db/queries/users';
 import { sendEmailChangeEmail } from '../../../../utils/build/email';
 import type { Env } from '../../../../types/env';
+import type { EmailUserProfile } from '../../../../types/email';
 
 /**
  * Request an email address change.
@@ -89,7 +90,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
         // Fire-and-forget: email failure is logged but not surfaced to the caller
         try {
-            await sendEmailChangeEmail(env, newEmail, verificationUrl);
+            // Build profile for email personalisation
+            const profile: EmailUserProfile = {
+                name: (session.user as Record<string, unknown>).name as string | undefined,
+                email: currentEmail,
+            };
+            await sendEmailChangeEmail(env, newEmail, verificationUrl, undefined, profile);
         } catch (emailErr) {
             console.warn('[community-rss] Email change verification email failed to send:', emailErr);
         }

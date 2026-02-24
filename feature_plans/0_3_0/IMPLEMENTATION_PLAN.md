@@ -675,6 +675,65 @@ if needed.
 > the API response. All three pending columns implemented as nullable TEXT/INTEGER
 > to support future migrations.
 
+### Phase 10: Email Service Refactor — ✅ Completed
+- [x] Create `src/types/email.ts` with all email interfaces
+- [x] Expand `EmailConfig` in `src/types/options.ts` with `transport` and `templates`
+- [x] Create `src/utils/build/email-templates.ts` with default templates + shared layout
+- [x] Create `src/utils/build/email-transports.ts` with Resend + SMTP adapters
+- [x] Create `src/utils/build/email-service.ts` with `createEmailService()` factory
+- [x] Refactor `src/utils/build/email.ts` as thin facade over email service
+- [x] Update `src/utils/build/auth.ts` to use email service with profile lookup
+- [x] Update `src/routes/api/v1/profile/change-email.ts` to pass emailConfig + profile
+- [x] Export new email types, templates, transports from `index.ts`
+- [x] Update `playground/astro.config.mjs` with `email.transport: 'smtp'`
+- [x] Create `test/utils/build/email-templates.test.ts` (31 tests)
+- [x] Create `test/utils/build/email-transports.test.ts` (7 tests)
+- [x] Create `test/utils/build/email-service.test.ts` (23 tests)
+- [x] Rewrite `test/utils/build/email.test.ts` for new architecture (16 tests)
+- [x] Update `test/utils/build/auth.test.ts` with new module mocks
+- [x] Update `test/routes/api/v1/profile/change-email.test.ts` for profile data
+- [x] 309 tests passing (61 new), 86.35% statement coverage
+
+> **Notes:** Introduced three-layer email architecture: templates → service → transports.
+>
+> **Template functions** are pure `(context, data) => EmailContent` functions with
+> shared layout helpers (`emailLayout`, `greeting`, `actionButton`, `disclaimer`).
+> The `greeting()` helper personalises emails ("Hi Jim," vs "Hi there,") using the
+> optional `EmailUserProfile` passed through the template context. Consumers
+> override templates per email type via `emailConfig.templates` in integration options.
+>
+> **Transport adapters** implement the `EmailTransport` interface (`send(message)`).
+> Two built-in adapters: `createResendTransport(apiKey)` throws on API errors;
+> `createSmtpTransport(host, port?)` degrades gracefully (warns, doesn't throw) to
+> avoid blocking auth flows in development. Consumers supply custom adapters (e.g.,
+> SendGrid, Postmark) by passing an `EmailTransport` object to `emailConfig.transport`.
+>
+> **Config propagation** uses `EMAIL_TRANSPORT` env var as runtime bridge. Astro
+> integration options are build-time only and don't propagate to SSR runtime for
+> all code paths. The email service resolves transport with explicit priority:
+> (1) `emailConfig.transport` object/string, (2) `EMAIL_TRANSPORT` env var, (3) null
+> (logs warning, no-ops). A Vite virtual module approach was considered but rejected
+> because `emailConfig` can contain function values (templates, custom transports)
+> that can't be serialised to a virtual module.
+>
+> **Profile lookup** in `auth.ts`: the `sendMagicLink` callback now checks
+> `pending_signups` for the user's name (new registrations) and falls back to
+> `getUserByEmail()` for returning users. The `change-email` route builds profile
+> from the existing session data.
+>
+> **Email types** use TypeScript declaration merging on `EmailTypeDataMap` interface
+> so consumers can register custom email types with full type safety. Built-in types:
+> `'sign-in'` (SignInEmailData), `'welcome'` (WelcomeEmailData), `'email-change'`
+> (EmailChangeData).
+>
+> **Backward compatibility**: `email.ts` remains as a thin facade — `sendMagicLinkEmail()`
+> and `sendEmailChangeEmail()` now accept an optional `profile` parameter and delegate
+> to `createEmailService().send()`. Existing callers continue to work unchanged.
+>
+> **Coverage**: 86.35% statements, 87.81% branches, 93.75% functions, 86.35% lines.
+> All new modules at 100% statement coverage. `email-service.ts` has 94.59% branch
+> coverage (unreachable fallback branch for unknown transport strings).
+
 ### Post-Implementation Fixes
 
 #### Magic Link Sign-In Flow (0.3.0 hotfix)
@@ -730,3 +789,153 @@ if needed.
   returns `{ expired: true }` for time-expired tokens (vs 404 for non-existent).
   This distinction allows UI to show "link expired, request a new one" vs
   "invalid link" messaging.
+
+## Phase 10: Email Service Refactor — Adapter Pattern & Overridable Templates
+
+### Motivation
+
+The email architecture from Phases 2/8/9 has accumulated brittleness:
+
+1. **Inline templates:** HTML email content is embedded as template literals
+   inside `email.ts`, not extractable or overridable by consumers
+2. **Duplicated transport logic:** Every send function (`sendMagicLinkEmail`,
+   `sendEmailChangeEmail`) repeats the same Resend-vs-SMTP selection logic
+3. **Inconsistent error handling:** Resend transport throws on failure; SMTP
+   swallows errors — callers can't rely on consistent behaviour
+4. **Missing emailConfig:** The `change-email` route doesn't pass `emailConfig`
+   to `sendEmailChangeEmail()`, so custom `from`/`appName` are ignored
+5. **No personalization:** Templates can't greet users by name or use profile data
+6. **Closed for extension:** Adding a new email type requires modifying the
+   central `email.ts` file rather than registering a template externally
+
+### Architecture
+
+#### Email Type System
+
+Each email type has a **data payload interface** and a **template function**:
+
+```typescript
+// Types in src/types/email.ts
+interface EmailTemplateContext {
+  appName: string;       // From EmailConfig
+  email: string;         // Recipient
+  profile?: EmailUserProfile; // User name, avatar, etc.
+}
+
+interface EmailContent {
+  subject: string;
+  html: string;
+  text: string;
+}
+
+type EmailTemplateFunction<TData> =
+  (context: EmailTemplateContext, data: TData) => EmailContent;
+```
+
+#### Transport Adapter Pattern
+
+A single `EmailTransport` interface with two built-in implementations:
+
+```typescript
+interface EmailTransport {
+  send(message: EmailMessage): Promise<void>;
+}
+
+// Built-in: createResendTransport(apiKey)
+// Built-in: createSmtpTransport(host, port?)
+// Extensible: consumers implement EmailTransport for SendGrid, Postmark, etc.
+```
+
+Transport is explicitly configured via `EmailConfig.transport`:
+- `'smtp'` → uses `createSmtpTransport()` with env vars
+- `'resend'` → uses `createResendTransport()` with env var
+- Custom `EmailTransport` object → used directly
+- Not set → logs warning, emails not sent
+
+#### Email Service
+
+Central `createEmailService(env, emailConfig?)` factory returns an
+`EmailService` with a single `send()` method:
+
+```typescript
+interface EmailService {
+  send<K extends EmailType>(
+    type: K,
+    to: string,
+    data: EmailTypeDataMap[K],
+    profile?: EmailUserProfile,
+  ): Promise<void>;
+}
+```
+
+The service:
+1. Looks up the template (custom override or built-in default)
+2. Builds the `EmailTemplateContext` (appName, recipient, profile)
+3. Calls the template function to generate `EmailContent`
+4. Constructs `EmailMessage` with sender address
+5. Delegates to the configured `EmailTransport`
+
+#### Consumer Customization
+
+Consumers override templates and transport via integration options:
+
+```typescript
+// astro.config.mjs
+communityRss({
+  email: {
+    from: 'hello@mysite.com',
+    appName: 'My Community',
+    transport: 'smtp', // or 'resend' or custom EmailTransport
+    templates: {
+      'sign-in': (ctx, data) => ({
+        subject: `Log in to ${ctx.appName}`,
+        html: `<h1>Hi ${ctx.profile?.name ?? 'there'}!</h1>...`,
+        text: `Hi ${ctx.profile?.name ?? 'there'}, click here: ${data.url}`,
+      }),
+    },
+  },
+})
+```
+
+### New Files
+
+| File | Purpose |
+|------|---------|
+| `src/types/email.ts` | Email system interfaces (public API types) |
+| `src/utils/build/email-templates.ts` | Default template functions + shared layout |
+| `src/utils/build/email-transports.ts` | Resend + SMTP transport adapters |
+| `src/utils/build/email-service.ts` | Unified email service factory |
+| `test/utils/build/email-templates.test.ts` | Template rendering tests |
+| `test/utils/build/email-transports.test.ts` | Transport adapter tests |
+| `test/utils/build/email-service.test.ts` | Email service integration tests |
+
+### Modified Files
+
+| File | Change |
+|------|--------|
+| `src/types/options.ts` | Expand `EmailConfig` with `transport` and `templates` |
+| `src/utils/build/email.ts` | Replace with thin facade using email service |
+| `src/utils/build/auth.ts` | Use email service; pass profile to templates |
+| `src/routes/api/v1/profile/change-email.ts` | Pass `emailConfig`; include profile data |
+| `index.ts` | Export email types, templates, transports |
+| `playground/astro.config.mjs` | Add `email: { transport: 'smtp' }` |
+| `test/utils/build/email.test.ts` | Rewrite for new architecture |
+
+### Tasks
+
+- [x] Create `src/types/email.ts` with all email interfaces
+- [x] Expand `EmailConfig` in `src/types/options.ts` with `transport` and `templates`
+- [x] Create `src/utils/build/email-templates.ts` with default templates + shared layout
+- [x] Create `src/utils/build/email-transports.ts` with Resend + SMTP adapters
+- [x] Create `src/utils/build/email-service.ts` with `createEmailService()` factory
+- [x] Refactor `src/utils/build/email.ts` as thin facade over email service
+- [x] Update `src/utils/build/auth.ts` to use email service with profile lookup
+- [x] Update `src/routes/api/v1/profile/change-email.ts` to pass emailConfig + profile
+- [x] Export new email types, templates, transports from `index.ts`
+- [x] Update `playground/astro.config.mjs` with `email.transport: 'smtp'`
+- [x] Create `test/utils/build/email-templates.test.ts`
+- [x] Create `test/utils/build/email-transports.test.ts`
+- [x] Create `test/utils/build/email-service.test.ts`
+- [x] Update `test/utils/build/email.test.ts` for new architecture
+- [x] Verify ≥80% coverage maintained
+- [x] Update implementation notes

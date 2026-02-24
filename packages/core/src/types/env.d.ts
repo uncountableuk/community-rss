@@ -98,8 +98,20 @@ export interface Env {
 
   /**
    * Resend API key for production transactional email.
-   * Optional — when absent, emails are sent via SMTP (Mailpit in local dev).
+   * Required when `EMAIL_TRANSPORT` is `'resend'`.
    * @since 0.3.0
    */
   RESEND_API_KEY?: string;
+
+  /**
+   * Email transport to use: `'smtp'` or `'resend'`.
+   *
+   * When not set via `EmailConfig.transport` (integration options),
+   * this env var determines the transport at runtime. This is the
+   * primary mechanism for Cloudflare Workers where integration
+   * config is not available to route handlers.
+   *
+   * @since 0.3.0
+   */
+  EMAIL_TRANSPORT?: string;
 }

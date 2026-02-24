@@ -34,6 +34,9 @@ export interface CommunityRssOptions {
 /**
  * Email configuration for transactional emails.
  *
+ * Controls the transport adapter, sender address, and template
+ * overrides for all emails sent by the framework.
+ *
  * @since 0.3.0
  */
 export interface EmailConfig {
@@ -50,6 +53,42 @@ export interface EmailConfig {
    * @since 0.3.0
    */
   appName?: string;
+
+  /**
+   * Transport adapter configuration.
+   *
+   * - `'smtp'` — Uses Mailpit HTTP API (requires `SMTP_HOST` env var)
+   * - `'resend'` — Uses Resend API (requires `RESEND_API_KEY` env var)
+   * - `EmailTransport` object — Custom transport implementation
+   *
+   * When not set, emails are not sent and a warning is logged.
+   *
+   * @since 0.3.0
+   */
+  transport?: 'smtp' | 'resend' | import('./email').EmailTransport;
+
+  /**
+   * Override default email templates by type.
+   *
+   * Each key is an email type name (e.g., `'sign-in'`, `'welcome'`,
+   * `'email-change'`). The value is a template function that receives
+   * an `EmailTemplateContext` and type-specific data, returning
+   * `{ subject, html, text }`.
+   *
+   * @example
+   * ```typescript
+   * templates: {
+   *   'sign-in': (ctx, data) => ({
+   *     subject: `Log in to ${ctx.appName}`,
+   *     html: `<h1>Hi ${ctx.profile?.name ?? 'there'}!</h1><a href="${data.url}">Sign In</a>`,
+   *     text: `Hi ${ctx.profile?.name ?? 'there'}, click here: ${data.url}`,
+   *   }),
+   * }
+   * ```
+   *
+   * @since 0.3.0
+   */
+  templates?: import('./email').EmailTemplateMap;
 }
 
 /**
@@ -67,6 +106,8 @@ export function resolveOptions(options: CommunityRssOptions = {}): Required<Comm
     email: {
       from: options.email?.from,
       appName: options.email?.appName ?? 'Community RSS',
+      transport: options.email?.transport,
+      templates: options.email?.templates,
     },
   };
 }

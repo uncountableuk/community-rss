@@ -34,6 +34,14 @@ vi.mock('@utils/build/email', () => ({
     sendMagicLinkEmail: mockSendMagicLinkEmail,
 }));
 
+vi.mock('@db/queries/pending-signups', () => ({
+    getPendingSignup: vi.fn().mockResolvedValue(null),
+}));
+
+vi.mock('@db/queries/users', () => ({
+    getUserByEmail: vi.fn().mockResolvedValue(null),
+}));
+
 import { createAuth, requireAuth, requireAdmin } from '@utils/build/auth';
 import type { Env } from '@core-types/env';
 

@@ -48,14 +48,19 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
     try {
       const verifyUrl = `/api/auth/magic-link/verify?token=${encodeURIComponent(token)}&callbackURL=${encodeURIComponent(callbackURL)}`;
       
+      // Use redirect: 'follow' so the browser stores the Set-Cookie header
+      // from better-auth's 302 redirect response. With redirect: 'manual' the
+      // response has null headers (opaque redirect) and the session cookie is
+      // never applied to the browser's cookie jar, leaving the user logged out.
       const res = await fetch(verifyUrl, {
         method: 'GET',
         credentials: 'include',
-        redirect: 'manual',
+        redirect: 'follow',
       });
 
-      if (res.ok || res.type === 'opaqueredirect' || (res.status >= 300 && res.status < 400)) {
-        // Verification succeeded — redirect to homepage or callback URL
+      if (res.ok) {
+        // Session cookie was stored when the browser followed the 302 redirect.
+        // Navigate to the callback page — the user will arrive logged in.
         window.location.href = callbackURL;
         return;
       }

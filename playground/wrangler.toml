@@ -7,6 +7,12 @@ compatibility_flags = ["nodejs_compat"]
 # Astro on Cloudflare Pages
 pages_build_output_dir = "./dist"
 
+# Runtime environment variables
+[vars]
+# Email transport selection — matches the docker-compose Mailpit service name.
+# Override with 'resend' (plus RESEND_API_KEY secret) for production.
+EMAIL_TRANSPORT = "smtp"
+
 # D1 Database
 [[d1_databases]]
 binding = "DB"
