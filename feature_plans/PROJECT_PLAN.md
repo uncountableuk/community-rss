@@ -1169,6 +1169,90 @@ Each release follows the branching model defined in the release prompt:
 
 ---
 
+## Architecture & Implementation Notes
+
+These lessons and patterns were discovered during implementation of 0.3.0 and should guide future phases.
+
+### Config Propagation Across Build/Runtime Boundaries
+
+**Problem:** Astro integration options (build-time) don't propagate to all route handlers (SSR runtime). This affects systems that need configuration at request time (auth, email, etc.).
+
+**Historical attempt:** Virtual modules were explored but rejected because consumers may pass function values (template functions, custom transports) that can't be serialized to a virtual module.
+
+**Solution:** Use environment variables as a fallback runtime bridge. Example:
+- Integration options: `communityRss({ email: { transport: createCustomTransport() } })`
+  - Threaded through `locals` when possible
+  - Fallback: `EMAIL_TRANSPORT` env var for catch-all routes
+  - Priority: object/string → env var → null (with warning)
+
+**Implication for future phases:** Any feature needing config in deep route handlers should support env var fallback. Document the precedence clearly.
+
+### HTTP Redirect Handling with Session Cookies
+
+**Problem:** `fetch(..., { redirect: 'manual' })` returns an opaque redirect response with null headers. Set-Cookie headers from the intermediate response are lost — the browser never stores the session cookie.
+
+**Impact:** Magic link verification was silently logging users out (session cookie never reached browser).
+
+**Solution:** Use `redirect: 'follow'` to let the browser follow redirects internally, applying cookies before the fetch resolves. For sensitive operations, accept the redirect following overhead.
+
+**Implication for future phases:** When implementing OAuth, OIDC, or other redirect-based auth flows, always test with real redirects and verify session cookies are present post-verification. Don't use `redirect: 'manual'` for auth flows.
+
+### Email Transport Graceful Degradation Strategy
+
+**Design decision:** Different transports have different failure semantics:
+- **Resend (production):** Throws on error for operational visibility
+- **SMTP (development):** Warns but doesn't throw to avoid blocking auth flows
+
+**Rationale:** In dev, email is a convenience (Mailpit catches it locally). In production, email failures should be visible (thrown, logged, monitored). This allows the same codebase to work in both contexts without friction.
+
+**Implication for future phases:** When adding new integrations (webhooks, analytics, payment systems), consider whether failures should block the user action or degrade gracefully. Different tools may need different strategies.
+
+### Profile Lookup for Email Personalization
+
+**Pattern:** Email templates accept an optional `EmailUserProfile` for personalisation (e.g., "Hi Jim," instead of "Hi there,"). The profile is looked up from multiple sources depending on context:
+- **Sign-in:** Check pending signups (new users), then registered users
+- **Email change:** Extract from session data (authenticated context)
+- **Comment notification (future):** Query user by ID
+
+**Implication for future phases:** Template functions are intentionally data-agnostic. Place profile lookup logic at the call site (route handler) where you have context. This keeps templates pure and reusable.
+
+### Preventing Account Overwrites on Re-Signup
+
+**Problem:** If a user tries to sign up with an existing account's email, a new `pending_signups` record would be created, and upon verification the user's name/profile would be overwritten.
+
+**Solution:** Before creating pending signup, check if the email belongs to a registered non-guest user. If so:
+- Send a **sign-in** link instead of a welcome link
+- Skip creating the pending signup record
+- Always return 200 (even on email failure) to avoid account enumeration
+
+**Implication for future phases:** When implementing user-facing flows (password reset, subscription changes, etc.), always check whether the account already exists and route accordingly. Guard against blindly creating new records on re-submission.
+
+### Environment Variable Naming Conventions
+
+**Established pattern for 0.3.0:**
+- `RESEND_API_KEY` — secrets (auth credentials)
+- `EMAIL_TRANSPORT` — runtime configuration (public strings like 'smtp', 'resend')
+- `PUBLIC_SITE_URL` — consumer-visible URLs (passed to client code)
+- `SMTP_HOST`, `SMTP_PORT`, `SMTP_FROM` — infrastructure parameters
+
+**Implication for future phases:** Follow this convention (UPPERCASE_SNAKE_CASE, PUBLIC_ prefix for client-accessible vars). Document all env vars in `.dev.vars.example` and `wrangler.toml [vars]`. Validate presence in route handlers or return 503 with a helpful error message.
+
+### Opaque Types vs. Type Aliases for Extensibility
+
+**Pattern from email module:** Used a type alias (`EmailTemplateMap = Record<string, EmailTemplateFunction<any>>`) instead of a restrictive interface. This allows consumers to register custom email types via declaration merging:
+
+```typescript
+declare module '@community-rss/core' {
+  interface EmailTypeDataMap {
+    'custom-email': { url: string };
+  }
+}
+```
+
+**Implication for future phases:** When designing public APIs, prefer type aliases over interfaces for extension points. Interfaces are better for contracts (class implementations); type aliases are better for registries (Template types, event maps, etc.).
+
+---
+
 ## Risk Register
 
 | Risk | Impact | Mitigation |
