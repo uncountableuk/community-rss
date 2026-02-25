@@ -8,11 +8,51 @@
  *
  * @since 0.3.0
  */
+
+interface Props {
+  /** Configurable message strings. @since 0.4.0 */
+  messages?: {
+    emailLabel?: string;
+    nameLabel?: string;
+    namePlaceholder?: string;
+    termsPrefix?: string;
+    termsLinkText?: string;
+    submitLabel?: string;
+    footerText?: string;
+    footerLinkText?: string;
+    confirmHeading?: string;
+    confirmHint?: string;
+  };
+  /** Configurable error message strings. @since 0.4.0 */
+  errorMessages?: {
+    createFailed?: string;
+    networkError?: string;
+  };
+}
+
+const {
+  messages: {
+    emailLabel = 'Email address',
+    nameLabel = 'Display name',
+    namePlaceholder = 'Your display name',
+    termsPrefix = 'I agree to the',
+    termsLinkText = 'Terms of Service',
+    submitLabel = 'Create Account',
+    footerText = 'Already have an account?',
+    footerLinkText = 'Sign in',
+    confirmHeading = 'Thanks for signing up!',
+    confirmHint = "Can't find it? Check your spam folder, or",
+  } = {},
+  errorMessages: {
+    createFailed = 'Failed to create account. Please try again.',
+    networkError = 'Network error. Please try again.',
+  } = {},
+} = Astro.props;
 ---
 
-<form class="crss-signup-form" id="crss-signup-form">
+<form class="crss-signup-form" id="crss-signup-form" data-error-create={createFailed} data-error-network={networkError}>
   <div class="crss-form-group">
-    <label for="crss-signup-email" class="crss-form-label">Email address</label>
+    <label for="crss-signup-email" class="crss-form-label">{emailLabel}</label>
     <input
       type="email"
       id="crss-signup-email"
@@ -25,13 +65,13 @@
   </div>
 
   <div class="crss-form-group">
-    <label for="crss-signup-name" class="crss-form-label">Display name</label>
+    <label for="crss-signup-name" class="crss-form-label">{nameLabel}</label>
     <input
       type="text"
       id="crss-signup-name"
       name="name"
       class="crss-form-input"
-      placeholder="Your display name"
+      placeholder={namePlaceholder}
       required
       maxlength="100"
       autocomplete="name"
@@ -47,18 +87,18 @@
         class="crss-form-checkbox"
         required
       />
-      <span>I agree to the <a href="/terms" target="_blank" class="crss-form-link">Terms of Service</a></span>
+      <span>{termsPrefix} <a href="/terms" target="_blank" class="crss-form-link">{termsLinkText}</a></span>
     </label>
   </div>
 
-  <button type="submit" class="crss-btn crss-btn--primary" id="crss-signup-btn">
-    Create Account
+  <button type="submit" class="crss-btn crss-btn--primary" id="crss-signup-btn" data-default-text={submitLabel}>
+    {submitLabel}
   </button>
 
   <div class="crss-form-message crss-form-message--error" id="crss-signup-error" style="display: none;"></div>
 
   <p class="crss-form-footer">
-    Already have an account? <a href="/auth/signin" class="crss-form-link">Sign in</a>
+    {footerText} <a href="/auth/signin" class="crss-form-link">{footerLinkText}</a>
   </p>
 </form>
 
@@ -70,7 +110,7 @@
       <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
     </svg>
   </div>
-  <h2 class="crss-signup-confirm__heading" id="crss-confirm-heading">Thanks for signing up!</h2>
+  <h2 class="crss-signup-confirm__heading" id="crss-confirm-heading">{confirmHeading}</h2>
   <p class="crss-signup-confirm__detail" id="crss-confirm-name-para">
     Welcome, <strong id="crss-confirm-name"></strong>.
   </p>
@@ -79,7 +119,7 @@
     Click it to complete creating your account.
   </p>
   <p class="crss-signup-confirm__hint">
-    Can't find it? Check your spam folder, or
+    {confirmHint}
     <a href="/auth/signup" class="crss-form-link">start over</a>.
   </p>
 </div>
@@ -312,15 +352,15 @@
         if (confirm) confirm.style.display = 'flex';
       } else {
         const data = await response.json().catch(() => ({}));
-        errorMsg.textContent = data.message || 'Failed to create account. Please try again.';
+        errorMsg.textContent = data.message || (form.dataset.errorCreate ?? 'Failed to create account. Please try again.');
         errorMsg.style.display = 'block';
       }
     } catch {
-      errorMsg.textContent = 'Network error. Please try again.';
+      errorMsg.textContent = form.dataset.errorNetwork ?? 'Network error. Please try again.';
       errorMsg.style.display = 'block';
     } finally {
       submitBtn.disabled = false;
-      submitBtn.textContent = 'Create Account';
+      submitBtn.textContent = submitBtn.dataset.defaultText ?? 'Create Account';
     }
   });
 </script>

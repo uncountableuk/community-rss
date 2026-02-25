@@ -7,13 +7,30 @@
  *
  * @since 0.3.0
  */
+
+interface Props {
+  /** Configurable label strings. @since 0.4.0 */
+  labels?: {
+    signIn?: string;
+    signOut?: string;
+    profileLink?: string;
+  };
+}
+
+const {
+  labels: {
+    signIn: signInLabel = 'Sign In',
+    signOut: signOutLabel = 'Sign Out',
+    profileLink: profileLinkText = '',
+  } = {},
+} = Astro.props;
 ---
 
 <div class="crss-auth-button" id="crss-auth-button">
-  <a href="/auth/signin" class="crss-btn crss-btn--signin" id="crss-signin-btn">Sign In</a>
+  <a href="/auth/signin" class="crss-btn crss-btn--signin" id="crss-signin-btn">{signInLabel}</a>
   <div class="crss-auth-user" id="crss-user-info" style="display: none;">
-    <a href="/profile" class="crss-auth-user__name" id="crss-user-name"></a>
-    <button class="crss-btn crss-btn--signout" id="crss-signout-btn" type="button">Sign Out</button>
+    <a href="/profile" class="crss-auth-user__name" id="crss-user-name">{profileLinkText}</a>
+    <button class="crss-btn crss-btn--signout" id="crss-signout-btn" type="button">{signOutLabel}</button>
   </div>
 </div>
 

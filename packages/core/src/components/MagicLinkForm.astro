@@ -8,28 +8,51 @@
  *
  * @since 0.3.0
  */
+
+interface Props {
+  /** Configurable message strings. @since 0.4.0 */
+  messages?: {
+    emailLabel?: string;
+    emailPlaceholder?: string;
+    submitLabel?: string;
+    successText?: string;
+    errorText?: string;
+    networkErrorText?: string;
+  };
+}
+
+const {
+  messages: {
+    emailLabel = 'Email address',
+    emailPlaceholder = 'you@example.com',
+    submitLabel = 'Send Magic Link',
+    successText = '\u2713 Check your email for a magic link!',
+    errorText = 'Failed to send magic link. Please try again.',
+    networkErrorText = 'Network error. Please try again.',
+  } = {},
+} = Astro.props;
 ---
 
-<form class="crss-magic-link-form" id="crss-magic-link-form">
+<form class="crss-magic-link-form" id="crss-magic-link-form" data-error-text={errorText} data-network-error-text={networkErrorText}>
   <div class="crss-form-group">
-    <label for="crss-email-input" class="crss-form-label">Email address</label>
+    <label for="crss-email-input" class="crss-form-label">{emailLabel}</label>
     <input
       type="email"
       id="crss-email-input"
       name="email"
       class="crss-form-input"
-      placeholder="you@example.com"
+      placeholder={emailPlaceholder}
       required
       autocomplete="email"
     />
   </div>
 
-  <button type="submit" class="crss-btn crss-btn--primary" id="crss-submit-btn">
-    Send Magic Link
+  <button type="submit" class="crss-btn crss-btn--primary" id="crss-submit-btn" data-default-text={submitLabel}>
+    {submitLabel}
   </button>
 
   <div class="crss-form-message crss-form-message--success" id="crss-success-msg" style="display: none;">
-    ✓ Check your email for a magic link!
+    {successText}
   </div>
 
   <div class="crss-form-message crss-form-message--error" id="crss-error-msg" style="display: none;">
@@ -124,6 +147,10 @@
   const errorMsg = document.getElementById('crss-error-msg') as HTMLDivElement;
   const emailInput = document.getElementById('crss-email-input') as HTMLInputElement;
 
+  const defaultText = submitBtn?.dataset.defaultText ?? 'Send Magic Link';
+  const errorFallback = form?.dataset.errorText ?? 'Failed to send magic link. Please try again.';
+  const networkError = form?.dataset.networkErrorText ?? 'Network error. Please try again.';
+
   form?.addEventListener('submit', async (e: Event) => {
     e.preventDefault();
 
@@ -173,15 +200,15 @@
         emailInput.value = '';
       } else {
         const data = await response.json().catch(() => ({}));
-        errorMsg.textContent = data.message || 'Failed to send magic link. Please try again.';
+        errorMsg.textContent = data.message || errorFallback;
         errorMsg.style.display = 'block';
       }
     } catch {
-      errorMsg.textContent = 'Network error. Please try again.';
+      errorMsg.textContent = networkError;
       errorMsg.style.display = 'block';
     } finally {
       submitBtn.disabled = false;
-      submitBtn.textContent = 'Send Magic Link';
+      submitBtn.textContent = defaultText;
     }
   });
 </script>
