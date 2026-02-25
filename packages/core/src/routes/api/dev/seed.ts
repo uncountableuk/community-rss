@@ -9,10 +9,6 @@ import type { AppContext } from '../../../types/context';
  * (System User, etc.). Protected by `import.meta.env.DEV` check
  * so it cannot be called in production.
  *
- * This exists because executing a .ts script directly against a local
- * Cloudflare D1 database is difficult — D1 runs inside Miniflare/Wrangler
- * and standard Node SQLite drivers can't access the .wrangler state files.
- *
  * Usage: `curl http://localhost:4321/api/dev/seed`
  *
  * @since 0.3.0

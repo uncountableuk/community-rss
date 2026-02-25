@@ -82,6 +82,8 @@ export {
 // Email service factory
 export { createEmailService } from './src/utils/build/email-service';
 
-// Worker exports (stubs in 0.1.0)
-export { scheduled } from './src/workers/scheduled';
-export { queue } from './src/workers/queue';
+// Database exports
+export { createDatabase, closeDatabase } from './src/db/connection';
+
+// Scheduler exports (replacing Cloudflare Workers)
+export { startScheduler, stopScheduler, isSchedulerRunning } from './src/utils/build/scheduler';

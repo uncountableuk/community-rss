@@ -1,4 +1,15 @@
 import { describe, it, expect, vi } from 'vitest';
+
+// Mock scheduler and database modules imported by integration.ts
+vi.mock('../../src/utils/build/scheduler', () => ({
+  startScheduler: vi.fn(),
+  stopScheduler: vi.fn(),
+}));
+vi.mock('../../src/db/connection', () => ({
+  createDatabase: vi.fn().mockReturnValue({}),
+  closeDatabase: vi.fn(),
+}));
+
 import { createIntegration } from '../../src/integration';
 
 describe('Integration Factory', () => {
@@ -94,6 +105,35 @@ describe('Integration Factory', () => {
 
       expect(logs).toContainEqual(expect.stringContaining('Community RSS'));
       expect(logs).toContainEqual(expect.stringContaining('15'));
+    });
+
+    it('should have astro:server:start hook', () => {
+      const integration = createIntegration();
+      expect(integration.hooks['astro:server:start']).toBeDefined();
+      expect(typeof integration.hooks['astro:server:start']).toBe('function');
+    });
+
+    it('should have astro:server:done hook', () => {
+      const integration = createIntegration();
+      expect(integration.hooks['astro:server:done']).toBeDefined();
+      expect(typeof integration.hooks['astro:server:done']).toBe('function');
+    });
+
+    it('should start scheduler on server start and stop on done', async () => {
+      const { startScheduler } = await import('../../src/utils/build/scheduler');
+      const { closeDatabase } = await import('../../src/db/connection');
+      const { stopScheduler } = await import('../../src/utils/build/scheduler');
+
+      const integration = createIntegration();
+
+      const startHook = integration.hooks['astro:server:start'] as () => void;
+      startHook();
+      expect(startScheduler).toHaveBeenCalledOnce();
+
+      const doneHook = integration.hooks['astro:server:done'] as () => void;
+      doneHook();
+      expect(stopScheduler).toHaveBeenCalledOnce();
+      expect(closeDatabase).toHaveBeenCalledOnce();
     });
   });
 });

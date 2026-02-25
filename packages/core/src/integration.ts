@@ -1,6 +1,9 @@
 import type { AstroIntegration } from 'astro';
 import type { CommunityRssOptions } from './types/options';
 import { resolveOptions } from './types/options';
+import { startScheduler, stopScheduler } from './utils/build/scheduler';
+import { createDatabase, closeDatabase } from './db/connection';
+import type { EnvironmentVariables } from './types/context';
 
 /**
  * Creates the Community RSS Astro integration.
@@ -115,6 +118,35 @@ export function createIntegration(options: CommunityRssOptions = {}): AstroInteg
         logger.info(`  commentTier: ${config.commentTier}`);
         logger.info(`  databasePath: ${config.databasePath}`);
         logger.info(`  syncSchedule: ${config.syncSchedule}`);
+      },
+
+      'astro:server:start': () => {
+        // Build environment variables from process.env
+        const env: EnvironmentVariables = {
+          DATABASE_PATH: process.env.DATABASE_PATH ?? config.databasePath,
+          FRESHRSS_URL: process.env.FRESHRSS_URL ?? '',
+          FRESHRSS_USER: process.env.FRESHRSS_USER ?? '',
+          FRESHRSS_API_PASSWORD: process.env.FRESHRSS_API_PASSWORD ?? '',
+          PUBLIC_SITE_URL: process.env.PUBLIC_SITE_URL ?? '',
+          SMTP_HOST: process.env.SMTP_HOST ?? '',
+          SMTP_PORT: process.env.SMTP_PORT ?? '',
+          SMTP_FROM: process.env.SMTP_FROM ?? '',
+          S3_ENDPOINT: process.env.S3_ENDPOINT ?? '',
+          S3_ACCESS_KEY: process.env.S3_ACCESS_KEY ?? '',
+          S3_SECRET_KEY: process.env.S3_SECRET_KEY ?? '',
+          S3_BUCKET: process.env.S3_BUCKET ?? '',
+          MEDIA_BASE_URL: process.env.MEDIA_BASE_URL ?? '',
+          RESEND_API_KEY: process.env.RESEND_API_KEY,
+          EMAIL_TRANSPORT: process.env.EMAIL_TRANSPORT,
+        };
+
+        const db = createDatabase(env.DATABASE_PATH);
+        startScheduler({ db, config, env });
+      },
+
+      'astro:server:done': () => {
+        stopScheduler();
+        closeDatabase();
       },
     },
   };
