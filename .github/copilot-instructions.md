@@ -11,7 +11,7 @@ architecture, code reuse, and adherence to established patterns.
   `playground/` (the reference implementation / dev testing app), and
   `docs/` (Starlight documentation site)
 - **Stack**: Astro SSR + Cloudflare (D1, R2, Queues, Workers, Pages) + FreshRSS
-  + Drizzle ORM (D1/SQLite) + Starlight (docs)
+  + Drizzle ORM (D1/SQLite) + better-auth (authentication) + Starlight (docs)
 - **Licence**: GPL-3.0 — all contributions must be compatible
 - **Local dev**: Docker Compose (FreshRSS, MinIO, Mailpit) + Dev Container
 - The playground consumes `@community-rss/core` exactly as an end-user would
@@ -21,6 +21,7 @@ architecture, code reuse, and adherence to established patterns.
 ### Monorepo Awareness
 - Root `package.json` defines workspaces — never add app dependencies there
 - Framework code lives in `packages/core/`; playground-specific code in `playground/`
+- Documentation site lives in `docs/` (Starlight) — independent workspace
 - Shared dev tooling (ESLint, Prettier, Vitest config) lives at the root
 - Run `npm install` from the root to wire workspace symlinks
 - Publishing is done from `packages/core/` only
@@ -32,8 +33,14 @@ architecture, code reuse, and adherence to established patterns.
   - `utils/client/` — Browser APIs only (DOM interactions, hearts/stars UI)
   - `utils/shared/` — Pure functions only (validation, formatting, scoring)
 - Database queries & migrations live in `packages/core/src/db/`
+- Database schema is defined in Drizzle ORM TypeScript (`src/db/schema.ts`).
+  Migrations are generated via `drizzle-kit generate` — never hand-written.
+- Authentication uses `better-auth` configured in `src/utils/build/auth.ts`
 - Cloudflare bindings (D1, R2, Queues) are typed in `packages/core/src/types/env.d.ts`
 - Before creating new functions, search for existing utilities that can be reused
+- The "System User" (`id: 'system'`) owns global/community feeds imported
+  from FreshRSS. It is seeded during database setup and checked defensively
+  in `syncFeeds()`. Admin users may also own feeds without domain verification.
 
 ### API Design (Post-1.0.0 Critical)
 - All public APIs exported from `packages/core/index.ts` must remain **forward-compatible**
@@ -80,6 +87,15 @@ architecture, code reuse, and adherence to established patterns.
 - After completing each implementation phase, update the feature plan's
   Implementation Notes: check off tasks, note decisions, log problems
 
+### Changelog
+- `CHANGELOG.md` at the repo root follows [Keep a Changelog](https://keepachangelog.com/) format
+- Categories: Added, Changed, Deprecated, Removed, Fixed, Security
+- During feature work: do NOT edit `CHANGELOG.md`
+- During release finalization: move entries from `[Unreleased]` to the new version heading
+- Each entry should be a concise, user-facing description of the change
+- Reference the component/file affected (e.g., `utils/build/sync.ts`)
+- Include a `Known Issues` section for documented limitations
+
 ### Contributing (Open Source)
 - All code must be GPL-3.0 compatible
 - Public APIs must have JSDoc documentation
@@ -98,5 +114,10 @@ architecture, code reuse, and adherence to established patterns.
 - ❌ Bump version numbers before release finalization
 - ❌ Add app dependencies to root package.json
 - ❌ Import from `packages/core/src/` in playground — use `@community-rss/core`
+- ❌ Import from `docs/` in packages/core or playground — docs is independent
 - ❌ Hard-code Cloudflare binding names — use typed env interfaces
 - ❌ Begin implementation without an approved feature plan
+- ❌ Use raw SQL strings — use Drizzle ORM query builders in `src/db/`
+- ❌ Hand-write SQL migration files — always generate via `drizzle-kit generate`
+- ❌ Implement custom session/auth logic — use better-auth patterns
+- ❌ Write misleading Implementation Notes — describe actual code, not intent

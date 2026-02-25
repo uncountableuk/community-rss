@@ -1,0 +1,137 @@
+---
+/**
+ * Auth button component — shows sign-in or sign-out based on session state.
+ *
+ * Uses client-side JavaScript to check the session via the better-auth
+ * `/api/auth/get-session` endpoint and toggles the button accordingly.
+ *
+ * @since 0.3.0
+ */
+---
+
+<div class="crss-auth-button" id="crss-auth-button">
+  <a href="/auth/signin" class="crss-btn crss-btn--signin" id="crss-signin-btn">Sign In</a>
+  <div class="crss-auth-user" id="crss-user-info" style="display: none;">
+    <a href="/profile" class="crss-auth-user__name" id="crss-user-name"></a>
+    <button class="crss-btn crss-btn--signout" id="crss-signout-btn" type="button">Sign Out</button>
+  </div>
+</div>
+
+<style>
+  .crss-auth-button {
+    display: flex;
+    align-items: center;
+    gap: var(--crss-space-sm);
+  }
+
+  .crss-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--crss-space-xs) var(--crss-space-md);
+    border-radius: var(--crss-radius-md);
+    font-size: var(--crss-font-size-sm);
+    font-family: var(--crss-font-family);
+    cursor: pointer;
+    text-decoration: none;
+    border: none;
+    transition: background-color var(--crss-transition-fast);
+  }
+
+  .crss-btn--signin {
+    background-color: var(--crss-brand-primary);
+    color: var(--crss-text-inverse);
+  }
+
+  .crss-btn--signin:hover {
+    background-color: var(--crss-brand-accent);
+  }
+
+  .crss-btn--signout {
+    background-color: var(--crss-surface-2);
+    color: var(--crss-text-primary);
+  }
+
+  .crss-btn--signout:hover {
+    background-color: var(--crss-surface-3);
+  }
+
+  .crss-auth-user {
+    display: flex;
+    align-items: center;
+    gap: var(--crss-space-sm);
+  }
+
+  .crss-auth-user__name {
+    font-size: var(--crss-font-size-sm);
+    color: var(--crss-text-secondary);
+    text-decoration: none;
+    transition: color var(--crss-transition-fast);
+  }
+
+  .crss-auth-user__name:hover {
+    color: var(--crss-brand-primary);
+  }
+</style>
+
+<script>
+  async function checkSession() {
+    try {
+      const response = await fetch('/api/auth/get-session', {
+        credentials: 'include',
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data?.session && data?.user) {
+          const signInBtn = document.getElementById('crss-signin-btn');
+          const userInfo = document.getElementById('crss-user-info');
+          const userName = document.getElementById('crss-user-name');
+
+          if (signInBtn) signInBtn.style.display = 'none';
+          if (userInfo) userInfo.style.display = 'flex';
+          if (userName) userName.textContent = data.user.name || data.user.email || 'User';
+        }
+      }
+    } catch {
+      // Session check failed — show sign-in button (default state)
+    }
+  }
+
+  async function signOut() {
+    try {
+      const response = await fetch('/api/auth/sign-out', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[community-rss] Sign-out failed with status', response.status, ':', errorText);
+        return;
+      }
+
+      // Clear guest cookie on sign-out
+      document.cookie = 'crss_guest=; path=/; max-age=0; samesite=lax';
+      
+      // Redirect to home
+      window.location.href = '/';
+    } catch (err) {
+      console.error('[community-rss] Sign-out failed:', err);
+    }
+  }
+
+  // Wire up sign-out button
+  const signOutBtn = document.getElementById('crss-signout-btn');
+  if (signOutBtn) {
+    signOutBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      signOut();
+    });
+  }
+
+  // Check session on page load
+  checkSession();
+</script>

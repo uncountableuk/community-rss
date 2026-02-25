@@ -1,0 +1,171 @@
+---
+/**
+ * Consent modal for guest interactions.
+ *
+ * Presented on first interaction (Heart, Star, or Comment) when the
+ * user is not authenticated and has no guest session. Explains data
+ * collection and creates a shadow profile on acceptance.
+ *
+ * @since 0.3.0
+ */
+---
+
+<div class="crss-consent-overlay" id="crss-consent-overlay" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="crss-consent-title">
+  <div class="crss-consent-modal">
+    <h2 class="crss-consent-title" id="crss-consent-title">Before you interact…</h2>
+    <p class="crss-consent-text">
+      To save your hearts, stars, and comments, we'll create an anonymous profile
+      using a randomly generated ID stored in a cookie. No personal information is collected.
+    </p>
+    <p class="crss-consent-text crss-consent-text--secondary">
+      You can register later to keep your interactions across devices. By continuing,
+      you agree to our use of cookies for this purpose.
+    </p>
+    <div class="crss-consent-actions">
+      <button type="button" class="crss-btn crss-btn--accept" id="crss-consent-accept">
+        Accept & Continue
+      </button>
+      <button type="button" class="crss-btn crss-btn--decline" id="crss-consent-decline">
+        No Thanks
+      </button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .crss-consent-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--crss-space-md);
+  }
+
+  .crss-consent-modal {
+    background-color: var(--crss-surface-0);
+    border-radius: var(--crss-radius-lg);
+    padding: var(--crss-space-xl);
+    max-width: 480px;
+    width: 100%;
+    box-shadow: var(--crss-shadow-lg);
+  }
+
+  .crss-consent-title {
+    font-size: var(--crss-font-size-xl);
+    font-weight: 600;
+    color: var(--crss-text-primary);
+    margin-bottom: var(--crss-space-md);
+  }
+
+  .crss-consent-text {
+    font-size: var(--crss-font-size-base);
+    color: var(--crss-text-secondary);
+    line-height: 1.6;
+    margin-bottom: var(--crss-space-sm);
+  }
+
+  .crss-consent-text--secondary {
+    font-size: var(--crss-font-size-sm);
+    color: var(--crss-text-muted);
+    margin-bottom: var(--crss-space-lg);
+  }
+
+  .crss-consent-actions {
+    display: flex;
+    gap: var(--crss-space-sm);
+    justify-content: flex-end;
+  }
+
+  .crss-btn--accept {
+    padding: var(--crss-space-sm) var(--crss-space-lg);
+    background-color: var(--crss-brand-primary);
+    color: var(--crss-text-inverse);
+    border: none;
+    border-radius: var(--crss-radius-md);
+    font-size: var(--crss-font-size-sm);
+    cursor: pointer;
+    transition: background-color var(--crss-transition-fast);
+  }
+
+  .crss-btn--accept:hover {
+    background-color: var(--crss-brand-accent);
+  }
+
+  .crss-btn--decline {
+    padding: var(--crss-space-sm) var(--crss-space-lg);
+    background-color: transparent;
+    color: var(--crss-text-muted);
+    border: 1px solid var(--crss-surface-3);
+    border-radius: var(--crss-radius-md);
+    font-size: var(--crss-font-size-sm);
+    cursor: pointer;
+    transition: all var(--crss-transition-fast);
+  }
+
+  .crss-btn--decline:hover {
+    background-color: var(--crss-surface-1);
+    color: var(--crss-text-secondary);
+  }
+</style>
+
+<script>
+  /**
+   * Shows the consent modal and returns a promise that resolves
+   * to the guest ID (on accept) or null (on decline).
+   *
+   * Called from interaction handlers (hearts, stars, comments)
+   * when no session or guest cookie exists.
+   */
+  (window as any).__crssShowConsentModal = function showConsentModal(): Promise<string | null> {
+    return new Promise((resolve) => {
+      const overlay = document.getElementById('crss-consent-overlay');
+      const acceptBtn = document.getElementById('crss-consent-accept');
+      const declineBtn = document.getElementById('crss-consent-decline');
+
+      if (!overlay || !acceptBtn || !declineBtn) {
+        resolve(null);
+        return;
+      }
+
+      overlay.style.display = 'flex';
+
+      const cleanup = () => {
+        overlay.style.display = 'none';
+        acceptBtn.removeEventListener('click', onAccept);
+        declineBtn.removeEventListener('click', onDecline);
+      };
+
+      const onAccept = async () => {
+        // Generate guest UUID and set cookie
+        const guestId = crypto.randomUUID();
+        document.cookie = `crss_guest=${guestId}; path=/; max-age=${60 * 60 * 24 * 365}; samesite=lax`;
+
+        // Create shadow profile server-side
+        try {
+          await fetch('/api/v1/guest', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ guestId }),
+          });
+        } catch {
+          // Shadow profile creation failure shouldn't block the interaction
+          console.warn('[community-rss] Failed to create shadow profile');
+        }
+
+        cleanup();
+        resolve(guestId);
+      };
+
+      const onDecline = () => {
+        cleanup();
+        resolve(null);
+      };
+
+      acceptBtn.addEventListener('click', onAccept);
+      declineBtn.addEventListener('click', onDecline);
+    });
+  };
+</script>

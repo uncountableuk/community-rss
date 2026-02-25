@@ -1,0 +1,326 @@
+---
+/**
+ * Sign-up form component.
+ *
+ * Collects email (pre-filled from sign-in redirect), display name,
+ * and Terms of Service consent. Submits to `/api/v1/auth/signup`
+ * which stores pending data and sends a welcome magic link.
+ *
+ * @since 0.3.0
+ */
+---
+
+<form class="crss-signup-form" id="crss-signup-form">
+  <div class="crss-form-group">
+    <label for="crss-signup-email" class="crss-form-label">Email address</label>
+    <input
+      type="email"
+      id="crss-signup-email"
+      name="email"
+      class="crss-form-input"
+      placeholder="your@email.com"
+      required
+      autocomplete="email"
+    />
+  </div>
+
+  <div class="crss-form-group">
+    <label for="crss-signup-name" class="crss-form-label">Display name</label>
+    <input
+      type="text"
+      id="crss-signup-name"
+      name="name"
+      class="crss-form-input"
+      placeholder="Your display name"
+      required
+      maxlength="100"
+      autocomplete="name"
+    />
+  </div>
+
+  <div class="crss-form-group crss-form-group--checkbox">
+    <label class="crss-form-checkbox-label">
+      <input
+        type="checkbox"
+        id="crss-signup-terms"
+        name="terms"
+        class="crss-form-checkbox"
+        required
+      />
+      <span>I agree to the <a href="/terms" target="_blank" class="crss-form-link">Terms of Service</a></span>
+    </label>
+  </div>
+
+  <button type="submit" class="crss-btn crss-btn--primary" id="crss-signup-btn">
+    Create Account
+  </button>
+
+  <div class="crss-form-message crss-form-message--error" id="crss-signup-error" style="display: none;"></div>
+
+  <p class="crss-form-footer">
+    Already have an account? <a href="/auth/signin" class="crss-form-link">Sign in</a>
+  </p>
+</form>
+
+<!-- Confirmation panel — replaces the form after successful submission -->
+<div class="crss-signup-confirm" id="crss-signup-confirm" style="display: none;" role="status">
+  <div class="crss-signup-confirm__icon" aria-hidden="true">
+    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="4" width="20" height="16" rx="2"/>
+      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+    </svg>
+  </div>
+  <h2 class="crss-signup-confirm__heading" id="crss-confirm-heading">Thanks for signing up!</h2>
+  <p class="crss-signup-confirm__detail" id="crss-confirm-name-para">
+    Welcome, <strong id="crss-confirm-name"></strong>.
+  </p>
+  <p class="crss-signup-confirm__detail" id="crss-confirm-action">
+    We've sent a verification link to <strong id="crss-confirm-email"></strong>.
+    Click it to complete creating your account.
+  </p>
+  <p class="crss-signup-confirm__hint">
+    Can't find it? Check your spam folder, or
+    <a href="/auth/signup" class="crss-form-link">start over</a>.
+  </p>
+</div>
+
+<style>
+  .crss-signup-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--crss-space-md);
+    max-width: 400px;
+    width: 100%;
+  }
+
+  .crss-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--crss-space-xs);
+  }
+
+  .crss-form-group--checkbox {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .crss-form-label {
+    font-size: var(--crss-font-size-sm);
+    font-weight: 500;
+    color: var(--crss-text-primary);
+  }
+
+  .crss-form-input {
+    padding: var(--crss-space-sm) var(--crss-space-md);
+    border: 1px solid var(--crss-surface-3);
+    border-radius: var(--crss-radius-md);
+    font-size: var(--crss-font-size-base);
+    font-family: var(--crss-font-family);
+    color: var(--crss-text-primary);
+    background-color: var(--crss-surface-0);
+    transition: border-color var(--crss-transition-fast);
+  }
+
+  .crss-form-input:focus {
+    outline: none;
+    border-color: var(--crss-brand-primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+  }
+
+  .crss-form-input--readonly {
+    background-color: var(--crss-surface-1);
+    color: var(--crss-text-secondary);
+    cursor: not-allowed;
+  }
+
+  .crss-form-checkbox-label {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--crss-space-xs);
+    font-size: var(--crss-font-size-sm);
+    color: var(--crss-text-primary);
+    cursor: pointer;
+  }
+
+  .crss-form-checkbox {
+    margin-top: 2px;
+    accent-color: var(--crss-brand-primary);
+  }
+
+  .crss-form-link {
+    color: var(--crss-brand-primary);
+    text-decoration: underline;
+  }
+
+  .crss-form-link:hover {
+    color: var(--crss-brand-accent);
+  }
+
+  .crss-btn--primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--crss-space-sm) var(--crss-space-lg);
+    background-color: var(--crss-brand-primary);
+    color: var(--crss-text-inverse);
+    border: none;
+    border-radius: var(--crss-radius-md);
+    font-size: var(--crss-font-size-base);
+    font-family: var(--crss-font-family);
+    cursor: pointer;
+    transition: background-color var(--crss-transition-fast);
+  }
+
+  .crss-btn--primary:hover {
+    background-color: var(--crss-brand-accent);
+  }
+
+  .crss-btn--primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .crss-form-message {
+    padding: var(--crss-space-sm) var(--crss-space-md);
+    border-radius: var(--crss-radius-md);
+    font-size: var(--crss-font-size-sm);
+  }
+
+  .crss-form-message--success {
+    background-color: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+  }
+
+  .crss-form-message--error {
+    background-color: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+  }
+
+  .crss-form-footer {
+    text-align: center;
+    font-size: var(--crss-font-size-sm);
+    color: var(--crss-text-secondary);
+  }
+
+  /* Confirmation panel */
+  .crss-signup-confirm {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--crss-space-md);
+    text-align: center;
+    max-width: 400px;
+    width: 100%;
+    padding: var(--crss-space-xl) var(--crss-space-lg);
+    background-color: var(--crss-surface-1);
+    border: 1px solid var(--crss-surface-3);
+    border-radius: var(--crss-radius-lg);
+  }
+
+  .crss-signup-confirm__icon {
+    color: var(--crss-brand-primary);
+    margin-bottom: var(--crss-space-xs);
+  }
+
+  .crss-signup-confirm__heading {
+    font-size: var(--crss-font-size-xl);
+    font-weight: 700;
+    color: var(--crss-text-primary);
+    margin: 0;
+  }
+
+  .crss-signup-confirm__detail {
+    font-size: var(--crss-font-size-base);
+    color: var(--crss-text-primary);
+    margin: 0;
+    line-height: 1.6;
+  }
+
+  .crss-signup-confirm__hint {
+    font-size: var(--crss-font-size-sm);
+    color: var(--crss-text-secondary);
+    margin: 0;
+  }
+</style>
+
+<script>
+  // Pre-fill email from URL query parameter
+  const params = new URLSearchParams(window.location.search);
+  const emailParam = params.get('email');
+  const emailInput = document.getElementById('crss-signup-email') as HTMLInputElement;
+  if (emailParam && emailInput) {
+    emailInput.value = emailParam;
+  }
+
+  const form = document.getElementById('crss-signup-form') as HTMLFormElement;
+  const submitBtn = document.getElementById('crss-signup-btn') as HTMLButtonElement;
+  const errorMsg = document.getElementById('crss-signup-error') as HTMLDivElement;
+  const nameInput = document.getElementById('crss-signup-name') as HTMLInputElement;
+  const termsCheckbox = document.getElementById('crss-signup-terms') as HTMLInputElement;
+
+  form?.addEventListener('submit', async (e: Event) => {
+    e.preventDefault();
+
+    const email = emailInput.value.trim();
+    const name = nameInput.value.trim();
+    const termsAccepted = termsCheckbox.checked;
+
+    if (!email || !name || !termsAccepted) return;
+
+    // Reset messages
+    errorMsg.style.display = 'none';
+
+    // Loading state
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Creating account...';
+
+    try {
+      const response = await fetch('/api/v1/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, name, termsAccepted }),
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const respData = await response.json().catch(() => ({})) as { exists?: boolean };
+
+        form.style.display = 'none';
+        const confirm = document.getElementById('crss-signup-confirm');
+        const confirmHeading = document.getElementById('crss-confirm-heading');
+        const confirmNamePara = document.getElementById('crss-confirm-name-para');
+        const confirmEmail = document.getElementById('crss-confirm-email');
+        const confirmAction = document.getElementById('crss-confirm-action');
+
+        if (respData.exists) {
+          // Existing account — surface a sign-in prompt instead
+          if (confirmHeading) confirmHeading.textContent = 'Check your email';
+          if (confirmNamePara) confirmNamePara.style.display = 'none';
+          if (confirmAction) {
+            confirmAction.innerHTML =
+              `You already have an account. We've sent a sign-in link to <strong>${email}</strong>.`;
+          }
+        } else {
+          // New account — fill in the name and email
+          const confirmName = document.getElementById('crss-confirm-name');
+          if (confirmName) confirmName.textContent = name;
+          if (confirmEmail) confirmEmail.textContent = email;
+        }
+
+        if (confirm) confirm.style.display = 'flex';
+      } else {
+        const data = await response.json().catch(() => ({}));
+        errorMsg.textContent = data.message || 'Failed to create account. Please try again.';
+        errorMsg.style.display = 'block';
+      }
+    } catch {
+      errorMsg.textContent = 'Network error. Please try again.';
+      errorMsg.style.display = 'block';
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Create Account';
+    }
+  });
+</script>

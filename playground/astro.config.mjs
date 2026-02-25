@@ -17,6 +17,9 @@ export default defineConfig({
     communityRss({
       maxFeeds: 5,
       commentTier: 'registered',
+      email: {
+        transport: 'smtp',
+      },
     }),
   ],
 });

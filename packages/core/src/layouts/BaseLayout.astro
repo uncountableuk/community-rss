@@ -8,6 +8,9 @@
  * @since 0.1.0
  */
 
+import AuthButton from '../components/AuthButton.astro';
+import ConsentModal from '../components/ConsentModal.astro';
+
 interface Props {
   title: string;
   description?: string;
@@ -25,7 +28,14 @@ const { title, description = 'Community RSS' } = Astro.props;
     <title>{title}</title>
   </head>
   <body>
+    <header class="crss-header">
+      <nav class="crss-nav">
+        <a href="/" class="crss-nav-brand">Community RSS</a>
+        <AuthButton />
+      </nav>
+    </header>
     <slot />
+    <ConsentModal />
   </body>
 </html>
 
@@ -46,5 +56,30 @@ const { title, description = 'Community RSS' } = Astro.props;
     color: var(--crss-text-primary);
     background-color: var(--crss-surface-0);
     line-height: 1.6;
+  }
+
+  .crss-header {
+    border-bottom: 1px solid var(--crss-border);
+    background: var(--crss-surface-0);
+  }
+
+  .crss-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--crss-space-sm) var(--crss-space-lg);
+  }
+
+  .crss-nav-brand {
+    font-weight: 700;
+    font-size: var(--crss-font-size-lg);
+    color: var(--crss-text-primary);
+    text-decoration: none;
+  }
+
+  .crss-nav-brand:hover {
+    color: var(--crss-primary);
   }
 </style>

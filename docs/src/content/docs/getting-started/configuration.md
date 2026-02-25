@@ -12,6 +12,14 @@ object. All properties have sensible defaults.
 |------|------|----------|---------|-------|-------------|
 | `maxFeeds` | `number` | No | `5` | 0.1.0 | Maximum feeds per verified author |
 | `commentTier` | `'verified' \| 'registered' \| 'guest'` | No | `'registered'` | 0.1.0 | Minimum user tier required to comment |
+| `email` | `EmailConfig` | No | See below | 0.3.0 | Email delivery configuration |
+
+### EmailConfig
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `from` | `string` | `'Community RSS <noreply@localhost>'` | Sender address for magic link emails |
+| `appName` | `string` | `'Community RSS'` | Application name shown in email subject and body |
 
 ## Usage
 
@@ -24,6 +32,10 @@ export default defineConfig({
     communityRss({
       maxFeeds: 10,
       commentTier: 'guest',
+      email: {
+        from: 'My Community <noreply@example.com>',
+        appName: 'My Community',
+      },
     }),
   ],
 });
@@ -65,6 +77,17 @@ The following environment variables must be set in your `.dev.vars` file
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `PUBLIC_SITE_URL` | Yes | Externally-accessible site URL (e.g., `http://localhost:4321`) |
+
+### Email & Authentication
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `SMTP_HOST` | Yes | SMTP host for email delivery (e.g., `mailpit` for local dev) |
+| `SMTP_PORT` | Yes | SMTP port (e.g., `1025` for Mailpit) |
+| `SMTP_FROM` | Yes | Default email sender address |
+| `RESEND_API_KEY` | No | Resend API key for production email delivery. When set, emails use Resend instead of SMTP. |
+
+See the [Email Setup](/guides/email-setup/) guide for details.
 
 ### Worker Exports
 

@@ -73,7 +73,10 @@ Create `feature_plans/X_Y_Z/release/RELEASE_FINALIZATION_PLAN.md`:
 
 ## Finalization Tasks
 - [ ] Update `packages/core/package.json` version to X.Y.Z
-- [ ] Update CHANGELOG.md — move Unreleased to vX.Y.Z
+- [ ] Update CHANGELOG.md — move Unreleased to vX.Y.Z with release date
+- [ ] Verify CHANGELOG follows Keep a Changelog format (Added, Changed,
+      Deprecated, Removed, Fixed, Security categories)
+- [ ] Include Known Issues section if applicable
 - [ ] Final commit: `chore: release vX.Y.Z`
 - [ ] Squash merge release branch to main
 - [ ] Tag release: `git tag vX.Y.Z`

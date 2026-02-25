@@ -1,5 +1,6 @@
+import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/d1';
-import { users } from '../schema';
+import { users, interactions, comments } from '../schema';
 
 /**
  * System user ID used as the owner for feeds created during FreshRSS sync.
@@ -12,6 +13,7 @@ export const SYSTEM_USER_ID = 'system';
  *
  * The system user owns feeds created during FreshRSS sync.
  * Uses INSERT OR IGNORE so it's safe to call on every sync run.
+ * Sets `role: 'system'` to distinguish from regular users.
  *
  * @param db - D1 database binding
  * @since 0.2.0
@@ -24,9 +26,250 @@ export async function ensureSystemUser(db: D1Database): Promise<void> {
             id: SYSTEM_USER_ID,
             name: 'System',
             isGuest: false,
+            role: 'system',
             createdAt: new Date(),
             updatedAt: new Date(),
         })
         .onConflictDoNothing()
         .run();
+}
+
+/**
+ * Retrieves a user by their ID.
+ *
+ * @param db - D1 database binding
+ * @param id - User ID
+ * @returns User record or null if not found
+ * @since 0.3.0
+ */
+export async function getUserById(db: D1Database, id: string) {
+    const d1 = drizzle(db);
+    const result = await d1.select().from(users).where(eq(users.id, id)).all();
+    return result[0] || null;
+}
+
+/**
+ * Retrieves a user by their email address.
+ *
+ * @param db - D1 database binding
+ * @param email - User email address
+ * @returns User record or null if not found
+ * @since 0.3.0
+ */
+export async function getUserByEmail(db: D1Database, email: string) {
+    const d1 = drizzle(db);
+    const result = await d1.select().from(users).where(eq(users.email, email)).all();
+    return result[0] || null;
+}
+
+/**
+ * Creates a guest user with a shadow profile.
+ *
+ * Guests have `isGuest = true` and `role = 'user'`. Their ID is
+ * the UUID generated client-side via `crypto.randomUUID()`.
+ *
+ * @param db - D1 database binding
+ * @param guestId - Client-generated UUID
+ * @returns The created guest user record
+ * @since 0.3.0
+ */
+export async function createGuestUser(db: D1Database, guestId: string) {
+    const d1 = drizzle(db);
+    const result = await d1
+        .insert(users)
+        .values({
+            id: guestId,
+            isGuest: true,
+            role: 'user',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        })
+        .onConflictDoNothing()
+        .returning()
+        .all();
+    return result[0] || null;
+}
+
+/**
+ * Migrates all interactions and comments from a guest to a registered user.
+ *
+ * Transfers ownership of hearts, stars, and comments, then deletes
+ * the guest user row. Idempotent — migrating a non-existent guest
+ * is a no-op.
+ *
+ * @param db - D1 database binding
+ * @param guestId - The guest's UUID
+ * @param userId - The registered user's ID
+ * @since 0.3.0
+ */
+export async function migrateGuestToUser(
+    db: D1Database,
+    guestId: string,
+    userId: string,
+): Promise<void> {
+    const d1 = drizzle(db);
+
+    // Transfer interactions (hearts/stars)
+    await d1
+        .update(interactions)
+        .set({ userId })
+        .where(eq(interactions.userId, guestId))
+        .run();
+
+    // Transfer comments
+    await d1
+        .update(comments)
+        .set({ userId })
+        .where(eq(comments.userId, guestId))
+        .run();
+
+    // Delete the guest user row
+    await d1
+        .delete(users)
+        .where(eq(users.id, guestId))
+        .run();
+}
+
+/**
+ * Checks whether a user has the admin role.
+ *
+ * @param user - User record with at least `role` field
+ * @returns `true` if the user is an admin
+ * @since 0.3.0
+ */
+export function isAdmin(user: { role: string }): boolean {
+    return user.role === 'admin';
+}
+
+/**
+ * Checks whether a user has the system role.
+ *
+ * @param user - User record with at least `role` field
+ * @returns `true` if the user is the system user
+ * @since 0.3.0
+ */
+export function isSystemUser(user: { role: string }): boolean {
+    return user.role === 'system';
+}
+
+/**
+ * Updates mutable fields on a user record.
+ *
+ * @param db - D1 database binding
+ * @param id - User ID to update
+ * @param data - Partial user fields to update
+ * @returns The updated user record or null if not found
+ * @since 0.3.0
+ */
+export async function updateUser(
+    db: D1Database,
+    id: string,
+    data: { name?: string; bio?: string; termsAcceptedAt?: Date },
+) {
+    const d1 = drizzle(db);
+    const result = await d1
+        .update(users)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(users.id, id))
+        .returning()
+        .all();
+    return result[0] || null;
+}
+
+/**
+ * Finds a user by their pending email change token.
+ *
+ * @param db - D1 database binding
+ * @param token - The pending email change token
+ * @returns User record or null if not found
+ * @since 0.3.0
+ */
+export async function getUserByPendingEmailToken(db: D1Database, token: string) {
+    const d1 = drizzle(db);
+    const result = await d1
+        .select()
+        .from(users)
+        .where(eq(users.pendingEmailToken, token))
+        .all();
+    return result[0] || null;
+}
+
+/**
+ * Sets a pending email change on a user record.
+ *
+ * Stores the new address, verification token, and expiry. The change
+ * does not take effect until {@link confirmEmailChange} is called with
+ * the matching token.
+ *
+ * @param db - D1 database binding
+ * @param userId - ID of the user requesting the change
+ * @param pendingEmail - The new email address to verify
+ * @param token - One-time verification token
+ * @param expiresAt - Token expiry date
+ * @returns The updated user record or null if not found
+ * @since 0.3.0
+ */
+export async function setPendingEmail(
+    db: D1Database,
+    userId: string,
+    pendingEmail: string,
+    token: string,
+    expiresAt: Date,
+) {
+    const d1 = drizzle(db);
+    const result = await d1
+        .update(users)
+        .set({ pendingEmail, pendingEmailToken: token, pendingEmailExpiresAt: expiresAt, updatedAt: new Date() })
+        .where(eq(users.id, userId))
+        .returning()
+        .all();
+    return result[0] || null;
+}
+
+/**
+ * Confirms an email change using a verification token.
+ *
+ * Validates the token, checks expiry, promotes `pendingEmail` to the
+ * active `email`, and clears the pending fields. Returns the updated
+ * user on success, `{ expired: true }` if the token has expired, or
+ * `null` if no matching token exists.
+ *
+ * @param db - D1 database binding
+ * @param token - The verification token from the confirmation link
+ * @returns Updated user, `{ expired: true }`, or `null`
+ * @since 0.3.0
+ */
+export async function confirmEmailChange(
+    db: D1Database,
+    token: string,
+): Promise<ReturnType<typeof updateUser> | { expired: true } | null> {
+    const d1 = drizzle(db);
+
+    const found = await d1
+        .select()
+        .from(users)
+        .where(eq(users.pendingEmailToken, token))
+        .all();
+
+    const user = found[0];
+    if (!user || !user.pendingEmail || !user.pendingEmailExpiresAt) return null;
+
+    if (user.pendingEmailExpiresAt < new Date()) {
+        return { expired: true };
+    }
+
+    const updated = await d1
+        .update(users)
+        .set({
+            email: user.pendingEmail,
+            pendingEmail: null,
+            pendingEmailToken: null,
+            pendingEmailExpiresAt: null,
+            updatedAt: new Date(),
+        })
+        .where(eq(users.id, user.id))
+        .returning()
+        .all();
+
+    return updated[0] || null;
 }

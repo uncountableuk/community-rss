@@ -26,6 +26,7 @@ export default defineConfig({
             { label: 'Integration', slug: 'api-reference/integration' },
             { label: 'Options', slug: 'api-reference/options' },
             { label: 'Articles API', slug: 'api-reference/articles' },
+            { label: 'Routes', slug: 'api-reference/routes' },
           ],
         },
         {
@@ -33,6 +34,9 @@ export default defineConfig({
           items: [
             { label: 'Feed Synchronisation', slug: 'guides/feed-sync' },
             { label: 'Customising Feed Cards', slug: 'guides/theming' },
+            { label: 'Authentication', slug: 'guides/authentication' },
+            { label: 'Email Setup', slug: 'guides/email-setup' },
+            { label: 'Admin Feeds', slug: 'guides/admin-feeds' },
           ],
         },
         {

@@ -33,15 +33,43 @@ export const users = sqliteTable(
     id: text('id').primaryKey(),
     email: text('email'),
     isGuest: integer('is_guest', { mode: 'boolean' }).notNull().default(false),
+    /** User privilege level: 'user' | 'admin' | 'system'. @since 0.3.0 */
+    role: text('role').notNull().default('user'),
     name: text('name'),
     bio: text('bio'),
     avatarUrl: text('avatar_url'),
+    emailVerified: integer('email_verified', { mode: 'boolean' }).notNull().default(false),
+    /** Timestamp when user accepted Terms of Service. @since 0.3.0 */
+    termsAcceptedAt: integer('terms_accepted_at', { mode: 'timestamp' }),
+    /** Pending new email address awaiting verification. @since 0.3.0 */
+    pendingEmail: text('pending_email'),
+    /** One-time token used to confirm a pending email change. @since 0.3.0 */
+    pendingEmailToken: text('pending_email_token'),
+    /** Expiry for the pending email change token. @since 0.3.0 */
+    pendingEmailExpiresAt: integer('pending_email_expires_at', { mode: 'timestamp' }),
     ...timestamps,
   },
   (table) => [
     uniqueIndex('users_email_idx').on(table.email),
   ],
 );
+
+// ─── Pending Sign-Ups ───────────────────────────────────────
+
+/**
+ * Pending sign-ups — temporary storage between sign-up form submission
+ * and magic-link verification. Keyed by email. Cleaned up after
+ * successful verification or expiry.
+ * @since 0.3.0
+ */
+export const pendingSignups = sqliteTable('pending_signups', {
+  email: text('email').primaryKey(),
+  name: text('name').notNull(),
+  termsAcceptedAt: integer('terms_accepted_at', { mode: 'timestamp' }).notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
 
 // ─── better-auth tables ──────────────────────────────────────
 

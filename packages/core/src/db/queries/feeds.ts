@@ -13,6 +13,34 @@ export async function getFeedById(db: D1Database, id: string) {
     return result[0] || null;
 }
 
+/**
+ * Returns all feeds owned by a specific user.
+ *
+ * @param db - D1 database binding
+ * @param userId - The feed owner's user ID
+ * @returns Array of feed records
+ * @since 0.3.0
+ */
+export async function getFeedsByUserId(db: D1Database, userId: string) {
+    const d1 = drizzle(db);
+    return d1.select().from(feeds).where(eq(feeds.userId, userId)).all();
+}
+
+/**
+ * Deletes a feed by ID.
+ *
+ * Cascading foreign keys handle article and interaction cleanup.
+ *
+ * @param db - D1 database binding
+ * @param id - The feed ID to delete
+ * @returns The deleted feed record(s)
+ * @since 0.3.0
+ */
+export async function deleteFeed(db: D1Database, id: string) {
+    const d1 = drizzle(db);
+    return d1.delete(feeds).where(eq(feeds.id, id)).returning().all();
+}
+
 export async function upsertFeed(
     db: D1Database,
     feed: {

@@ -1,0 +1,64 @@
+---
+/**
+ * Sign-in page with magic link form.
+ *
+ * Users enter their email and receive a magic link to sign in.
+ * Uses BaseLayout for consistent styling.
+ *
+ * @route /auth/signin
+ * @since 0.3.0
+ */
+
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import MagicLinkForm from '../../../components/MagicLinkForm.astro';
+---
+
+<BaseLayout title="Sign In" description="Sign in to Community RSS">
+  <main class="crss-signin-page">
+    <div class="crss-signin-container">
+      <h1 class="crss-signin-title">Sign In</h1>
+      <p class="crss-signin-subtitle">
+        Enter your email to receive a magic link — no password needed.
+      </p>
+      <MagicLinkForm />
+      <p class="crss-signin-footer">
+        Don't have an account? Enter your email above and you'll be redirected to sign up.
+      </p>
+    </div>
+  </main>
+</BaseLayout>
+
+<style>
+  .crss-signin-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: var(--crss-space-xl);
+  }
+
+  .crss-signin-container {
+    max-width: 440px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .crss-signin-title {
+    font-size: var(--crss-font-size-3xl);
+    font-weight: 700;
+    color: var(--crss-text-primary);
+    margin-bottom: var(--crss-space-sm);
+  }
+
+  .crss-signin-subtitle {
+    font-size: var(--crss-font-size-base);
+    color: var(--crss-text-secondary);
+    margin-bottom: var(--crss-space-xl);
+  }
+
+  .crss-signin-footer {
+    margin-top: var(--crss-space-lg);
+    font-size: var(--crss-font-size-sm);
+    color: var(--crss-text-secondary);
+  }
+</style>

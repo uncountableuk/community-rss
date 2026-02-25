@@ -456,103 +456,90 @@ browsable homepage showing articles in a masonry grid layout.
 
 ---
 
-### Release 0.3.0 — Authentication & User System
+### Release 0.3.0 — Authentication, User System & Admin Feeds
 
-**Goal:** Working auth system with magic-link sign-in, guest consent
-flow, and account migration from guest to registered user.
+**Goal:** Working auth system with magic-link sign-in, sign-up with
+email pre-check, guest consent flow, account migration from guest to
+registered user, user profile page (view + edit), formalized System
+User concept, and admin feed management (bypassing domain verification).
 
-#### Phase 1: better-auth Integration
-- [ ] Install `better-auth` and `drizzle-orm` in `packages/core`
-- [ ] Create `packages/core/src/utils/build/auth.ts`
-  - Configure `betterAuth()` with D1 via Drizzle adapter (SQLite provider)
-  - Enable magic-link plugin
-  - Configure session settings (cookie name, expiry, secure flags)
-  - **CRITICAL:** Set `baseURL: process.env.PUBLIC_SITE_URL`
-    (`http://localhost:4321` in local dev). Without this, magic-link
-    generation and cookie setting fail silently because better-auth
-    misidentifies the request origin as internal Docker networking.
-- [ ] Generate better-auth schema additions via CLI:
-  1. Run `npx @better-auth/cli generate` — outputs Drizzle TypeScript
-     for `users`, `sessions`, `accounts`, and `verifications` tables
-  2. Copy the generated TypeScript into
-     `packages/core/src/db/schema.ts`, merging with existing tables
-  3. Adjust any foreign-key relationships to custom tables
-     (e.g., `interactions`, `feeds`, `followers`)
-  4. Run `npx drizzle-kit generate` to produce the migration
-  This keeps the single-source-of-truth workflow intact.
-- [ ] Integrate with framework's existing `users` table or map better-auth's user table
-- [ ] Create `packages/core/src/utils/build/email.ts`
-  - `sendMagicLink(email, url)` — uses Resend in prod, SMTP to Mailpit locally
-  - `sendCommentNotification(email, approveUrl, rejectUrl)` — for 0.4.0
-- [ ] Test: `test/utils/build/auth.test.ts`
-- [ ] Test: `test/utils/build/email.test.ts` (mocked SMTP)
+#### Phase 1: System User Formalization & Database Updates
+- [x] Formalize System User concept: seed `system` user during DB setup
+  (not just lazily in `syncFeeds()`)
+- [x] Add `role` column to `users` table (`'user' | 'admin' | 'system'`)
+  to distinguish user types (additive migration)
+- [x] Create seed helper `packages/core/src/db/seed.ts` — run after
+  migrations to ensure System User exists
+- [x] Update `ensureSystemUser()` to set `role: 'system'`
+- [x] Run `npx drizzle-kit generate` for the migration
+- [x] Test: `test/db/seed.test.ts`
 
-#### Phase 2: Auth API Routes (better-auth Native Router)
+#### Phase 2: better-auth Integration
+- [x] Install `better-auth` and `@better-auth/client` in `packages/core`
+- [x] Create `packages/core/src/utils/build/auth.ts`
+- [x] Generate better-auth schema additions via CLI and merge into Drizzle schema
+- [x] Create `packages/core/src/utils/build/email.ts`
+- [x] Test: `test/utils/build/auth.test.ts`
+- [x] Test: `test/utils/build/email.test.ts` (mocked SMTP)
 
-better-auth runs its own internal router and automatically exposes
-standard endpoints (`/api/auth/sign-in/magic-link`, `/api/auth/sign-out`,
-`/api/auth/get-session`, etc.). Instead of building manual wrapper
-endpoints, the integration injects a single catch-all route.
-
-- [ ] Create `packages/core/src/routes/api/auth/[...all].ts`
-  - Single catch-all handler: passes `context.request` to `auth.handler()`
-  - better-auth automatically exposes all auth endpoints under `/api/auth/*`
-  - No manual route wrappers needed for magic-link, verify, session, sign-out
-- [ ] Install `@better-auth/client` as a dependency of `packages/core`
-  - Frontend UI components use the client SDK (`createAuthClient()`) to
-    call the native `/api/auth/*` routes directly — no custom fetch wrappers
-- [ ] Wire better-auth session middleware for protected `/api/v1/` routes
-  (extract session from request via `auth.api.getSession()`)
-- [ ] Test: `test/routes/api/auth/catch-all.test.ts`
-  - Test magic-link request, verification, session retrieval, sign-out
-  - All via the single catch-all handler
-
-#### Phase 3: Guest Consent Flow
-- [ ] Create `packages/core/src/components/ConsentModal.astro`
-  - Presented on first interaction (Heart, Star, or Comment)
-  - Explains data collection, links to privacy policy
-  - Accept/Decline buttons
-- [ ] Create `packages/core/src/utils/client/guest.ts`
-  - `initGuestSession()` — generate UUID via `crypto.randomUUID()`, set cookie
-  - `getGuestId()` — read UUID from cookie
-  - `isGuest()` — check if current user is guest vs registered
-  - `clearGuestSession()` — remove UUID cookie (called on sign-out)
-- [ ] Create `packages/core/src/utils/build/guest.ts`
-  - `createShadowProfile(guestId)` — insert guest row (`is_guest=true`) in D1
-  - `migrateGuestToUser(guestId, userId)` — move all interactions to real account
-- [ ] Create `packages/core/src/db/queries/users.ts`
-  - User CRUD, guest profile creation, guest migration query
-- [ ] **Guest Sign-Out Lifecycle:**
-  - When a Registered User signs out, **clear the Guest UUID cookie entirely**
-  - Do NOT generate a new Guest UUID on sign-out
-  - A new Guest UUID is only created if the user later attempts an
-    interaction (Heart/Star/Comment) while signed out, re-triggering
-    the consent modal
-  - Wire `clearGuestSession()` into the sign-out handler (Phase 2)
-- [ ] Test: `test/utils/client/guest.test.ts`
-  - Test sign-out clears cookie, new UUID only on next interaction
-- [ ] Test: `test/utils/build/guest.test.ts` (D1 migration of interactions)
-- [ ] Test: `test/db/queries/users.test.ts`
+#### Phase 3: Auth Routes & Guest Consent Flow
+- [x] Create `packages/core/src/routes/api/auth/[...all].ts` — catch-all
+- [x] Create guest utils (client + build)
+- [x] Create `packages/core/src/components/ConsentModal.astro`
+- [x] Test: `test/routes/api/auth/catch-all.test.ts`
+- [x] Test: guest tests (client + build)
+- [x] Test: `test/db/queries/users.test.ts`
 
 #### Phase 4: Auth UI Components
-- [ ] Create `packages/core/src/components/AuthButton.astro`
-  - Sign in / Sign up / Sign out state switching
-- [ ] Create `packages/core/src/components/MagicLinkForm.astro`
-  - Email input + submit for magic link request
-- [ ] Create `packages/core/src/routes/pages/auth/signin.astro`
-- [ ] Create `packages/core/src/routes/pages/auth/verify.astro`
-  - Landing page for magic link clicks
-- [ ] Inject auth routes via integration
+- [x] Create `packages/core/src/components/AuthButton.astro`
+- [x] Create `packages/core/src/components/MagicLinkForm.astro`
+- [x] Create sign-in and verify pages
+- [x] Update `BaseLayout.astro` with AuthButton
+- [x] Inject auth routes via integration
 
-#### Phase 5: Documentation for 0.3.0
-- [ ] Guide: Authentication flow (magic link + guest consent)
-- [ ] API reference: auth endpoints
-- [ ] Guide: Configuring email provider (Resend setup)
-- [ ] Guide: Guest-to-registered migration flow
+#### Phase 5: Admin Feed Management
+- [x] Create admin feed routes and utilities
+- [x] Test: admin feed tests
 
-#### Phase 6: Tests & Coverage for 0.3.0
-- [ ] Integration test: full magic-link flow (request → email → verify → session)
-- [ ] Integration test: guest consent → interaction → registration → migration
+#### Phase 6: Sign-Up Flow & Profile Page
+- [ ] Add `pending_signups` table and `termsAcceptedAt` column to users
+  - Database migration via `drizzle-kit generate`
+- [ ] Create `GET /api/v1/auth/check-email` — returns whether email exists
+- [ ] Create `POST /api/v1/auth/signup` — stores pending data, sends
+  welcome magic link
+- [ ] Create `packages/core/src/components/SignUpForm.astro`
+  - Email (pre-filled, read-only), display name, terms checkbox
+- [ ] Create `packages/core/src/routes/pages/auth/signup.astro`
+- [ ] Update `MagicLinkForm.astro` — pre-check email, redirect to sign-up
+  if not registered
+- [ ] Update catch-all route — apply pending signup data after verification
+  (set display name + terms consent, delete pending record)
+- [ ] Update `sendMagicLinkEmail()` with welcome email template variant
+- [ ] Create `packages/core/src/routes/pages/profile.astro` — view + edit
+  name and bio
+- [ ] Create `GET /api/v1/profile` and `PATCH /api/v1/profile` endpoints
+- [ ] Update `AuthButton.astro` — show profile link for signed-in users
+- [ ] Create placeholder `/terms` page
+- [ ] Register new routes in `integration.ts`
+- [ ] Test: `test/routes/api/v1/auth/check-email.test.ts`
+- [ ] Test: `test/routes/api/v1/auth/signup.test.ts`
+- [ ] Test: `test/routes/api/v1/profile.test.ts`
+- [ ] Test: `test/db/queries/pending-signups.test.ts`
+
+#### Phase 7: Documentation for 0.3.0
+- [x] Guide: Authentication flow (magic link + guest consent)
+- [x] API reference: auth endpoints
+- [x] Guide: Configuring email provider (Resend setup)
+- [x] Guide: Guest-to-registered migration flow
+- [x] Guide: Admin feed management (adding feeds without verification)
+- [x] Document System User concept and admin vs system feed ownership
+- [ ] Update docs: sign-up flow and profile page
+
+#### Phase 8: Tests & Coverage for 0.3.0
+- [x] Integration test: full magic-link flow (request → email → verify → session)
+- [x] Integration test: guest consent → interaction → registration → migration
+- [x] Integration test: admin adds feed → feed appears in All Feeds
+- [ ] Integration test: sign-up flow (pre-check → sign-up → verify → profile)
 - [ ] Verify ≥80% coverage maintained
 - [ ] Verify Mailpit catches magic link emails locally
 
@@ -646,9 +633,15 @@ with My Feed, Trending, and Starred views.
 - [ ] Guide: Customising trending algorithm weights
 - [ ] Guide: Moderation workflow (author email flow)
 
+#### Phase 6.5: Profile Page — Interaction History
+- [ ] Update `/profile` page to display user's hearts, stars, and comments
+- [ ] Create `GET /api/v1/profile/interactions` — paginated interaction history
+- [ ] Test: `test/routes/api/v1/profile-interactions.test.ts`
+
 #### Phase 7: Tests & Coverage for 0.4.0
 - [ ] Integration test: heart → trending score update → trending tab
 - [ ] Integration test: comment submit → email → magic link moderate
+- [ ] Integration test: profile page shows interaction history
 - [ ] Verify ≥80% coverage maintained
 
 ---
@@ -728,6 +721,16 @@ Author profile pages with follow functionality.
   - Checkbox confirming domain ownership and display rights consent
   - Required before feed submission completes
 - [ ] Store consent timestamp in `feeds` table
+
+#### Phase 5.5: Profile Enhancements
+- [ ] Profile page: avatar upload via R2
+  - `POST /api/v1/profile/avatar` — upload image to R2, update `avatar_url`
+- [ ] Profile page: manage submitted feeds (list, remove)
+- [ ] Test: avatar upload + display
+
+> **Note:** Email change with verification flow was implemented in 0.3.0
+> (Phase 9) to allow users to manage their account email. This feature is
+> no longer needed in 0.5.0.
 
 #### Phase 6: Documentation for 0.5.0
 - [ ] Guide: Feed submission and verification flow
@@ -1152,7 +1155,7 @@ applyTo: "docs/**/*"
 |---------|-----------------|---------------|
 | **0.1.0** | Foundation & Scaffold | `npm run dev` starts playground + docs; CI green; D1 schema applied |
 | **0.2.0** | Feed Sync & Reader | Articles sync from FreshRSS and display in a grid on the homepage |
-| **0.3.0** | Auth & Users | Users can sign in via magic link; guests get shadow profiles |
+| **0.3.0** | Auth, Users & Admin Feeds | Users can sign in via magic link; guests get shadow profiles; admin can add feeds |
 | **0.4.0** | Interactions | Hearts, Stars, Comments work; Trending and Following tabs active |
 | **0.5.0** | Feed Submission | Authors can submit, verify, and manage their own feeds |
 | **0.6.0** | Media & Polish | Image caching pipeline; production deployment guide; theme system |
@@ -1163,6 +1166,90 @@ Each release follows the branching model defined in the release prompt:
 3. Feature plans live in `feature_plans/X_Y_Z/{feature}/`
 4. Version bump and CHANGELOG happen only at release finalization
 5. Release branch squash-merges into `main`
+
+---
+
+## Architecture & Implementation Notes
+
+These lessons and patterns were discovered during implementation of 0.3.0 and should guide future phases.
+
+### Config Propagation Across Build/Runtime Boundaries
+
+**Problem:** Astro integration options (build-time) don't propagate to all route handlers (SSR runtime). This affects systems that need configuration at request time (auth, email, etc.).
+
+**Historical attempt:** Virtual modules were explored but rejected because consumers may pass function values (template functions, custom transports) that can't be serialized to a virtual module.
+
+**Solution:** Use environment variables as a fallback runtime bridge. Example:
+- Integration options: `communityRss({ email: { transport: createCustomTransport() } })`
+  - Threaded through `locals` when possible
+  - Fallback: `EMAIL_TRANSPORT` env var for catch-all routes
+  - Priority: object/string → env var → null (with warning)
+
+**Implication for future phases:** Any feature needing config in deep route handlers should support env var fallback. Document the precedence clearly.
+
+### HTTP Redirect Handling with Session Cookies
+
+**Problem:** `fetch(..., { redirect: 'manual' })` returns an opaque redirect response with null headers. Set-Cookie headers from the intermediate response are lost — the browser never stores the session cookie.
+
+**Impact:** Magic link verification was silently logging users out (session cookie never reached browser).
+
+**Solution:** Use `redirect: 'follow'` to let the browser follow redirects internally, applying cookies before the fetch resolves. For sensitive operations, accept the redirect following overhead.
+
+**Implication for future phases:** When implementing OAuth, OIDC, or other redirect-based auth flows, always test with real redirects and verify session cookies are present post-verification. Don't use `redirect: 'manual'` for auth flows.
+
+### Email Transport Graceful Degradation Strategy
+
+**Design decision:** Different transports have different failure semantics:
+- **Resend (production):** Throws on error for operational visibility
+- **SMTP (development):** Warns but doesn't throw to avoid blocking auth flows
+
+**Rationale:** In dev, email is a convenience (Mailpit catches it locally). In production, email failures should be visible (thrown, logged, monitored). This allows the same codebase to work in both contexts without friction.
+
+**Implication for future phases:** When adding new integrations (webhooks, analytics, payment systems), consider whether failures should block the user action or degrade gracefully. Different tools may need different strategies.
+
+### Profile Lookup for Email Personalization
+
+**Pattern:** Email templates accept an optional `EmailUserProfile` for personalisation (e.g., "Hi Jim," instead of "Hi there,"). The profile is looked up from multiple sources depending on context:
+- **Sign-in:** Check pending signups (new users), then registered users
+- **Email change:** Extract from session data (authenticated context)
+- **Comment notification (future):** Query user by ID
+
+**Implication for future phases:** Template functions are intentionally data-agnostic. Place profile lookup logic at the call site (route handler) where you have context. This keeps templates pure and reusable.
+
+### Preventing Account Overwrites on Re-Signup
+
+**Problem:** If a user tries to sign up with an existing account's email, a new `pending_signups` record would be created, and upon verification the user's name/profile would be overwritten.
+
+**Solution:** Before creating pending signup, check if the email belongs to a registered non-guest user. If so:
+- Send a **sign-in** link instead of a welcome link
+- Skip creating the pending signup record
+- Always return 200 (even on email failure) to avoid account enumeration
+
+**Implication for future phases:** When implementing user-facing flows (password reset, subscription changes, etc.), always check whether the account already exists and route accordingly. Guard against blindly creating new records on re-submission.
+
+### Environment Variable Naming Conventions
+
+**Established pattern for 0.3.0:**
+- `RESEND_API_KEY` — secrets (auth credentials)
+- `EMAIL_TRANSPORT` — runtime configuration (public strings like 'smtp', 'resend')
+- `PUBLIC_SITE_URL` — consumer-visible URLs (passed to client code)
+- `SMTP_HOST`, `SMTP_PORT`, `SMTP_FROM` — infrastructure parameters
+
+**Implication for future phases:** Follow this convention (UPPERCASE_SNAKE_CASE, PUBLIC_ prefix for client-accessible vars). Document all env vars in `.dev.vars.example` and `wrangler.toml [vars]`. Validate presence in route handlers or return 503 with a helpful error message.
+
+### Opaque Types vs. Type Aliases for Extensibility
+
+**Pattern from email module:** Used a type alias (`EmailTemplateMap = Record<string, EmailTemplateFunction<any>>`) instead of a restrictive interface. This allows consumers to register custom email types via declaration merging:
+
+```typescript
+declare module '@community-rss/core' {
+  interface EmailTypeDataMap {
+    'custom-email': { url: string };
+  }
+}
+```
+
+**Implication for future phases:** When designing public APIs, prefer type aliases over interfaces for extension points. Interfaces are better for contracts (class implementations); type aliases are better for registries (Template types, event maps, etc.).
 
 ---
 
@@ -1186,3 +1273,7 @@ Each release follows the branching model defined in the release prompt:
 | Drizzle ORM version conflicts with better-auth | Build failures | Pin compatible versions; test upgrades in CI before merging |
 | CSS custom property browser support | Older browser breakage | Provide fallback values in token definitions; document minimum browser versions |
 | Guest UUID cookie cleared on sign-out leaves orphaned shadow profile | Wasted DB rows | Periodic cleanup job for guest profiles with no interactions older than N days (future optimisation) |
+| Offset-based pagination with active syncing | Duplicate items shown to users when new articles shift offsets between page requests | Migrate to cursor-based pagination (`WHERE published_at < ?`) before 0.4.0 — natively optimised in D1/SQLite. Flagged as high-priority tech debt from 0.2.0 review |
+| Cloudflare Pages cron/queue in production | Local dev workaround (inline sync) risks breaching 30s HTTP timeout if used in production with large feeds | Before 0.6.0, deploy to a real CF Pages Preview environment to verify `scheduled` and `queue` handlers work. Do not migrate to raw Workers — keep Astro's static asset hosting |
+| Admin sync endpoint used in production accidentally | 30-second Cloudflare HTTP request timeout breach with large feed syncs (500+ articles) | Mark admin sync endpoint as dev-only; add warnings in response headers and documentation |
+| System/admin feed ownership ambiguity | UI confusion when 0.5.0 introduces user-submitted feeds alongside system feeds | 0.5.0 must distinguish "Global/System Feeds" (system user), "Admin Feeds" (admin user), and "Personal Feeds" (verified author) in the UI and API |

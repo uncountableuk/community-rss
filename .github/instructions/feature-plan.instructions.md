@@ -159,3 +159,6 @@ Before the plan is approved:
 - ❌ Including version bumps or changelog updates in the plan
 - ❌ Completing a phase without updating Implementation Notes
 - ❌ Deleting or overwriting previous Implementation Notes entries
+- ❌ Writing misleading Implementation Notes — describe actual code behaviour,
+  not intended behaviour. If the code uses `sanitize-html`, say so; don't
+  describe it as "regex stripping"

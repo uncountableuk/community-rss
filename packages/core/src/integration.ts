@@ -59,6 +59,88 @@ export function createIntegration(options: CommunityRssOptions = {}): AstroInteg
           pattern: '/api/v1/admin/sync',
           entrypoint: new URL('./routes/api/v1/admin/sync.ts', import.meta.url).pathname,
         });
+
+        // Admin: feed management (CRUD)
+        injectRoute({
+          pattern: '/api/v1/admin/feeds',
+          entrypoint: new URL('./routes/api/v1/admin/feeds.ts', import.meta.url).pathname,
+        });
+
+        // better-auth catch-all — handles sign-in, sign-out, session, magic link
+        injectRoute({
+          pattern: '/api/auth/[...all]',
+          entrypoint: new URL('./routes/api/auth/[...all].ts', import.meta.url).pathname,
+        });
+
+        // Auth pages
+        injectRoute({
+          pattern: '/auth/signin',
+          entrypoint: new URL('./routes/pages/auth/signin.astro', import.meta.url).pathname,
+        });
+
+        injectRoute({
+          pattern: '/auth/signup',
+          entrypoint: new URL('./routes/pages/auth/signup.astro', import.meta.url).pathname,
+        });
+
+        injectRoute({
+          pattern: '/auth/verify',
+          entrypoint: new URL('./routes/pages/auth/verify.astro', import.meta.url).pathname,
+        });
+
+        // Auth API: email pre-check for sign-in/sign-up routing
+        injectRoute({
+          pattern: '/api/v1/auth/check-email',
+          entrypoint: new URL('./routes/api/v1/auth/check-email.ts', import.meta.url).pathname,
+        });
+
+        // Auth API: sign-up endpoint
+        injectRoute({
+          pattern: '/api/v1/auth/signup',
+          entrypoint: new URL('./routes/api/v1/auth/signup.ts', import.meta.url).pathname,
+        });
+
+        // User profile page
+        injectRoute({
+          pattern: '/profile',
+          entrypoint: new URL('./routes/pages/profile.astro', import.meta.url).pathname,
+        });
+
+        // User profile API
+        injectRoute({
+          pattern: '/api/v1/profile',
+          entrypoint: new URL('./routes/api/v1/profile.ts', import.meta.url).pathname,
+        });
+
+        // Email change request
+        injectRoute({
+          pattern: '/api/v1/profile/change-email',
+          entrypoint: new URL('./routes/api/v1/profile/change-email.ts', import.meta.url).pathname,
+        });
+
+        // Email change confirmation
+        injectRoute({
+          pattern: '/api/v1/profile/confirm-email-change',
+          entrypoint: new URL('./routes/api/v1/profile/confirm-email-change.ts', import.meta.url).pathname,
+        });
+
+        // Email change verification page
+        injectRoute({
+          pattern: '/auth/verify-email-change',
+          entrypoint: new URL('./routes/pages/auth/verify-email-change.astro', import.meta.url).pathname,
+        });
+
+        // Terms of Service page (placeholder — consumers override)
+        injectRoute({
+          pattern: '/terms',
+          entrypoint: new URL('./routes/pages/terms.astro', import.meta.url).pathname,
+        });
+
+        // Dev-only seed endpoint
+        injectRoute({
+          pattern: '/api/dev/seed',
+          entrypoint: new URL('./routes/api/dev/seed.ts', import.meta.url).pathname,
+        });
       },
 
       'astro:config:done': ({ logger }) => {

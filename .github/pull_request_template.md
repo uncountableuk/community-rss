@@ -33,6 +33,9 @@ Feature plan: `feature_plans/___/___/FEATURE_PLAN.md`
 - [ ] JSDoc with `@since` tags on all public exports
 - [ ] CSS custom properties used (no hard-coded colours)
 - [ ] Cloudflare bindings use typed `Env` interface
+- [ ] Drizzle ORM used for database queries (no raw SQL outside generated migrations)
+- [ ] better-auth patterns followed for auth logic (no custom session handling)
+- [ ] Implementation Notes accurately describe actual code, not intent
 
 ### Testing
 - [ ] All tests pass (`npm run test:run` from root)
@@ -50,6 +53,7 @@ Feature plan: `feature_plans/___/___/FEATURE_PLAN.md`
 - [ ] API reference updated for new public exports
 - [ ] Consumer examples import from `@community-rss/core`
 - [ ] Feature plan updated with implementation notes
+- [ ] Starlight docs updated if user-facing feature
 
 ### Monorepo
 - [ ] No app dependencies added to root `package.json`

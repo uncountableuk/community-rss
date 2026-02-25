@@ -16,6 +16,17 @@
 export type UserTier = 'guest' | 'registered' | 'verified' | 'admin';
 
 /**
+ * Database-level user role for privilege management.
+ *
+ * - `'user'` — Standard registered user (default)
+ * - `'admin'` — Platform owner, can bypass domain verification
+ * - `'system'` — The single System User that owns community feeds
+ *
+ * @since 0.3.0
+ */
+export type UserRole = 'user' | 'admin' | 'system';
+
+/**
  * Feed approval status.
  * @since 0.1.0
  */
