@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { drizzle } from 'drizzle-orm/d1';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import { users, interactions, comments } from '../schema';
 
 /**
@@ -15,12 +15,11 @@ export const SYSTEM_USER_ID = 'system';
  * Uses INSERT OR IGNORE so it's safe to call on every sync run.
  * Sets `role: 'system'` to distinguish from regular users.
  *
- * @param db - D1 database binding
+ * @param db - Drizzle database instance
  * @since 0.2.0
  */
-export async function ensureSystemUser(db: D1Database): Promise<void> {
-    const d1 = drizzle(db);
-    await d1
+export async function ensureSystemUser(db: BetterSQLite3Database): Promise<void> {
+    await db
         .insert(users)
         .values({
             id: SYSTEM_USER_ID,
@@ -37,28 +36,26 @@ export async function ensureSystemUser(db: D1Database): Promise<void> {
 /**
  * Retrieves a user by their ID.
  *
- * @param db - D1 database binding
+ * @param db - Drizzle database instance
  * @param id - User ID
  * @returns User record or null if not found
  * @since 0.3.0
  */
-export async function getUserById(db: D1Database, id: string) {
-    const d1 = drizzle(db);
-    const result = await d1.select().from(users).where(eq(users.id, id)).all();
+export async function getUserById(db: BetterSQLite3Database, id: string) {
+    const result = await db.select().from(users).where(eq(users.id, id)).all();
     return result[0] || null;
 }
 
 /**
  * Retrieves a user by their email address.
  *
- * @param db - D1 database binding
+ * @param db - Drizzle database instance
  * @param email - User email address
  * @returns User record or null if not found
  * @since 0.3.0
  */
-export async function getUserByEmail(db: D1Database, email: string) {
-    const d1 = drizzle(db);
-    const result = await d1.select().from(users).where(eq(users.email, email)).all();
+export async function getUserByEmail(db: BetterSQLite3Database, email: string) {
+    const result = await db.select().from(users).where(eq(users.email, email)).all();
     return result[0] || null;
 }
 
@@ -68,14 +65,13 @@ export async function getUserByEmail(db: D1Database, email: string) {
  * Guests have `isGuest = true` and `role = 'user'`. Their ID is
  * the UUID generated client-side via `crypto.randomUUID()`.
  *
- * @param db - D1 database binding
+ * @param db - Drizzle database instance
  * @param guestId - Client-generated UUID
  * @returns The created guest user record
  * @since 0.3.0
  */
-export async function createGuestUser(db: D1Database, guestId: string) {
-    const d1 = drizzle(db);
-    const result = await d1
+export async function createGuestUser(db: BetterSQLite3Database, guestId: string) {
+    const result = await db
         .insert(users)
         .values({
             id: guestId,
@@ -97,34 +93,32 @@ export async function createGuestUser(db: D1Database, guestId: string) {
  * the guest user row. Idempotent — migrating a non-existent guest
  * is a no-op.
  *
- * @param db - D1 database binding
+ * @param db - Drizzle database instance
  * @param guestId - The guest's UUID
  * @param userId - The registered user's ID
  * @since 0.3.0
  */
 export async function migrateGuestToUser(
-    db: D1Database,
+    db: BetterSQLite3Database,
     guestId: string,
     userId: string,
 ): Promise<void> {
-    const d1 = drizzle(db);
-
     // Transfer interactions (hearts/stars)
-    await d1
+    await db
         .update(interactions)
         .set({ userId })
         .where(eq(interactions.userId, guestId))
         .run();
 
     // Transfer comments
-    await d1
+    await db
         .update(comments)
         .set({ userId })
         .where(eq(comments.userId, guestId))
         .run();
 
     // Delete the guest user row
-    await d1
+    await db
         .delete(users)
         .where(eq(users.id, guestId))
         .run();
@@ -155,19 +149,18 @@ export function isSystemUser(user: { role: string }): boolean {
 /**
  * Updates mutable fields on a user record.
  *
- * @param db - D1 database binding
+ * @param db - Drizzle database instance
  * @param id - User ID to update
  * @param data - Partial user fields to update
  * @returns The updated user record or null if not found
  * @since 0.3.0
  */
 export async function updateUser(
-    db: D1Database,
+    db: BetterSQLite3Database,
     id: string,
     data: { name?: string; bio?: string; termsAcceptedAt?: Date },
 ) {
-    const d1 = drizzle(db);
-    const result = await d1
+    const result = await db
         .update(users)
         .set({ ...data, updatedAt: new Date() })
         .where(eq(users.id, id))
@@ -179,14 +172,13 @@ export async function updateUser(
 /**
  * Finds a user by their pending email change token.
  *
- * @param db - D1 database binding
+ * @param db - Drizzle database instance
  * @param token - The pending email change token
  * @returns User record or null if not found
  * @since 0.3.0
  */
-export async function getUserByPendingEmailToken(db: D1Database, token: string) {
-    const d1 = drizzle(db);
-    const result = await d1
+export async function getUserByPendingEmailToken(db: BetterSQLite3Database, token: string) {
+    const result = await db
         .select()
         .from(users)
         .where(eq(users.pendingEmailToken, token))
@@ -201,7 +193,7 @@ export async function getUserByPendingEmailToken(db: D1Database, token: string) 
  * does not take effect until {@link confirmEmailChange} is called with
  * the matching token.
  *
- * @param db - D1 database binding
+ * @param db - Drizzle database instance
  * @param userId - ID of the user requesting the change
  * @param pendingEmail - The new email address to verify
  * @param token - One-time verification token
@@ -210,14 +202,13 @@ export async function getUserByPendingEmailToken(db: D1Database, token: string) 
  * @since 0.3.0
  */
 export async function setPendingEmail(
-    db: D1Database,
+    db: BetterSQLite3Database,
     userId: string,
     pendingEmail: string,
     token: string,
     expiresAt: Date,
 ) {
-    const d1 = drizzle(db);
-    const result = await d1
+    const result = await db
         .update(users)
         .set({ pendingEmail, pendingEmailToken: token, pendingEmailExpiresAt: expiresAt, updatedAt: new Date() })
         .where(eq(users.id, userId))
@@ -234,18 +225,16 @@ export async function setPendingEmail(
  * user on success, `{ expired: true }` if the token has expired, or
  * `null` if no matching token exists.
  *
- * @param db - D1 database binding
+ * @param db - Drizzle database instance
  * @param token - The verification token from the confirmation link
  * @returns Updated user, `{ expired: true }`, or `null`
  * @since 0.3.0
  */
 export async function confirmEmailChange(
-    db: D1Database,
+    db: BetterSQLite3Database,
     token: string,
 ): Promise<ReturnType<typeof updateUser> | { expired: true } | null> {
-    const d1 = drizzle(db);
-
-    const found = await d1
+    const found = await db
         .select()
         .from(users)
         .where(eq(users.pendingEmailToken, token))
@@ -258,7 +247,7 @@ export async function confirmEmailChange(
         return { expired: true };
     }
 
-    const updated = await d1
+    const updated = await db
         .update(users)
         .set({
             email: user.pendingEmail,

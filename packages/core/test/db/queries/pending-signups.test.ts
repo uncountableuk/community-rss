@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const {
     mockAll, mockRun, mockOnConflictDoUpdate,
-    mockValues, mockInsert, mockDelete, mockDrizzle,
+    mockValues, mockInsert, mockDelete, mockSelect,
 } = vi.hoisted(() => {
     const mockRun = vi.fn().mockResolvedValue(undefined);
     const mockAll = vi.fn().mockResolvedValue([]);
@@ -14,20 +14,11 @@ const {
     const mockFrom = vi.fn(() => ({ where: mockWhere }));
     const mockSelect = vi.fn(() => ({ from: mockFrom }));
     const mockDelete = vi.fn(() => ({ where: mockWhere }));
-    const mockDrizzle = vi.fn(() => ({
-        insert: mockInsert,
-        select: mockSelect,
-        delete: mockDelete,
-    }));
     return {
         mockAll, mockRun, mockOnConflictDoUpdate,
-        mockValues, mockInsert, mockDelete, mockDrizzle,
+        mockValues, mockInsert, mockDelete, mockSelect,
     };
 });
-
-vi.mock('drizzle-orm/d1', () => ({
-    drizzle: mockDrizzle,
-}));
 
 vi.mock('drizzle-orm', () => ({
     eq: vi.fn((col, val) => ({ col, val })),
@@ -41,12 +32,18 @@ import {
     cleanupExpiredSignups,
 } from '@db/queries/pending-signups';
 
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+
 describe('pending-signups queries', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
 
-    const mockDb = {} as D1Database;
+    const mockDb = {
+        insert: mockInsert,
+        select: mockSelect,
+        delete: mockDelete,
+    } as unknown as BetterSQLite3Database;
 
     describe('createPendingSignup', () => {
         it('should insert a pending signup with upsert', async () => {

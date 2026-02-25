@@ -1,5 +1,5 @@
 import { eq, lt } from 'drizzle-orm';
-import { drizzle } from 'drizzle-orm/d1';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import { pendingSignups } from '../schema';
 
 /**
@@ -9,20 +9,19 @@ import { pendingSignups } from '../schema';
  * between sign-up form submission and magic-link verification.
  * Uses upsert to handle re-submissions with the same email.
  *
- * @param db - D1 database binding
+ * @param db - Drizzle database instance
  * @param email - User's email address
  * @param name - Display name from sign-up form
  * @returns The created/updated pending sign-up record
  * @since 0.3.0
  */
 export async function createPendingSignup(
-    db: D1Database,
+    db: BetterSQLite3Database,
     email: string,
     name: string,
 ) {
-    const d1 = drizzle(db);
     const now = new Date();
-    const result = await d1
+    const result = await db
         .insert(pendingSignups)
         .values({
             email,
@@ -46,14 +45,13 @@ export async function createPendingSignup(
 /**
  * Retrieves a pending sign-up record by email.
  *
- * @param db - D1 database binding
+ * @param db - Drizzle database instance
  * @param email - Email address to look up
  * @returns Pending sign-up record or null if not found
  * @since 0.3.0
  */
-export async function getPendingSignup(db: D1Database, email: string) {
-    const d1 = drizzle(db);
-    const result = await d1
+export async function getPendingSignup(db: BetterSQLite3Database, email: string) {
+    const result = await db
         .select()
         .from(pendingSignups)
         .where(eq(pendingSignups.email, email))
@@ -64,16 +62,15 @@ export async function getPendingSignup(db: D1Database, email: string) {
 /**
  * Deletes a pending sign-up record after successful verification.
  *
- * @param db - D1 database binding
+ * @param db - Drizzle database instance
  * @param email - Email address to delete
  * @since 0.3.0
  */
 export async function deletePendingSignup(
-    db: D1Database,
+    db: BetterSQLite3Database,
     email: string,
 ): Promise<void> {
-    const d1 = drizzle(db);
-    await d1
+    await db
         .delete(pendingSignups)
         .where(eq(pendingSignups.email, email))
         .run();
@@ -85,17 +82,16 @@ export async function deletePendingSignup(
  * Records older than the specified max age are deleted.
  * Should be called periodically to prevent stale data accumulation.
  *
- * @param db - D1 database binding
+ * @param db - Drizzle database instance
  * @param maxAgeMs - Maximum age in milliseconds (default: 24 hours)
  * @since 0.3.0
  */
 export async function cleanupExpiredSignups(
-    db: D1Database,
+    db: BetterSQLite3Database,
     maxAgeMs: number = 24 * 60 * 60 * 1000,
 ): Promise<void> {
-    const d1 = drizzle(db);
     const cutoff = new Date(Date.now() - maxAgeMs);
-    await d1
+    await db
         .delete(pendingSignups)
         .where(lt(pendingSignups.createdAt, cutoff))
         .run();

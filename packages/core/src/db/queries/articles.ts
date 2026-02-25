@@ -1,10 +1,9 @@
 import { eq, desc } from 'drizzle-orm';
-import { drizzle } from 'drizzle-orm/d1';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import { articles } from '../schema';
 
-export async function getArticles(db: D1Database, limit = 20, offset = 0) {
-    const d1 = drizzle(db);
-    return d1
+export async function getArticles(db: BetterSQLite3Database, limit = 20, offset = 0) {
+    return db
         .select()
         .from(articles)
         .orderBy(desc(articles.publishedAt))
@@ -13,14 +12,13 @@ export async function getArticles(db: D1Database, limit = 20, offset = 0) {
         .all();
 }
 
-export async function getArticleById(db: D1Database, id: string) {
-    const d1 = drizzle(db);
-    const result = await d1.select().from(articles).where(eq(articles.id, id)).all();
+export async function getArticleById(db: BetterSQLite3Database, id: string) {
+    const result = await db.select().from(articles).where(eq(articles.id, id)).all();
     return result[0] || null;
 }
 
 export async function upsertArticle(
-    db: D1Database,
+    db: BetterSQLite3Database,
     article: {
         id: string;
         feedId: string;
@@ -34,8 +32,7 @@ export async function upsertArticle(
         mediaPending?: boolean;
     }
 ) {
-    const d1 = drizzle(db);
-    return d1
+    return db
         .insert(articles)
         .values({
             id: article.id,
