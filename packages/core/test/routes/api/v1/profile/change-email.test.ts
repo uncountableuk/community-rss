@@ -26,15 +26,18 @@ vi.stubGlobal('crypto', { randomUUID: () => 'test-uuid-1234' });
 import { POST } from '@routes/api/v1/profile/change-email';
 import { mockUsers } from '@fixtures/users';
 
-const mockEnv = {
-    DB: {} as D1Database,
-    PUBLIC_SITE_URL: 'http://localhost:4321',
+const mockApp = {
+    db: {} as Record<string, unknown>,
+    config: { email: undefined } as Record<string, unknown>,
+    env: {
+        PUBLIC_SITE_URL: 'http://localhost:4321',
+    } as Record<string, unknown>,
 };
 
-function createContext(request: Request, env: Record<string, unknown> = mockEnv) {
+function createContext(request: Request, app: Record<string, unknown> | null = mockApp) {
     return {
         request,
-        locals: { runtime: { env } },
+        locals: { app },
         params: {},
         redirect: (url: string) =>
             new Response(null, { status: 302, headers: { Location: url } }),
@@ -166,7 +169,7 @@ describe('POST /api/v1/profile/change-email', () => {
         expect(response.status).toBe(200);
 
         expect(mocks.mockSetPendingEmail).toHaveBeenCalledWith(
-            mockEnv.DB,
+            mockApp.db,
             mockUsers.registered.id,
             'new@example.com',
             'test-uuid-1234',
@@ -174,7 +177,7 @@ describe('POST /api/v1/profile/change-email', () => {
         );
 
         expect(mocks.mockSendEmailChangeEmail).toHaveBeenCalledWith(
-            mockEnv,
+            mockApp,
             'new@example.com',
             expect.stringContaining('/auth/verify-email-change?token=test-uuid-1234'),
             undefined,

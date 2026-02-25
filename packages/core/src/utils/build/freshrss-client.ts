@@ -1,4 +1,4 @@
-import type { Env } from '../../types/env';
+import type { EnvironmentVariables } from '../../types/context';
 import type { FreshRssSubscriptionListResponse, FreshRssStreamResponse } from '../../types/freshrss';
 
 /**
@@ -20,7 +20,7 @@ export class FreshRssClient {
     private authToken: string | null = null;
     private cfAccessHeaders: { id: string; secret: string } | null = null;
 
-    constructor(env: Env) {
+    constructor(env: EnvironmentVariables) {
         // Ensure URL doesn't end with a slash
         this.baseUrl = env.FRESHRSS_URL.replace(/\/$/, '');
         this.user = env.FRESHRSS_USER;

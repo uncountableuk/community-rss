@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { createIntegration } from '../../src/integration';
 
 describe('Integration Factory', () => {
@@ -41,41 +41,40 @@ describe('Integration Factory', () => {
       expect(integration.name).toBe('community-rss');
     });
 
-    it('should inject all routes via astro:config:setup', () => {
+    it('should inject all API routes via astro:config:setup', () => {
       const integration = createIntegration();
       const injectedRoutes: Array<{ pattern: string; entrypoint: string }> = [];
       const mockInjectRoute = (route: { pattern: string; entrypoint: string }) => {
         injectedRoutes.push(route);
       };
+      const mockAddMiddleware = vi.fn();
 
-      // Call the hook with a mock injectRoute
+      // Call the hook with a mock injectRoute and addMiddleware
       const setupHook = integration.hooks['astro:config:setup'] as (params: {
         injectRoute: typeof mockInjectRoute;
+        addMiddleware: typeof mockAddMiddleware;
       }) => void;
-      setupHook({ injectRoute: mockInjectRoute });
+      setupHook({ injectRoute: mockInjectRoute, addMiddleware: mockAddMiddleware });
 
-      expect(injectedRoutes).toHaveLength(19);
+      expect(injectedRoutes).toHaveLength(11);
 
       const patterns = injectedRoutes.map((r) => r.pattern);
       expect(patterns).toContain('/api/v1/health');
       expect(patterns).toContain('/api/v1/articles');
       expect(patterns).toContain('/api/v1/admin/sync');
       expect(patterns).toContain('/api/v1/admin/feeds');
-      expect(patterns).toContain('/');
-      expect(patterns).toContain('/article/[id]');
       expect(patterns).toContain('/api/auth/[...all]');
-      expect(patterns).toContain('/auth/signin');
-      expect(patterns).toContain('/auth/verify');
-      expect(patterns).toContain('/api/dev/seed');
-      expect(patterns).toContain('/auth/signup');
       expect(patterns).toContain('/api/v1/auth/check-email');
       expect(patterns).toContain('/api/v1/auth/signup');
-      expect(patterns).toContain('/profile');
       expect(patterns).toContain('/api/v1/profile');
-      expect(patterns).toContain('/terms');
       expect(patterns).toContain('/api/v1/profile/change-email');
       expect(patterns).toContain('/api/v1/profile/confirm-email-change');
-      expect(patterns).toContain('/auth/verify-email-change');
+      expect(patterns).toContain('/api/dev/seed');
+
+      // Verify middleware was registered
+      expect(mockAddMiddleware).toHaveBeenCalledWith(
+        expect.objectContaining({ order: 'pre' }),
+      );
 
       const healthRoute = injectedRoutes.find((r) => r.pattern === '/api/v1/health');
       expect(healthRoute?.entrypoint).toContain('health.ts');

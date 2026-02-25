@@ -1,15 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { sendMagicLinkEmail, sendEmailChangeEmail } from '@utils/build/email';
-import type { Env } from '@core-types/env';
+import type { AppContext, EnvironmentVariables } from '@core-types/context';
+import type { ResolvedCommunityRssOptions, EmailConfig } from '@core-types/options';
 
 // Mock global fetch
 const mockFetch = vi.fn();
 vi.stubGlobal('fetch', mockFetch);
 
-const baseEnv: Env = {
-    DB: {} as D1Database,
-    MEDIA_BUCKET: {} as R2Bucket,
-    ARTICLE_QUEUE: {} as Queue,
+const baseEnv: EnvironmentVariables = {
+    DATABASE_PATH: './data/test.db',
     FRESHRSS_URL: 'http://freshrss:80',
     FRESHRSS_USER: 'admin',
     FRESHRSS_API_PASSWORD: 'password',
@@ -24,6 +23,14 @@ const baseEnv: Env = {
     MEDIA_BASE_URL: 'http://localhost:9000/bucket',
 };
 
+function makeApp(emailConfig?: EmailConfig, envOverrides?: Partial<EnvironmentVariables>): AppContext {
+    return {
+        db: {} as any,
+        config: { email: emailConfig } as ResolvedCommunityRssOptions,
+        env: { ...baseEnv, ...envOverrides },
+    };
+}
+
 describe('email (facade)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -33,10 +40,8 @@ describe('email (facade)', () => {
         it('should send via Resend when transport is "resend" and RESEND_API_KEY is set', async () => {
             mockFetch.mockResolvedValueOnce({ ok: true });
 
-            const env = { ...baseEnv, RESEND_API_KEY: 'test-key-123' };
-            await sendMagicLinkEmail(env, 'user@example.com', 'https://example.com/verify?token=abc', {
-                transport: 'resend',
-            });
+            const app = makeApp({ transport: 'resend' }, { RESEND_API_KEY: 'test-key-123' });
+            await sendMagicLinkEmail(app, 'user@example.com', 'https://example.com/verify?token=abc');
 
             expect(mockFetch).toHaveBeenCalledWith(
                 'https://api.resend.com/emails',
@@ -56,9 +61,8 @@ describe('email (facade)', () => {
         it('should send via SMTP when transport is "smtp"', async () => {
             mockFetch.mockResolvedValueOnce({ ok: true });
 
-            await sendMagicLinkEmail(baseEnv, 'user@example.com', 'https://example.com/verify?token=abc', {
-                transport: 'smtp',
-            });
+            const app = makeApp({ transport: 'smtp' });
+            await sendMagicLinkEmail(app, 'user@example.com', 'https://example.com/verify?token=abc');
 
             expect(mockFetch).toHaveBeenCalledWith(
                 'http://mailpit:8025/api/v1/send',
@@ -71,8 +75,8 @@ describe('email (facade)', () => {
         it('should use EMAIL_TRANSPORT env var as fallback', async () => {
             mockFetch.mockResolvedValueOnce({ ok: true });
 
-            const env = { ...baseEnv, EMAIL_TRANSPORT: 'smtp' };
-            await sendMagicLinkEmail(env, 'user@example.com', 'https://example.com/verify');
+            const app = makeApp(undefined, { EMAIL_TRANSPORT: 'smtp' });
+            await sendMagicLinkEmail(app, 'user@example.com', 'https://example.com/verify');
 
             expect(mockFetch).toHaveBeenCalledWith(
                 'http://mailpit:8025/api/v1/send',
@@ -83,12 +87,11 @@ describe('email (facade)', () => {
         it('should use emailConfig.from when provided', async () => {
             mockFetch.mockResolvedValueOnce({ ok: true });
 
-            const env = { ...baseEnv, RESEND_API_KEY: 'key' };
-            await sendMagicLinkEmail(env, 'user@example.com', 'https://example.com/verify', {
-                from: 'custom@example.com',
-                appName: 'My App',
-                transport: 'resend',
-            });
+            const app = makeApp(
+                { from: 'custom@example.com', appName: 'My App', transport: 'resend' },
+                { RESEND_API_KEY: 'key' },
+            );
+            await sendMagicLinkEmail(app, 'user@example.com', 'https://example.com/verify');
 
             const body = JSON.parse(mockFetch.mock.calls[0][1].body);
             expect(body.from).toBe('custom@example.com');
@@ -98,10 +101,8 @@ describe('email (facade)', () => {
         it('should fall back to SMTP_FROM when no emailConfig.from', async () => {
             mockFetch.mockResolvedValueOnce({ ok: true });
 
-            const env = { ...baseEnv, RESEND_API_KEY: 'key' };
-            await sendMagicLinkEmail(env, 'user@example.com', 'https://example.com/verify', {
-                transport: 'resend',
-            });
+            const app = makeApp({ transport: 'resend' }, { RESEND_API_KEY: 'key' });
+            await sendMagicLinkEmail(app, 'user@example.com', 'https://example.com/verify');
 
             const body = JSON.parse(mockFetch.mock.calls[0][1].body);
             expect(body.from).toBe('noreply@localhost');
@@ -114,10 +115,10 @@ describe('email (facade)', () => {
                 text: () => Promise.resolve('Invalid email'),
             });
 
-            const env = { ...baseEnv, RESEND_API_KEY: 'key' };
+            const app = makeApp({ transport: 'resend' }, { RESEND_API_KEY: 'key' });
 
             await expect(
-                sendMagicLinkEmail(env, 'bad', 'https://example.com/verify', { transport: 'resend' }),
+                sendMagicLinkEmail(app, 'bad', 'https://example.com/verify'),
             ).rejects.toThrow('Resend email failed (422)');
         });
 
@@ -125,9 +126,8 @@ describe('email (facade)', () => {
             mockFetch.mockRejectedValueOnce(new Error('Connection refused'));
             const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => { });
 
-            await sendMagicLinkEmail(baseEnv, 'user@example.com', 'https://example.com/verify', {
-                transport: 'smtp',
-            });
+            const app = makeApp({ transport: 'smtp' });
+            await sendMagicLinkEmail(app, 'user@example.com', 'https://example.com/verify');
 
             expect(consoleSpy).toHaveBeenCalledWith(
                 expect.stringContaining('Email delivery failed'),
@@ -139,9 +139,9 @@ describe('email (facade)', () => {
         it('should include magic link URL in email body', async () => {
             mockFetch.mockResolvedValueOnce({ ok: true });
 
-            const env = { ...baseEnv, RESEND_API_KEY: 'key' };
+            const app = makeApp({ transport: 'resend' }, { RESEND_API_KEY: 'key' });
             const url = 'https://example.com/verify?token=secret123';
-            await sendMagicLinkEmail(env, 'user@example.com', url, { transport: 'resend' });
+            await sendMagicLinkEmail(app, 'user@example.com', url);
 
             const body = JSON.parse(mockFetch.mock.calls[0][1].body);
             expect(body.text).toContain(url);
@@ -151,12 +151,11 @@ describe('email (facade)', () => {
         it('should use welcome template when isWelcome is true', async () => {
             mockFetch.mockResolvedValueOnce({ ok: true });
 
-            const env = { ...baseEnv, RESEND_API_KEY: 'key' };
+            const app = makeApp({ transport: 'resend' }, { RESEND_API_KEY: 'key' });
             await sendMagicLinkEmail(
-                env,
+                app,
                 'user@example.com',
                 'https://example.com/verify',
-                { transport: 'resend' },
                 true,
             );
 
@@ -167,12 +166,11 @@ describe('email (facade)', () => {
         it('should pass profile data for email personalisation', async () => {
             mockFetch.mockResolvedValueOnce({ ok: true });
 
-            const env = { ...baseEnv, RESEND_API_KEY: 'key' };
+            const app = makeApp({ transport: 'resend' }, { RESEND_API_KEY: 'key' });
             await sendMagicLinkEmail(
-                env,
+                app,
                 'jim@example.com',
                 'https://example.com/verify',
-                { transport: 'resend' },
                 false,
                 { name: 'Jim', email: 'jim@example.com' },
             );
@@ -185,7 +183,8 @@ describe('email (facade)', () => {
         it('should skip sending when no transport configured', async () => {
             const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => { });
 
-            await sendMagicLinkEmail(baseEnv, 'user@example.com', 'https://example.com/verify');
+            const app = makeApp();
+            await sendMagicLinkEmail(app, 'user@example.com', 'https://example.com/verify');
 
             expect(mockFetch).not.toHaveBeenCalled();
             expect(warnSpy).toHaveBeenCalledWith(
@@ -199,10 +198,8 @@ describe('email (facade)', () => {
         it('should send via Resend when transport is "resend"', async () => {
             mockFetch.mockResolvedValueOnce({ ok: true });
 
-            const env = { ...baseEnv, RESEND_API_KEY: 'key' };
-            await sendEmailChangeEmail(env, 'new@example.com', 'https://example.com/confirm?token=abc', {
-                transport: 'resend',
-            });
+            const app = makeApp({ transport: 'resend' }, { RESEND_API_KEY: 'key' });
+            await sendEmailChangeEmail(app, 'new@example.com', 'https://example.com/confirm?token=abc');
 
             expect(mockFetch).toHaveBeenCalledWith(
                 'https://api.resend.com/emails',
@@ -217,9 +214,8 @@ describe('email (facade)', () => {
         it('should send via SMTP when transport is "smtp"', async () => {
             mockFetch.mockResolvedValueOnce({ ok: true });
 
-            await sendEmailChangeEmail(baseEnv, 'new@example.com', 'https://example.com/confirm', {
-                transport: 'smtp',
-            });
+            const app = makeApp({ transport: 'smtp' });
+            await sendEmailChangeEmail(app, 'new@example.com', 'https://example.com/confirm');
 
             expect(mockFetch).toHaveBeenCalledWith(
                 'http://mailpit:8025/api/v1/send',
@@ -230,9 +226,9 @@ describe('email (facade)', () => {
         it('should include verification URL in email body', async () => {
             mockFetch.mockResolvedValueOnce({ ok: true });
 
-            const env = { ...baseEnv, RESEND_API_KEY: 'key' };
+            const app = makeApp({ transport: 'resend' }, { RESEND_API_KEY: 'key' });
             const url = 'https://example.com/confirm?token=tok123';
-            await sendEmailChangeEmail(env, 'new@example.com', url, { transport: 'resend' });
+            await sendEmailChangeEmail(app, 'new@example.com', url);
 
             const body = JSON.parse(mockFetch.mock.calls[0][1].body);
             expect(body.text).toContain(url);
@@ -242,12 +238,11 @@ describe('email (facade)', () => {
         it('should use emailConfig.appName in subject when provided', async () => {
             mockFetch.mockResolvedValueOnce({ ok: true });
 
-            const env = { ...baseEnv, RESEND_API_KEY: 'key' };
-            await sendEmailChangeEmail(env, 'new@example.com', 'https://example.com/verify', {
-                from: 'hello@myapp.com',
-                appName: 'My App',
-                transport: 'resend',
-            });
+            const app = makeApp(
+                { from: 'hello@myapp.com', appName: 'My App', transport: 'resend' },
+                { RESEND_API_KEY: 'key' },
+            );
+            await sendEmailChangeEmail(app, 'new@example.com', 'https://example.com/verify');
 
             const body = JSON.parse(mockFetch.mock.calls[0][1].body);
             expect(body.subject).toContain('My App');
@@ -257,12 +252,12 @@ describe('email (facade)', () => {
         it('should pass profile data for email personalisation', async () => {
             mockFetch.mockResolvedValueOnce({ ok: true });
 
-            const env = { ...baseEnv, RESEND_API_KEY: 'key' };
+            const app = makeApp({ transport: 'resend' }, { RESEND_API_KEY: 'key' });
             await sendEmailChangeEmail(
-                env,
+                app,
                 'new@example.com',
                 'https://example.com/verify',
-                { transport: 'resend' },
+                undefined,
                 { name: 'Sarah', email: 'sarah@example.com' },
             );
 

@@ -23,13 +23,11 @@ vi.mock('../../../../src/db/queries/articles', () => ({
     ]),
 }));
 
-function createMockContext(url: string, env?: Record<string, unknown>) {
+function createMockContext(url: string, app?: Record<string, unknown> | null) {
     return {
         request: new Request(url),
         locals: {
-            runtime: {
-                env: env || { DB: {} },
-            },
+            app: app === undefined ? { db: {}, config: {}, env: {} } : app,
         },
         // Minimal Astro context stubs
         params: {},
@@ -77,8 +75,6 @@ describe('GET /api/v1/articles', () => {
 
     it('returns 503 when database is not available', async () => {
         const ctx = createMockContext('http://localhost:4321/api/v1/articles', {});
-        // Override locals to have no DB
-        ctx.locals = { runtime: { env: {} } };
         const response = await GET(ctx);
 
         expect(response.status).toBe(503);

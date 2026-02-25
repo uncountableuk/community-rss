@@ -3,7 +3,7 @@ import { setupServer } from 'msw/node';
 import { http, HttpResponse } from 'msw';
 import { syncFeeds, generateFeedId, itemToQueueMessage } from '@utils/build/sync';
 import { mockFeedsResponse, mockArticlesResponse } from '@fixtures/freshrss-responses';
-import type { Env } from '@core-types/env';
+import type { AppContext } from '@core-types/context';
 
 // Mock the DB query module so syncFeeds doesn't hit real Drizzle
 vi.mock('../../../src/db/queries/feeds', () => ({
@@ -14,18 +14,29 @@ vi.mock('../../../src/db/queries/users', () => ({
     ensureSystemUser: vi.fn().mockResolvedValue(undefined),
 }));
 
-const mockQueue = {
-    send: vi.fn().mockResolvedValue(undefined),
-};
+vi.mock('../../../src/db/queries/articles', () => ({
+    upsertArticle: vi.fn().mockResolvedValue([]),
+}));
 
-const mockEnv: Env = {
-    FRESHRSS_URL: 'https://freshrss.example.com',
-    FRESHRSS_USER: 'admin',
-    FRESHRSS_API_PASSWORD: 'password123',
-    DB: {} as D1Database,
-    ARTICLE_QUEUE: mockQueue,
-    MEDIA_BUCKET: {} as R2Bucket,
-} as unknown as Env;
+const mockApp: AppContext = {
+    db: {} as any,
+    config: {} as any,
+    env: {
+        DATABASE_PATH: './data/test.db',
+        FRESHRSS_URL: 'https://freshrss.example.com',
+        FRESHRSS_USER: 'admin',
+        FRESHRSS_API_PASSWORD: 'password123',
+        PUBLIC_SITE_URL: 'http://localhost:4321',
+        SMTP_HOST: 'localhost',
+        SMTP_PORT: '1025',
+        SMTP_FROM: 'noreply@localhost',
+        S3_ENDPOINT: 'http://minio:9000',
+        S3_ACCESS_KEY: 'key',
+        S3_SECRET_KEY: 'secret',
+        S3_BUCKET: 'bucket',
+        MEDIA_BASE_URL: 'http://localhost:9000/bucket',
+    },
+};
 
 const MOCK_AUTH_TOKEN = 'admin/abc123synctoken';
 
@@ -84,21 +95,22 @@ describe('syncFeeds', () => {
         vi.clearAllMocks();
     });
 
-    it('syncs feeds and enqueues articles', async () => {
-        const result = await syncFeeds(mockEnv);
+    it('syncs feeds and processes articles inline', async () => {
+        const result = await syncFeeds(mockApp);
 
         expect(result.feedsProcessed).toBe(2); // 2 subscriptions
-        expect(result.articlesEnqueued).toBe(4); // 2 articles × 2 feeds
-        expect(mockQueue.send).toHaveBeenCalledTimes(4);
+        expect(result.articlesProcessed).toBe(4); // 2 articles × 2 feeds
     });
 
-    it('sends correct queue messages', async () => {
-        await syncFeeds(mockEnv);
+    it('processes articles with correct data', async () => {
+        const { upsertArticle } = await import('../../../src/db/queries/articles');
+        await syncFeeds(mockApp);
 
-        const firstCall = mockQueue.send.mock.calls[0][0];
-        expect(firstCall).toHaveProperty('freshrssItemId');
-        expect(firstCall).toHaveProperty('feedId');
-        expect(firstCall).toHaveProperty('title');
+        expect(upsertArticle).toHaveBeenCalledTimes(4);
+        const firstCall = (upsertArticle as ReturnType<typeof vi.fn>).mock.calls[0];
+        expect(firstCall[1]).toHaveProperty('freshrssItemId');
+        expect(firstCall[1]).toHaveProperty('feedId');
+        expect(firstCall[1]).toHaveProperty('title');
     });
 
     it('handles FreshRSS API errors', async () => {
@@ -108,6 +120,6 @@ describe('syncFeeds', () => {
             }),
         );
 
-        await expect(syncFeeds(mockEnv)).rejects.toThrow('FreshRSS login failed');
+        await expect(syncFeeds(mockApp)).rejects.toThrow('FreshRSS login failed');
     });
 });

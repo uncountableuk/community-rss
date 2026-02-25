@@ -26,27 +26,28 @@ describe('auth catch-all route', () => {
         vi.clearAllMocks();
     });
 
-    const mockEnv = {
-        DB: {} as D1Database,
-        MEDIA_BUCKET: {} as R2Bucket,
-        ARTICLE_QUEUE: {} as Queue,
-        FRESHRSS_URL: 'http://freshrss:80',
-        FRESHRSS_USER: 'admin',
-        FRESHRSS_API_PASSWORD: 'password',
-        PUBLIC_SITE_URL: 'http://localhost:4321',
-        SMTP_HOST: 'mailpit',
-        SMTP_PORT: '1025',
-        SMTP_FROM: 'noreply@localhost',
-        S3_ENDPOINT: 'http://minio:9000',
-        S3_ACCESS_KEY: 'key',
-        S3_SECRET_KEY: 'secret',
-        S3_BUCKET: 'bucket',
-        MEDIA_BASE_URL: 'http://localhost:9000/bucket',
+    const mockApp = {
+        db: {} as Record<string, unknown>,
+        config: { email: undefined } as Record<string, unknown>,
+        env: {
+            FRESHRSS_URL: 'http://freshrss:80',
+            FRESHRSS_USER: 'admin',
+            FRESHRSS_API_PASSWORD: 'password',
+            PUBLIC_SITE_URL: 'http://localhost:4321',
+            SMTP_HOST: 'mailpit',
+            SMTP_PORT: '1025',
+            SMTP_FROM: 'noreply@localhost',
+            S3_ENDPOINT: 'http://minio:9000',
+            S3_ACCESS_KEY: 'key',
+            S3_SECRET_KEY: 'secret',
+            S3_BUCKET: 'bucket',
+            MEDIA_BASE_URL: 'http://localhost:9000/bucket',
+        } as Record<string, unknown>,
     };
 
     const createContext = (url: string, options: RequestInit = {}) => ({
         request: new Request(url, options),
-        locals: { runtime: { env: mockEnv } },
+        locals: { app: mockApp },
         // Provide minimal Astro API context stubs
         params: {},
         redirect: vi.fn(),
@@ -75,7 +76,7 @@ describe('auth catch-all route', () => {
 
     it('should return 503 when DB is not available', async () => {
         const ctx = createContext('http://localhost:4321/api/auth/get-session');
-        ctx.locals = { runtime: { env: undefined } } as any;
+        ctx.locals = { app: undefined } as any;
 
         const response = await ALL(ctx as any);
 
@@ -97,7 +98,7 @@ describe('auth catch-all route', () => {
         const response = await ALL(ctx as any);
 
         expect(mockMigrateGuestToUser).toHaveBeenCalledWith(
-            mockEnv.DB,
+            mockApp.db,
             'guest-uuid-123',
             'new-user-1',
         );

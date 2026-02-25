@@ -1,8 +1,9 @@
 /**
- * Cloudflare environment bindings for the Community RSS framework.
+ * Legacy Cloudflare environment bindings for the Community RSS framework.
  *
- * These bindings are configured in `wrangler.toml` and injected
- * at runtime by the Cloudflare Workers platform.
+ * @deprecated Since 0.4.0. Use `AppContext` from `./context` instead.
+ * This interface is kept for backward compatibility and will be removed
+ * in the next major version.
  *
  * @since 0.1.0
  */

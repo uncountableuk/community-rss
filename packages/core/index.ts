@@ -33,7 +33,9 @@ export default function communityRss(options?: CommunityRssOptions): AstroIntegr
 }
 
 // Public type exports
-export type { CommunityRssOptions, EmailConfig } from './src/types/options';
+export type { CommunityRssOptions, EmailConfig, ResolvedCommunityRssOptions } from './src/types/options';
+export type { AppContext, EnvironmentVariables } from './src/types/context';
+/** @deprecated Use AppContext and EnvironmentVariables from types/context instead */
 export type { Env } from './src/types/env';
 export type {
   UserTier,

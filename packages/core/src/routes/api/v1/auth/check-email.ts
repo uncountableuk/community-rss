@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { getUserByEmail } from '../../../../db/queries/users';
-import type { Env } from '../../../../types/env';
+import type { AppContext } from '../../../../types/context';
 
 /**
  * Check whether an email address is already registered.
@@ -13,9 +13,9 @@ import type { Env } from '../../../../types/env';
  * @since 0.3.0
  */
 export const GET: APIRoute = async ({ request, locals }) => {
-    const env = (locals as { runtime?: { env?: Env } }).runtime?.env;
+    const app = (locals as { app?: AppContext }).app;
 
-    if (!env?.DB) {
+    if (!app?.db) {
         return new Response(
             JSON.stringify({ error: 'Database not available' }),
             { status: 503, headers: { 'Content-Type': 'application/json' } },
@@ -41,7 +41,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
     }
 
     try {
-        const user = await getUserByEmail(env.DB, email);
+        const user = await getUserByEmail(app.db, email);
         const exists = user !== null && !user.isGuest;
 
         return new Response(

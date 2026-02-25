@@ -7,7 +7,11 @@ import { resolveOptions } from './types/options';
  *
  * This is the main entry point for consumers. It accepts an optional
  * configuration object and returns an Astro integration that injects
- * routes, components, and layouts into the consumer's project.
+ * API routes, middleware, and scheduler lifecycle hooks into the
+ * consumer's project.
+ *
+ * Page routes are no longer injected — use `npx @community-rss/core init`
+ * to scaffold pages into your project.
  *
  * @param options - Framework configuration
  * @returns Astro integration instance
@@ -29,7 +33,15 @@ export function createIntegration(options: CommunityRssOptions = {}): AstroInteg
   return {
     name: 'community-rss',
     hooks: {
-      'astro:config:setup': ({ injectRoute }) => {
+      'astro:config:setup': ({ injectRoute, addMiddleware: registerMiddleware }) => {
+        // Register middleware that creates AppContext on every request
+        registerMiddleware({
+          entrypoint: new URL('./middleware.ts', import.meta.url).pathname,
+          order: 'pre',
+        });
+
+        // --- API Routes (injected — update automatically with package) ---
+
         // Health check route — validates integration wiring
         injectRoute({
           pattern: '/api/v1/health',
@@ -40,18 +52,6 @@ export function createIntegration(options: CommunityRssOptions = {}): AstroInteg
         injectRoute({
           pattern: '/api/v1/articles',
           entrypoint: new URL('./routes/api/v1/articles.ts', import.meta.url).pathname,
-        });
-
-        // Homepage
-        injectRoute({
-          pattern: '/',
-          entrypoint: new URL('./routes/pages/index.astro', import.meta.url).pathname,
-        });
-
-        // Article detail page (direct URL access / SEO)
-        injectRoute({
-          pattern: '/article/[id]',
-          entrypoint: new URL('./routes/pages/article/[id].astro', import.meta.url).pathname,
         });
 
         // Admin: manual sync trigger (local dev / operator use)
@@ -72,22 +72,6 @@ export function createIntegration(options: CommunityRssOptions = {}): AstroInteg
           entrypoint: new URL('./routes/api/auth/[...all].ts', import.meta.url).pathname,
         });
 
-        // Auth pages
-        injectRoute({
-          pattern: '/auth/signin',
-          entrypoint: new URL('./routes/pages/auth/signin.astro', import.meta.url).pathname,
-        });
-
-        injectRoute({
-          pattern: '/auth/signup',
-          entrypoint: new URL('./routes/pages/auth/signup.astro', import.meta.url).pathname,
-        });
-
-        injectRoute({
-          pattern: '/auth/verify',
-          entrypoint: new URL('./routes/pages/auth/verify.astro', import.meta.url).pathname,
-        });
-
         // Auth API: email pre-check for sign-in/sign-up routing
         injectRoute({
           pattern: '/api/v1/auth/check-email',
@@ -98,12 +82,6 @@ export function createIntegration(options: CommunityRssOptions = {}): AstroInteg
         injectRoute({
           pattern: '/api/v1/auth/signup',
           entrypoint: new URL('./routes/api/v1/auth/signup.ts', import.meta.url).pathname,
-        });
-
-        // User profile page
-        injectRoute({
-          pattern: '/profile',
-          entrypoint: new URL('./routes/pages/profile.astro', import.meta.url).pathname,
         });
 
         // User profile API
@@ -124,18 +102,6 @@ export function createIntegration(options: CommunityRssOptions = {}): AstroInteg
           entrypoint: new URL('./routes/api/v1/profile/confirm-email-change.ts', import.meta.url).pathname,
         });
 
-        // Email change verification page
-        injectRoute({
-          pattern: '/auth/verify-email-change',
-          entrypoint: new URL('./routes/pages/auth/verify-email-change.astro', import.meta.url).pathname,
-        });
-
-        // Terms of Service page (placeholder — consumers override)
-        injectRoute({
-          pattern: '/terms',
-          entrypoint: new URL('./routes/pages/terms.astro', import.meta.url).pathname,
-        });
-
         // Dev-only seed endpoint
         injectRoute({
           pattern: '/api/dev/seed',
@@ -147,6 +113,8 @@ export function createIntegration(options: CommunityRssOptions = {}): AstroInteg
         logger.info(`Community RSS integration loaded`);
         logger.info(`  maxFeeds: ${config.maxFeeds}`);
         logger.info(`  commentTier: ${config.commentTier}`);
+        logger.info(`  databasePath: ${config.databasePath}`);
+        logger.info(`  syncSchedule: ${config.syncSchedule}`);
       },
     },
   };

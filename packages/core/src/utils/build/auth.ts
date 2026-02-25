@@ -1,9 +1,8 @@
 /**
  * better-auth configuration factory for Community RSS.
  *
- * Creates a better-auth instance configured for D1 (SQLite) with
- * magic-link authentication. Each request needs its own instance
- * because Cloudflare Workers bindings are per-request.
+ * Creates a better-auth instance configured for SQLite (better-sqlite3)
+ * with magic-link authentication.
  *
  * **CRITICAL:** `baseURL` must be set to `env.PUBLIC_SITE_URL`
  * (e.g., `http://localhost:4321` in local dev). Without this,
@@ -16,32 +15,24 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { magicLink } from 'better-auth/plugins/magic-link';
-import { drizzle } from 'drizzle-orm/d1';
 import * as schema from '../../db/schema';
-import type { Env } from '../../types/env';
-import type { EmailConfig } from '../../types/options';
+import type { AppContext } from '../../types/context';
 import { sendMagicLinkEmail } from './email';
 import { getPendingSignup } from '../../db/queries/pending-signups';
 import { getUserByEmail } from '../../db/queries/users';
 import type { EmailUserProfile } from '../../types/email';
 
 /**
- * Creates a configured better-auth instance for the current request.
+ * Creates a configured better-auth instance.
  *
- * Not a singleton — each request receives fresh env bindings from
- * Cloudflare Workers, so a new auth instance is needed per-request.
- *
- * @param env - Cloudflare environment bindings
- * @param emailConfig - Optional email configuration from integration options
+ * @param app - Application context containing database and configuration
  * @returns Configured better-auth instance
  * @since 0.3.0
  */
-export function createAuth(env: Env, emailConfig?: EmailConfig) {
-    const db = drizzle(env.DB);
-
+export function createAuth(app: AppContext) {
     return betterAuth({
-        baseURL: env.PUBLIC_SITE_URL,
-        database: drizzleAdapter(db, {
+        baseURL: app.env.PUBLIC_SITE_URL,
+        database: drizzleAdapter(app.db, {
             provider: 'sqlite',
             schema,
             usePlural: true,
@@ -56,7 +47,7 @@ export function createAuth(env: Env, emailConfig?: EmailConfig) {
                     let isWelcome = false;
                     let profile: EmailUserProfile | undefined;
                     try {
-                        const pending = await getPendingSignup(env.DB, email);
+                        const pending = await getPendingSignup(app.db, email);
                         isWelcome = pending !== null;
                         if (pending?.name) {
                             profile = { name: pending.name, email };
@@ -68,7 +59,7 @@ export function createAuth(env: Env, emailConfig?: EmailConfig) {
                     // For returning users, look up their profile for personalisation
                     if (!profile) {
                         try {
-                            const user = await getUserByEmail(env.DB, email);
+                            const user = await getUserByEmail(app.db, email);
                             if (user?.name) {
                                 profile = {
                                     name: user.name,
@@ -81,7 +72,7 @@ export function createAuth(env: Env, emailConfig?: EmailConfig) {
                         }
                     }
 
-                    await sendMagicLinkEmail(env, email, verifyUrl, emailConfig, isWelcome, profile);
+                    await sendMagicLinkEmail(app, email, verifyUrl, isWelcome, profile);
                 },
                 expiresIn: 3600, // 60 minutes (increased from 5 for local dev testing)
             }),
@@ -151,18 +142,16 @@ export type AuthInstance = ReturnType<typeof createAuth>;
  * Extracts and validates the session from a request.
  *
  * @param request - The incoming HTTP request
- * @param env - Cloudflare environment bindings
- * @param emailConfig - Optional email configuration
+ * @param app - Application context
  * @returns The authenticated session with user data
  * @throws Response with 401 status if not authenticated
  * @since 0.3.0
  */
 export async function requireAuth(
     request: Request,
-    env: Env,
-    emailConfig?: EmailConfig,
+    app: AppContext,
 ) {
-    const auth = createAuth(env, emailConfig);
+    const auth = createAuth(app);
     const session = await auth.api.getSession({
         headers: request.headers,
     });
@@ -181,18 +170,16 @@ export async function requireAuth(
  * Extracts session and verifies admin role.
  *
  * @param request - The incoming HTTP request
- * @param env - Cloudflare environment bindings
- * @param emailConfig - Optional email configuration
+ * @param app - Application context
  * @returns The authenticated admin session
  * @throws Response with 401 if not authenticated, 403 if not admin
  * @since 0.3.0
  */
 export async function requireAdmin(
     request: Request,
-    env: Env,
-    emailConfig?: EmailConfig,
+    app: AppContext,
 ) {
-    const session = await requireAuth(request, env, emailConfig);
+    const session = await requireAuth(request, app);
 
     const userRole = ((session.user as unknown) as Record<string, string>).role;
     if (userRole !== 'admin') {

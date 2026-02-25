@@ -11,15 +11,18 @@ vi.mock('@db/queries/users', () => ({
 import { GET } from '@routes/api/v1/profile/confirm-email-change';
 import { mockUsers } from '@fixtures/users';
 
-const mockEnv = {
-    DB: {} as D1Database,
-    PUBLIC_SITE_URL: 'http://localhost:4321',
+const mockApp = {
+    db: {} as Record<string, unknown>,
+    config: { email: undefined } as Record<string, unknown>,
+    env: {
+        PUBLIC_SITE_URL: 'http://localhost:4321',
+    } as Record<string, unknown>,
 };
 
-function createContext(request: Request, env: Record<string, unknown> = mockEnv) {
+function createContext(request: Request, app: Record<string, unknown> | null = mockApp) {
     return {
         request,
-        locals: { runtime: { env } },
+        locals: { app },
         params: {},
         redirect: (url: string) =>
             new Response(null, { status: 302, headers: { Location: url } }),
@@ -75,7 +78,7 @@ describe('GET /api/v1/profile/confirm-email-change', () => {
         expect(response.status).toBe(200);
         const data = (await response.json()) as Record<string, string>;
         expect(data.message).toContain('updated');
-        expect(mocks.mockConfirmEmailChange).toHaveBeenCalledWith(mockEnv.DB, 'valid-token');
+        expect(mocks.mockConfirmEmailChange).toHaveBeenCalledWith(mockApp.db, 'valid-token');
     });
 
     it('should return 500 when an unexpected error occurs', async () => {

@@ -2,7 +2,7 @@ import type { APIRoute } from 'astro';
 import { requireAuth } from '../../../../utils/build/auth';
 import { getUserByEmail, setPendingEmail } from '../../../../db/queries/users';
 import { sendEmailChangeEmail } from '../../../../utils/build/email';
-import type { Env } from '../../../../types/env';
+import type { AppContext } from '../../../../types/context';
 import type { EmailUserProfile } from '../../../../types/email';
 
 /**
@@ -21,9 +21,9 @@ import type { EmailUserProfile } from '../../../../types/email';
  * @since 0.3.0
  */
 export const POST: APIRoute = async ({ request, locals }) => {
-    const env = (locals as { runtime?: { env?: Env } }).runtime?.env;
+    const app = (locals as { app?: AppContext }).app;
 
-    if (!env?.DB) {
+    if (!app?.db) {
         return new Response(
             JSON.stringify({ error: 'Database not available' }),
             { status: 503, headers: { 'Content-Type': 'application/json' } },
@@ -31,7 +31,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     }
 
     try {
-        const session = await requireAuth(request, env);
+        const session = await requireAuth(request, app);
 
         let body: { email?: string };
         try {
@@ -71,7 +71,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         }
 
         // Check whether the new address is already taken
-        const existing = await getUserByEmail(env.DB, newEmail);
+        const existing = await getUserByEmail(app.db, newEmail);
         if (existing) {
             return new Response(
                 JSON.stringify({ code: 'EMAIL_IN_USE', message: 'That email address is already in use' }),
@@ -83,9 +83,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
         const token = crypto.randomUUID();
         const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-        await setPendingEmail(env.DB, session.user.id, newEmail, token, expiresAt);
+        await setPendingEmail(app.db, session.user.id, newEmail, token, expiresAt);
 
-        const siteUrl = env.PUBLIC_SITE_URL ?? 'http://localhost:4321';
+        const siteUrl = app.env.PUBLIC_SITE_URL ?? 'http://localhost:4321';
         const verificationUrl = `${siteUrl}/auth/verify-email-change?token=${token}`;
 
         // Fire-and-forget: email failure is logged but not surfaced to the caller
@@ -95,7 +95,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
                 name: (session.user as Record<string, unknown>).name as string | undefined,
                 email: currentEmail,
             };
-            await sendEmailChangeEmail(env, newEmail, verificationUrl, undefined, profile);
+            await sendEmailChangeEmail(app, newEmail, verificationUrl, undefined, profile);
         } catch (emailErr) {
             console.warn('[community-rss] Email change verification email failed to send:', emailErr);
         }

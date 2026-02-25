@@ -1,7 +1,9 @@
-import type { Env } from '../../types/env';
+import type { AppContext } from '../../types/context';
 import { FreshRssClient } from './freshrss-client';
 import { upsertFeed } from '../../db/queries/feeds';
+import { upsertArticle } from '../../db/queries/articles';
 import { ensureSystemUser } from '../../db/queries/users';
+import { processArticle } from './article-processor';
 import type { FreshRssItem } from '../../types/freshrss';
 
 /**
@@ -54,34 +56,34 @@ export function itemToQueueMessage(item: FreshRssItem, feedId: string): ArticleQ
 }
 
 /**
- * Synchronises feeds and articles from FreshRSS to D1.
+ * Synchronises feeds and articles from FreshRSS to SQLite.
  *
- * This is the main sync orchestrator called by the Cron trigger.
- * It fetches all subscribed feeds from FreshRSS, upserts them into D1,
- * then fetches articles for each feed and enqueues them for processing.
+ * This is the main sync orchestrator. It fetches all subscribed feeds
+ * from FreshRSS, upserts them into the database, then fetches and
+ * processes articles inline (no queue needed with Node.js long-lived process).
  *
- * @param env - Cloudflare environment bindings
+ * @param app - Application context
  * @since 0.2.0
  */
-export async function syncFeeds(env: Env): Promise<{
+export async function syncFeeds(app: AppContext): Promise<{
     feedsProcessed: number;
-    articlesEnqueued: number;
+    articlesProcessed: number;
 }> {
-    const client = new FreshRssClient(env);
+    const client = new FreshRssClient(app.env);
 
     // 0. Ensure the system user exists for feed ownership
-    await ensureSystemUser(env.DB);
+    await ensureSystemUser(app.db);
 
     // 1. Fetch all subscribed feeds
     const { subscriptions } = await client.fetchFeeds();
-    let articlesEnqueued = 0;
+    let articlesProcessed = 0;
 
-    // 2. Upsert each feed into D1
+    // 2. Upsert each feed into the database
     for (const sub of subscriptions) {
         const feedId = generateFeedId(sub.id);
         const category = sub.categories?.[0]?.label || 'Uncategorised';
 
-        await upsertFeed(env.DB, {
+        await upsertFeed(app.db, {
             id: feedId,
             userId: 'system', // System-managed feeds during sync
             feedUrl: sub.url,
@@ -94,16 +96,37 @@ export async function syncFeeds(env: Env): Promise<{
         // 3. Fetch articles for this feed
         const stream = await client.fetchArticles(sub.id);
 
-        // 4. Enqueue each article for processing
+        // 4. Process each article inline (replaces queue-based processing)
         for (const item of stream.items) {
-            const message = itemToQueueMessage(item, feedId);
-            await env.ARTICLE_QUEUE.send(message);
-            articlesEnqueued++;
+            try {
+                const message = itemToQueueMessage(item, feedId);
+                const processed = processArticle(message);
+
+                await upsertArticle(app.db, {
+                    id: crypto.randomUUID(),
+                    feedId: processed.feedId,
+                    freshrssItemId: processed.freshrssItemId,
+                    title: processed.title,
+                    content: processed.content,
+                    summary: processed.summary,
+                    originalLink: processed.originalLink,
+                    authorName: processed.authorName,
+                    publishedAt: processed.publishedAt,
+                    mediaPending: true,
+                });
+
+                articlesProcessed++;
+            } catch (error) {
+                console.error(
+                    `[community-rss] Failed to process article ${item.id}:`,
+                    error,
+                );
+            }
         }
     }
 
     return {
         feedsProcessed: subscriptions.length,
-        articlesEnqueued,
+        articlesProcessed,
     };
 }

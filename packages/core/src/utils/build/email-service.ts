@@ -7,7 +7,8 @@
  * @since 0.3.0
  */
 
-import type { Env } from '../../types/env';
+import type { AppContext } from '../../types/context';
+import type { EnvironmentVariables } from '../../types/context';
 import type { EmailConfig } from '../../types/options';
 import type {
     EmailService,
@@ -23,13 +24,13 @@ import { createResendTransport, createSmtpTransport } from './email-transports';
 /**
  * Resolves the transport adapter from configuration.
  *
- * @param env - Cloudflare environment bindings
+ * @param env - Environment variables
  * @param emailConfig - Email configuration from integration options
  * @returns Resolved EmailTransport or null if not configured
  * @since 0.3.0
  */
 export function resolveTransport(
-    env: Env,
+    env: EnvironmentVariables,
     emailConfig?: EmailConfig,
 ): EmailTransport | null {
     // 1. EmailConfig.transport (integration options) has highest priority
@@ -98,26 +99,25 @@ export function resolveTemplate(
  * Creates a unified email service instance.
  *
  * The service resolves templates and transport from the provided
- * configuration, then exposes a single `send()` method for all
+ * application context, then exposes a single `send()` method for all
  * email types.
  *
- * @param env - Cloudflare environment bindings
- * @param emailConfig - Optional email configuration from integration options
+ * @param app - Application context
  * @returns EmailService instance
  * @since 0.3.0
  *
  * @example
  * ```typescript
- * const emailService = createEmailService(env, options.email);
+ * const emailService = createEmailService(app);
  * await emailService.send('sign-in', 'user@example.com', { url }, { name: 'Jim' });
  * ```
  */
 export function createEmailService(
-    env: Env,
-    emailConfig?: EmailConfig,
+    app: AppContext,
 ): EmailService {
-    const transport = resolveTransport(env, emailConfig);
-    const from = emailConfig?.from ?? env.SMTP_FROM ?? 'noreply@localhost';
+    const emailConfig = app.config.email;
+    const transport = resolveTransport(app.env, emailConfig);
+    const from = emailConfig?.from ?? app.env.SMTP_FROM ?? 'noreply@localhost';
     const appName = emailConfig?.appName ?? 'Community RSS';
 
     return {
