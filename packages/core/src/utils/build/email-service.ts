@@ -20,6 +20,7 @@ import type {
 } from '../../types/email';
 import { defaultTemplates } from './email-templates';
 import { createResendTransport, createSmtpTransport } from './email-transports';
+import { renderEmailTemplate } from './email-renderer';
 
 /**
  * Resolves the transport adapter from configuration.
@@ -136,6 +137,38 @@ export function createEmailService(
                 return;
             }
 
+            // Resolution order:
+            // 1. Code-based custom templates (emailConfig.templates) — highest priority
+            // 2. File-based templates (developer dir → package defaults)
+            // 3. Code-based default templates (built-in)
+
+            // 1. Check code-based custom templates first
+            const customTemplate = emailConfig?.templates?.[type];
+            if (customTemplate) {
+                const context: EmailTemplateContext = { appName, email: to, profile };
+                const content = (customTemplate as EmailTemplateFunction<Record<string, unknown>>)(
+                    context, data as any,
+                );
+                await transport.send({ from, to, subject: content.subject, text: content.text, html: content.html });
+                return;
+            }
+
+            // 2. Try file-based template
+            const greetingText = profile?.name ? `Hi ${profile.name},` : 'Hi there,';
+            const templateVars: Record<string, string> = {
+                appName,
+                greeting: greetingText,
+                email: to,
+                ...(data as Record<string, unknown>) as Record<string, string>,
+            };
+            const templateDir = emailConfig?.templateDir ?? app.config.emailTemplateDir;
+            const fileContent = renderEmailTemplate(type, templateVars, templateDir);
+            if (fileContent) {
+                await transport.send({ from, to, subject: fileContent.subject, text: fileContent.text, html: fileContent.html });
+                return;
+            }
+
+            // 3. Fall back to code-based default template
             const template = resolveTemplate(type, emailConfig);
             if (!template) {
                 console.warn(
@@ -144,22 +177,9 @@ export function createEmailService(
                 return;
             }
 
-            const context: EmailTemplateContext = {
-                appName,
-                email: to,
-                profile,
-            };
-
-            // Cast data as any since template function is generic but data is type-specific
+            const context: EmailTemplateContext = { appName, email: to, profile };
             const content = template(context, data as any);
-
-            await transport.send({
-                from,
-                to,
-                subject: content.subject,
-                text: content.text,
-                html: content.html,
-            });
+            await transport.send({ from, to, subject: content.subject, text: content.text, html: content.html });
         },
     };
 }

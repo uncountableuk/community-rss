@@ -82,6 +82,9 @@ export {
 // Email service factory
 export { createEmailService } from './src/utils/build/email-service';
 
+// Email template renderer
+export { renderEmailTemplate } from './src/utils/build/email-renderer';
+
 // Database exports
 export { createDatabase, closeDatabase } from './src/db/connection';
 
