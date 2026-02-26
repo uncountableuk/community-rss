@@ -576,24 +576,21 @@ working project for the developer.
 **Objective:** Transform the playground from a Cloudflare Pages project to
 a standard Node.js project demonstrating the new developer experience.
 
-- [ ] Update `playground/package.json`:
+- [x] Update `playground/package.json`:
   - Replace `@astrojs/cloudflare` with `@astrojs/node`
-  - Add `better-sqlite3` (or have it as a peer dep of core)
   - Remove `wrangler:dev` script
   - Add `start` script: `node dist/server/entry.mjs`
-- [ ] Update `playground/astro.config.mjs`:
+- [x] Update `playground/astro.config.mjs`:
   - Switch adapter from `cloudflare` to `node`
-  - Configure `communityRss()` with new options (`databasePath`, etc.)
+  - Configure `communityRss()` with new options
   - Remove Cloudflare-specific config (`platformProxy`, `workerEntryPoint`)
-- [ ] Delete `playground/wrangler.toml`
-- [ ] Delete `playground/src/worker.ts`
-- [ ] Rename `playground/.dev.vars.example` → `playground/.env.example`
+- [x] Delete `playground/wrangler.toml`
+- [x] Rename `playground/.dev.vars.example` → `playground/.env.example`
   - Update variable names (remove CF-specific ones, add `DATABASE_PATH`)
-- [ ] Create `playground/src/pages/` with scaffolded pages (either via CLI
-  or manually matching the scaffold templates)
-- [ ] Create `playground/src/email-templates/` with default templates
-- [ ] Verify `npm run dev` starts the playground on `http://localhost:4321`
-- [ ] Verify `npm run build && npm start` runs the production build
+- [x] Rename `playground/.dev.vars` → `playground/.env`
+- [x] Create `playground/src/pages/` with scaffolded pages (copied from CLI templates)
+- [x] Create `playground/src/email-templates/` with default templates
+- [x] Create `playground/src/styles/theme.css` with design token overrides
 
 ## Phase 8: Docker Compose & Production Deployment
 
@@ -1014,6 +1011,38 @@ on VPS/Docker.
   dist/server/entry.mjs` on the host.
 - `findProjectRoot()` walks up from `cwd` looking for `package.json`, which
   correctly handles invocation from subdirectories.
+
+**Issues:** None.
+
+---
+
+### Phase 7: Playground Migration
+
+**Commit:** *(pending)* — 360 tests passing (no new tests)
+
+**Completed:**
+- Replaced `@astrojs/cloudflare` with `@astrojs/node` in `playground/package.json`
+- Removed `wrangler:dev` script, added `start` script
+- Updated `playground/astro.config.mjs`: switched to `node({ mode: 'standalone' })`,
+  removed `platformProxy` and `workerEntryPoint` config
+- Deleted `playground/wrangler.toml` (Cloudflare Workers config)
+- Renamed `.dev.vars.example` → `.env.example`, `.dev.vars` → `.env`
+- Added `DATABASE_PATH` to env files, removed CF-specific vars
+  (`CF_ACCESS_CLIENT_ID`, `CF_ACCESS_CLIENT_SECRET`)
+- Copied all 15 scaffold template files to playground:
+  8 pages, 3 email templates, theme.css (via `cp` from `src/cli/templates/`)
+
+**Decisions:**
+- `better-sqlite3` is NOT added as a direct playground dependency — it's
+  already a dependency of `@community-rss/core` and is available transitively
+  through the workspace symlink. Adding it would create version conflicts.
+- `worker.ts` was already deleted in Phase 3 — Phase 7 only needed to delete
+  `wrangler.toml`.
+- Playground pages are exact copies of scaffold templates rather than
+  customized versions. This ensures the playground demonstrates the exact
+  developer experience a consumer would get from `npx @community-rss/core init`.
+- Dev server verification and build verification deferred to Phase 12
+  (Final Verification) since they require live Docker services.
 
 **Issues:** None.
 

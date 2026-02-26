@@ -1,18 +1,10 @@
 import { defineConfig } from 'astro/config';
-import cloudflare from '@astrojs/cloudflare';
+import node from '@astrojs/node';
 import communityRss from '@community-rss/core';
 
 export default defineConfig({
   output: 'server',
-  adapter: cloudflare({
-    platformProxy: {
-      enabled: true,
-    },
-    workerEntryPoint: {
-      path: './src/worker.ts',
-      namedExports: ['scheduled', 'queue'],
-    },
-  }),
+  adapter: node({ mode: 'standalone' }),
   integrations: [
     communityRss({
       maxFeeds: 5,
