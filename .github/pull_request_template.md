@@ -29,12 +29,14 @@ Feature plan: `feature_plans/___/___/FEATURE_PLAN.md`
 
 ### Code Standards
 - [ ] Business logic in `packages/core/src/utils/` (not in components)
-- [ ] Path aliases used for all cross-directory imports
+- [ ] Relative imports used in source code (path aliases in tests only)
 - [ ] JSDoc with `@since` tags on all public exports
 - [ ] CSS custom properties used (no hard-coded colours)
-- [ ] Cloudflare bindings use typed `Env` interface
+- [ ] AppContext used for runtime context (db, env, config)
 - [ ] Drizzle ORM used for database queries (no raw SQL outside generated migrations)
 - [ ] better-auth patterns followed for auth logic (no custom session handling)
+- [ ] Components use `messages`/`labels` props (no hard-coded strings)
+- [ ] Page routes scaffolded via CLI (not injected by integration)
 - [ ] Implementation Notes accurately describe actual code, not intent
 
 ### Testing
@@ -42,7 +44,7 @@ Feature plan: `feature_plans/___/___/FEATURE_PLAN.md`
 - [ ] Coverage maintained ≥80% (`npm run test:coverage`)
 - [ ] New functions have unit tests with fixtures
 - [ ] Integration tests have explicit timeouts
-- [ ] D1 tests use Miniflare local simulation
+- [ ] Database tests use in-memory SQLite via better-sqlite3
 
 ### Build & Integration
 - [ ] Build succeeds (`npm run build` from root)
@@ -62,13 +64,13 @@ Feature plan: `feature_plans/___/___/FEATURE_PLAN.md`
 
 ## Important Reminders
 
-⚠️ **Do NOT update version numbers or CHANGELOG.md in feature PRs.**
+ **Do NOT update version numbers or CHANGELOG.md in feature PRs.**
 Version and changelog updates happen only during release finalization.
 
-⚠️ **All feature work requires an approved feature plan** in
+ **All feature work requires an approved feature plan** in
 `feature_plans/X_Y_Z/{feature_name}/` before implementation begins.
 
-⚠️ **Commit messages must follow Conventional Commits:**
+ **Commit messages must follow Conventional Commits:**
 `feat:`, `fix:`, `docs:`, `test:`, `chore:`
 
 ## Additional Notes

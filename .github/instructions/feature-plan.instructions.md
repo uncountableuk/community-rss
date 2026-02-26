@@ -43,6 +43,8 @@ The `X_Y_Z` folder corresponds to the target release version.
 - New interfaces/types with full signatures
 - Route additions (`/api/v1/...`)
 - Database schema changes (new tables, columns, migrations)
+- CLI scaffold additions (new template files)
+- Email template additions
 - Rationale for design decisions
 - Forward-compatibility analysis: "Can this evolve without breaking?"
 
@@ -51,9 +53,10 @@ Break work into ordered, checkbox-tracked phases:
 
 ```markdown
 ## Phase 1: Database Schema
-- [ ] Create migration `XXX_create_feeds_table.sql`
+- [ ] Add Drizzle schema changes to `src/db/schema.ts`
+- [ ] Generate migration via `drizzle-kit generate`
 - [ ] Add seed data fixtures
-- [ ] Write D1 query helpers in `src/db/queries/feeds.ts`
+- [ ] Write query helpers in `src/db/queries/feeds.ts`
 
 ## Phase 2: Core Logic
 - [ ] Implement `syncFeeds()` in `src/utils/build/sync.ts`
@@ -64,17 +67,23 @@ Break work into ordered, checkbox-tracked phases:
 - [ ] Create `POST /api/v1/feeds` with validation
 
 ## Phase 4: UI Components
-- [ ] Create `FeedCard.astro` component
-- [ ] Create `FeedList.astro` component
+- [ ] Create `FeedCard.astro` component (with `messages` props)
+- [ ] Create `FeedList.astro` component (with `labels` props)
 
-## Phase 5: Testing
+## Phase 5: CLI Scaffold & Email Templates
+- [ ] Add new page templates to `src/cli/templates/pages/`
+- [ ] Add email templates to `src/cli/templates/email-templates/`
+- [ ] Update FILE_MAP in `src/cli/init.mjs`
+
+## Phase 6: Testing
 - [ ] Unit tests for all shared utils (fixtures)
-- [ ] Unit tests for all build utils (mocked D1)
-- [ ] Integration tests for API routes (Miniflare)
+- [ ] Unit tests for all build utils (mocked SQLite)
+- [ ] Integration tests for API routes
 - [ ] Client interaction tests (DOM events)
+- [ ] CLI scaffold tests
 - [ ] Verify ≥80% coverage maintained
 
-## Phase 6: Documentation
+## Phase 7: Documentation
 - [ ] API reference for new public exports
 - [ ] Update README if applicable
 - [ ] JSDoc on all public functions with @since tags
@@ -84,12 +93,13 @@ Break work into ordered, checkbox-tracked phases:
 - Specific test files to create (with paths)
 - Fixtures needed
 - Which tests are unit vs integration
-- D1 testing approach (Miniflare / transactions)
+- Database testing approach (in-memory SQLite via better-sqlite3)
 
 ### 6. Documentation Updates
 - API reference changes
 - README updates
 - Configuration examples for consumers
+- Starlight docs pages to create or update
 
 ### 7. Implementation Notes
 This section is **initially empty** when the plan is written. It is populated
@@ -99,25 +109,26 @@ during implementation and serves as the living record of progress.
 ## Implementation Notes
 
 ### Phase 1: Database Schema — ✅ Completed
-- [x] Create migration `XXX_create_feeds_table.sql`
+- [x] Add Drizzle schema changes to `src/db/schema.ts`
+- [x] Generate migration via `drizzle-kit generate`
 - [x] Add seed data fixtures
-- [x] Write D1 query helpers in `src/db/queries/feeds.ts`
+- [x] Write query helpers in `src/db/queries/feeds.ts`
 
-> **Notes:** Chose INTEGER for timestamps instead of TEXT for D1 performance.
-> Added an index on `feed_id` in the articles table — not in the original plan
-> but necessary for query performance.
+> **Notes:** Chose INTEGER for timestamps instead of TEXT for SQLite
+> performance. Added an index on `feed_id` in the articles table — not in
+> the original plan but necessary for query performance.
 
 ### Phase 2: Core Logic — 🔄 In Progress
 - [x] Implement `syncFeeds()` in `src/utils/build/sync.ts`
 - [ ] Implement `parseFeedXml()` in `src/utils/shared/feed-parser.ts`
 
-### Phase 3–6: Not Started
+### Phase 3–7: Not Started
 
 ---
 
 ### Problems & Constraints
 - FreshRSS API returns paginated results (max 50); added loop in `syncFeeds()`
-- D1 batch insert limit is 100 rows; chunked inserts implemented
+- SQLite WAL mode enabled for concurrent read performance
 ```
 
 #### Update Rules
@@ -143,12 +154,14 @@ Before the plan is approved:
 - [ ] All files listed with full monorepo paths
 - [ ] Utils placed in correct execution context (build/client/shared)
 - [ ] Public API changes use Options pattern with optional params
-- [ ] Database migrations are additive (no destructive changes to existing tables)
+- [ ] Database migrations generated via drizzle-kit (never hand-written)
 - [ ] Test phase included with specific file locations
 - [ ] Documentation phase included
 - [ ] No version bump or CHANGELOG update included (handled at release)
 - [ ] Forward-compatibility of any new APIs has been considered
 - [ ] GPL-3.0 compatibility confirmed for any new dependencies
+- [ ] Components use `messages`/`labels` props (no hard-coded strings)
+- [ ] Page routes scaffolded (not injected) if applicable
 
 ## Anti-Patterns
 - ❌ Starting implementation before plan approval
@@ -162,3 +175,5 @@ Before the plan is approved:
 - ❌ Writing misleading Implementation Notes — describe actual code behaviour,
   not intended behaviour. If the code uses `sanitize-html`, say so; don't
   describe it as "regex stripping"
+- ❌ Planning to inject page routes from the package
+- ❌ Planning hard-coded user-facing strings in components

@@ -45,6 +45,22 @@ Every public API exported from `packages/core/index.ts` must have:
 - At least one usage example
 - Migration notes if deprecating older patterns
 
+## CLI Documentation
+Document the CLI scaffold command (`npx @community-rss/core init`):
+- List all scaffolded files with their purposes
+- Document `--force` and `--help` flags
+- Show the expected project structure after scaffolding
+- Explain developer ownership of scaffolded page routes
+- Document email template customisation (file resolution order)
+
+## Deployment Documentation
+Document the self-hosted deployment model:
+- Docker Compose setup (FreshRSS, MinIO, Mailpit for dev; production overrides)
+- Environment variables (`.env.example` reference)
+- SQLite database persistence (`DATABASE_PATH`)
+- Production Dockerfile and multi-stage build
+- Node.js adapter configuration (`@astrojs/node`)
+
 ## Feature Plan Documentation
 Feature plans placed in `feature_plans/X_Y_Z/{feature_name}/` must include:
 1. Overview of requirements

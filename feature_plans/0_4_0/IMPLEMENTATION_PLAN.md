@@ -641,7 +641,7 @@ cover new functionality. ≥80% coverage maintained.
 
 **Objective:** All instruction files reflect the new architecture.
 
-- [ ] Rewrite `copilot-instructions.md`:
+- [x] Rewrite `copilot-instructions.md`:
   - **Stack:** Replace "Astro SSR + Cloudflare" with "Astro SSR + Node.js + Docker/VPS"
   - **Stack:** Remove D1, R2, Queues, Workers, Pages. Add SQLite, MinIO, node-cron
   - **Architecture:** Document integration-with-overrides pattern
@@ -653,29 +653,29 @@ cover new functionality. ≥80% coverage maintained.
   - **Anti-Patterns:** Add: "❌ Inject page routes from the package"
   - **Anti-Patterns:** Add: "❌ Hard-code messages in components — use props"
   - Remove all `wrangler`, Cloudflare, Workers, Pages references
-- [ ] Rewrite `instructions/implementation.instructions.md`:
+- [x] Rewrite `instructions/implementation.instructions.md`:
   - Replace Cloudflare Bindings section with AppContext section
   - Replace D1 references with SQLite/Drizzle
   - Add Component Composition Rules section
   - Add Email Template Rules section
   - Update import examples
-- [ ] Rewrite `instructions/api-design.instructions.md`:
+- [x] Rewrite `instructions/api-design.instructions.md`:
   - Remove worker exports documentation
   - Add CLI design rules
   - Document page vs API route split
   - Add AppContext interface rules
-- [ ] Rewrite `instructions/testing.instructions.md`:
+- [x] Rewrite `instructions/testing.instructions.md`:
   - Replace D1/Miniflare references with SQLite in-memory
   - Update mock patterns for AppContext
   - Remove Cloudflare pool workers references
-- [ ] Rewrite `instructions/test-performance.instructions.md`:
+- [x] Rewrite `instructions/test-performance.instructions.md`:
   - Replace D1 transaction pattern with SQLite in-memory pattern
   - Update seed data strategy for file-based SQLite
-- [ ] Update `instructions/feature-plan.instructions.md`:
+- [x] Update `instructions/feature-plan.instructions.md`:
   - Update template sections to reflect new architecture
   - Add CLI scaffold section
   - Add email template section
-- [ ] Update `instructions/documentation.instructions.md`:
+- [x] Update `instructions/documentation.instructions.md`:
   - Reorient from contributor-facing to developer-user-facing
   - Add CLI scaffold documentation requirements
   - Add email template documentation requirements
@@ -1103,6 +1103,60 @@ on VPS/Docker.
 - The bulk of test migration was already done in Phases 1-5 alongside the code
   changes. Phase 9 caught the remaining stragglers (`guest.ts`, `admin-feeds.ts`,
   `sync.ts`) and dead page route files.
+
+**Issues:** None.
+
+---
+
+### Phase 10: `.github` Instructions Rewrite — ✅ Completed
+
+**Commit:** *(pending)* — 360 tests passing (no new tests)
+
+**Completed:**
+- Rewrote all 7 instruction files listed in the plan:
+  - `copilot-instructions.md` — full rewrite with Docker/VPS stack, AppContext,
+    CLI scaffold, email templates, component `messages`/`labels` props,
+    route architecture (injected API vs scaffolded pages)
+  - `instructions/implementation.instructions.md` — replaced "Cloudflare Bindings"
+    section with "Runtime Context (AppContext)", added Email Templates, Route
+    Architecture, and Background Processing sections; updated component standards
+    with `messages`/`labels` props; added `@cli/*` path alias
+  - `instructions/api-design.instructions.md` — removed Cloudflare Worker exports,
+    added CLI Surface section, added Route Architecture section documenting
+    injected API routes vs scaffolded pages, updated DB layer to reference
+    `BetterSQLite3Database`
+  - `instructions/testing.instructions.md` — replaced D1/Miniflare with in-memory
+    SQLite via better-sqlite3, added `vi.hoisted()` rule, added CLI and email
+    template test expectations
+  - `instructions/test-performance.instructions.md` — replaced D1/Miniflare
+    examples with `BetterSQLite3Database` + `Database(':memory:')` patterns
+  - `instructions/feature-plan.instructions.md` — updated all template examples
+    (Drizzle instead of raw SQL, SQLite instead of D1), added CLI scaffold phase
+    and email template phase to template, added review checklist items for
+    component props and page route scaffolding
+  - `instructions/documentation.instructions.md` — added CLI Documentation and
+    Deployment Documentation sections
+- Also discovered and rewrote 4 additional files with Cloudflare references:
+  - `skills/feature-implementation/SKILL.md` — updated capabilities, workflow
+    steps, and standards compliance sections
+  - `prompts/plan.prompt.md` — replaced D1 references, added CLI scaffold checks
+  - `prompts/test.prompt.md` — replaced Cloudflare-specific testing section with
+    database testing and mock patterns
+  - `prompts/implement.prompt.md` — replaced Cloudflare bindings rules with
+    AppContext, relative imports, and CLI patterns
+  - `prompts/maintenance.prompt.md` — removed wrangler.toml validation, added
+    AppContext and CLI scaffold validation
+  - `pull_request_template.md` — replaced Cloudflare binding checks with AppContext,
+    component props, page scaffolding, and SQLite test checks
+- Verified zero Cloudflare references remain across all `.github/` files
+  (only contextual "not D1/Miniflare" clarifications in testing files)
+
+**Decisions:**
+- The plan listed 7 files but grep revealed 6 additional files (4 prompts, 1
+  skill, 1 PR template) containing Cloudflare references. All were rewritten
+  for consistency rather than doing minimal search-and-replace.
+- Each file was fully rewritten rather than patched, ensuring no stale context
+  remains. This is a documentation-only change with no code impact.
 
 **Issues:** None.
 

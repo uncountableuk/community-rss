@@ -8,7 +8,7 @@ applyTo: "packages/core/src/test/**/*.ts,packages/core/test/**/*.ts"
 
 These instructions supplement the main testing instructions with
 performance-specific requirements for the Community RSS Framework.
-Tests must remain fast even when handling large datasets from D1
+Tests must remain fast even when handling large datasets from SQLite
 queries or FreshRSS sync operations.
 
 ## Cache Management (MANDATORY)
@@ -58,26 +58,42 @@ describe('Mutation Tests', () => {
 });
 ```
 
-## D1 Database Test Performance
+## SQLite Database Test Performance
+
+### Use In-Memory Databases
+```typescript
+import Database from 'better-sqlite3';
+import { drizzle } from 'drizzle-orm/better-sqlite3';
+
+describe('Database Query Tests', () => {
+  let db: BetterSQLite3Database;
+
+  beforeAll(() => {
+    const sqlite = new Database(':memory:');
+    db = drizzle(sqlite);
+    // Apply migrations and seed data
+  });
+});
+```
 
 ### Use Transactions for Isolation
 ```typescript
-describe('D1 Query Tests', () => {
-  let db: D1Database;
+describe('DB Mutation Tests', () => {
+  let db: BetterSQLite3Database;
 
-  beforeAll(async () => {
-    db = await setupTestDatabase(); // Miniflare local D1
-    await applyMigrations(db);
-    await seedTestData(db);
+  beforeAll(() => {
+    db = setupTestDatabase(); // In-memory SQLite
+    applyMigrations(db);
+    seedTestData(db);
   });
 
   // Wrap each test in a transaction for fast rollback
-  it('inserts a new article', async () => {
-    await db.exec('BEGIN TRANSACTION');
+  it('inserts a new article', () => {
+    db.run(sql`BEGIN`);
     try {
       // Test logic
     } finally {
-      await db.exec('ROLLBACK');
+      db.run(sql`ROLLBACK`);
     }
   });
 });
@@ -106,20 +122,20 @@ describe('Unit Tests', () => {
 ```
 
 ### Integration Tests
-- Use real data (local D1, Miniflare) for end-to-end validation
+- Use real data (in-memory SQLite) for end-to-end validation
 - Set explicit timeouts: `{ timeout: 10000 }`
 - At least one integration test per module
 
 ```typescript
 describe('Integration Tests', () => {
-  let db: D1Database;
+  let db: BetterSQLite3Database;
 
-  beforeAll(async () => {
-    db = await setupTestDatabase();
+  beforeAll(() => {
+    db = setupTestDatabase(); // In-memory SQLite
   }, 10000);
 
   it('syncs and queries articles end-to-end', async () => {
-    // Test with real D1 operations
+    // Test with real SQLite operations
   });
 }, { timeout: 10000 });
 ```
@@ -128,7 +144,7 @@ describe('Integration Tests', () => {
 
 ### File Separation
 - **Unit tests**: `{feature}.test.ts` (fixtures, <100ms)
-- **Integration tests**: `{feature}.integration.test.ts` (D1/R2, set timeout)
+- **Integration tests**: `{feature}.integration.test.ts` (SQLite, set timeout)
 
 ### Performance Goals
 - Unit tests: <100ms execution
@@ -153,9 +169,8 @@ beforeEach(() => {
 
 ### ❌ No Timeouts on Integration
 ```typescript
-describe('D1 Tests', () => {
-  it('queries articles', async () => {
-    await db.prepare('SELECT * FROM articles').all();
+describe('DB Tests', () => {
+  it('queries articles', () => {
     // May hang indefinitely without a timeout
   });
 });
@@ -165,7 +180,7 @@ describe('D1 Tests', () => {
 ```typescript
 describe('Mixed', () => {
   it('fast unit test', () => {}); // <100ms
-  it('slow D1 query', async () => {
+  it('slow DB query', async () => {
     await setupTestDatabase(); // >1s — put in separate file
   });
 });
@@ -176,13 +191,13 @@ describe('Mixed', () => {
 ### Data Loading Strategy
 ```
 Need to mutate data?
-├── Yes → beforeEach reload or transaction rollback
-└── No → beforeAll suite cache
+ Yes → beforeEach reload or transaction rollback
+ No → beforeAll suite cache
 ```
 
 ### Test Type
 ```
 Testing pure logic?
-├── Yes → Unit test with fixtures
-└── No → Integration test with Miniflare/D1
+ Yes → Unit test with fixtures
+ No → Integration test with in-memory SQLite
 ```

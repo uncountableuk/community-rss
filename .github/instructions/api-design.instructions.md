@@ -12,8 +12,16 @@ Every design decision must prioritise stability and extensibility.
 The public API is everything exported from `packages/core/index.ts`:
 - The Astro integration factory: `communityRss(options?)`
 - Configuration interfaces: `CommunityRssOptions`, `ThemeConfig`, etc.
-- Worker exports: `scheduled`, `queue` (Cloudflare handlers)
+- Type exports: `AppContext`, `EnvironmentVariables`, `CommunityRssError`
 - Utility functions explicitly re-exported for consumer use
+
+## CLI Surface
+The `npx @community-rss/core init` command scaffolds developer-owned files:
+- 8 page routes (developer-owned, not injected)
+- 3 email templates (HTML with `{{variable}}` substitution)
+- Configuration files (astro.config.mjs, .env.example, docker-compose.yml, theme.css)
+- CLI supports `--force` (overwrite existing) and `--help` flags
+- CLI must remain backward-compatible — new scaffold files are additive
 
 ## Design Rules
 
@@ -77,11 +85,21 @@ export default function communityRss(
 ): AstroIntegration;
 ```
 
-### Route Namespace
-All injected API routes live under a versioned namespace:
-- `GET /api/v1/articles`
-- `POST /api/v1/interactions`
-- `ALL /api/auth/[...all]` — better-auth catch-all (uses its own native router; not versioned)
+### Route Architecture
+The framework uses a split route architecture:
+
+**Injected API routes** — owned by the package, injected during
+integration setup:
+- `GET /api/v1/articles` — article listing
+- `POST /api/v1/interactions` — hearts, stars
+- `ALL /api/auth/[...all]` — better-auth catch-all
+- Admin routes under `/api/v1/admin/...`
+
+**Scaffolded page routes** — developer-owned, created by CLI:
+- 8 pages scaffolded to `src/pages/` via `npx @community-rss/core init`
+- Pages are owned by the developer and can be customised freely
+- Pages import components from `@community-rss/core/components/*`
+- Pages fetch data client-side from the API routes
 
 If a breaking route change is needed post-1.0.0, introduce `/api/v2/`
 and keep `/api/v1/` working with a deprecation notice.
@@ -89,9 +107,11 @@ Auth routes (`/api/auth/*`) are managed entirely by better-auth's native
 router via a single catch-all endpoint — do not create manual wrapper routes.
 
 ### Database Layer
-Public API routes that touch D1 must use Drizzle ORM query helpers from
-`src/db/queries/` — never expose raw SQL or construct queries inline in
-route handlers. This ensures type safety and keeps business logic testable.
+Public API routes that touch the database must use Drizzle ORM query
+helpers from `src/db/queries/` — never expose raw SQL or construct queries
+inline in route handlers. The database is better-sqlite3 accessed via
+`BetterSQLite3Database` from the `AppContext`. This ensures type safety
+and keeps business logic testable.
 
 ### Admin Routes
 Admin-only routes use the `/api/v1/admin/` namespace and must verify the

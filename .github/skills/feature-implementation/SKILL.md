@@ -11,7 +11,7 @@ through testing and documentation in the `@community-rss/core` NPM monorepo.
 ## Capabilities
 - Generate feature plans following guidelines
 - Implement code following monorepo architecture patterns
-- Create tests with proper organisation (unit + integration + D1)
+- Create tests with proper organisation (unit + integration + SQLite)
 - Update documentation with API references
 - Verify playground compatibility
 
@@ -25,15 +25,17 @@ through testing and documentation in the `@community-rss/core` NPM monorepo.
 ### Step 2: Codebase Analysis
 - Search existing `packages/core/src/utils/` for reuse opportunities
 - Identify affected files across the monorepo
-- Map dependencies (D1 schema, Cloudflare bindings, public API)
+- Map dependencies (DB schema, AppContext, public API, CLI scaffold)
 - Check impact on `packages/core/index.ts` exports
 
 ### Step 3: Implementation
 - Create utils in correct directory (build/client/shared)
 - Database queries in `packages/core/src/db/`
 - API routes under `/api/v1/` namespace
-- Components as thin wrappers with CSS custom properties
-- Use path aliases for all imports
+- Components as thin wrappers with `messages`/`labels` props and CSS custom properties
+- Page routes scaffolded via CLI (never injected by integration)
+- Email templates in `src/cli/templates/email-templates/` and `src/templates/email-templates/`
+- Use relative imports in source code (path aliases in test code only)
 - Add JSDoc with `@since` tags to all public exports
 - **After each phase**: update the feature plan Implementation Notes:
   - Check off completed tasks (`[x]`)
@@ -43,22 +45,25 @@ through testing and documentation in the `@community-rss/core` NPM monorepo.
 
 ### Step 4: Testing
 - Create tests mirroring source structure in `packages/core/test/`
-- Use path aliases for imports (`@utils/`, `@fixtures/`, `@test/`)
+- Use path aliases for imports (`@utils/`, `@fixtures/`, `@test/`, `@cli/`)
 - Cover happy path, edge cases, errors
 - **Unit tests**: Fixtures, pure functions, <100ms
-- **Integration tests**: Miniflare D1, timeouts, real bindings
+- **Integration tests**: In-memory SQLite, timeouts, real DB operations
 - **API tests**: Route handlers, request/response validation
+- **CLI tests**: Scaffold operations, --force flag, file creation
 - Maintain ≥80% coverage
 
 ### Step 5: Documentation
 - Update API reference with tables including "Since" column
 - Consumer examples use `@community-rss/core` imports
 - Contributor examples use path aliases
+- Document CLI scaffold additions
 - NOTE: Do NOT update changelog or version — release finalization only
 
 ### Step 6: Playground Verification
 - Confirm playground app still builds with new framework code
 - Test injected routes respond correctly
+- Verify scaffolded pages work
 - Verify HMR works with code changes
 
 ## Standards Compliance
@@ -66,9 +71,11 @@ This agent enforces:
 - NPM Workspaces monorepo structure
 - Testable architecture (utils, not components, hold logic)
 - API forward-compatibility (Options pattern, optional params)
-- Path alias usage (no `../` cross-directory imports)
+- Relative imports in source; path aliases in test code
 - CSS custom property theming (`--crss-` prefix)
-- Cloudflare binding typing (Env interface)
+- AppContext (BetterSQLite3Database, EnvironmentVariables, config)
+- Component `messages`/`labels` props (no hard-coded strings)
+- Page routes scaffolded via CLI (not injected by integration)
 - GPL-3.0 licence compatibility
 
 ## Triggers

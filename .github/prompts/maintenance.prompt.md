@@ -31,6 +31,7 @@ to stay consistent.
 - `.github/pull_request_template.md` — PR checklist
 - Root `package.json` — Workspace config
 - `docker-compose.yml` — Dev environment
+- `docker-compose.prod.yml` — Production overrides
 
 ## Analysis Task
 For each source of truth that has changed:
@@ -68,6 +69,7 @@ After updates, verify:
 - [ ] All changed standards are reflected in configs
 - [ ] No contradictions between config files
 - [ ] Examples in configs match current project structure
-- [ ] Path aliases match current tsconfig
-- [ ] Cloudflare binding names match current wrangler.toml
+- [ ] Path aliases match current Vitest config
 - [ ] Docker Compose services match current setup
+- [ ] AppContext interface matches current types
+- [ ] CLI scaffold FILE_MAP matches current templates

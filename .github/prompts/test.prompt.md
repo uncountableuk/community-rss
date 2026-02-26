@@ -7,7 +7,7 @@ description: "Generate comprehensive test suites following testing standards"
 
 Generate tests for the Community RSS Framework following the project's
 testing standards specifically designed for an NPM monorepo with
-Cloudflare D1, R2, and Queue bindings.
+better-sqlite3, Drizzle ORM, and Node.js server-side processing.
 
 ## Standards to Follow
 - Testing Rules: `.github/instructions/testing.instructions.md`
@@ -20,6 +20,7 @@ Mirror the source structure within `packages/core/`:
 - `src/utils/build/sync.ts` → `test/utils/build/sync.test.ts`
 - `src/db/queries/articles.ts` → `test/db/queries/articles.test.ts`
 - `src/routes/api/v1/feeds.ts` → `test/routes/api/v1/feeds.test.ts`
+- `src/cli/init.mjs` → `test/cli/init.test.ts`
 
 ## Test Structure
 ```typescript
@@ -37,7 +38,7 @@ describe('ModuleName', () => {
 ```
 
 ## Import Rules (CRITICAL)
-- ✅ Use: `@utils/`, `@db/`, `@core-types/`, `@fixtures/`, `@test/`
+- ✅ Use: `@utils/`, `@db/`, `@core-types/`, `@fixtures/`, `@test/`, `@cli/`
 - ❌ Never: `../../../src/utils/`
 
 ## Coverage Requirements
@@ -45,11 +46,19 @@ describe('ModuleName', () => {
 - All exported functions must have tests
 - Test happy paths, edge cases, and error conditions
 
-## Cloudflare-Specific Testing
-- **D1**: Use Miniflare local SQLite; apply migrations in `beforeAll`
-- **R2**: Mock with `vi.mock()` or use Miniflare R2 simulation
-- **Queues**: Mock queue producers; test consumer handler logic directly
-- **Cron**: Test the exported `scheduled()` handler with mock env
+## Database Testing
+- Use in-memory SQLite via better-sqlite3 for database tests
+- Apply schema migrations before each test suite in `beforeAll`
+- Use transactions + rollback for test isolation
+- Test both query success and constraint violation paths
+- Never use D1 or Miniflare — the stack uses better-sqlite3 directly
+
+## Mock Patterns
+- Use `vi.hoisted()` for any variable referenced inside `vi.mock()` factories
+- Mock `node-cron` for scheduled task tests
+- Mock `nodemailer` for email sending tests
+- Mock `fs` operations for CLI scaffold tests
+- Mock `AppContext` for route handler tests
 
 ## Checklist
 - [ ] Test file mirrors source location in `packages/core/`
@@ -60,6 +69,7 @@ describe('ModuleName', () => {
 - [ ] Suite-level caching with `beforeAll` for data loading
 - [ ] Unit tests (<100ms) separated from integration tests (>1s)
 - [ ] Integration tests have explicit timeouts
-- [ ] D1 tests use Miniflare with migrations applied
+- [ ] Database tests use in-memory SQLite with migrations applied
+- [ ] `vi.hoisted()` used for mock variables in `vi.mock()` factories
 - [ ] Public API tests verify forward-compatibility
 - [ ] Coverage maintained at ≥80%
