@@ -1,87 +1,132 @@
 ---
-title: Customising Feed Cards
-description: How to theme feed cards using CSS custom properties
+title: Theming
+description: Customise the visual appearance of your Community RSS site.
 ---
 
-Feed cards use CSS custom properties (design tokens) for all visual values, making them fully customisable without modifying framework code.
+import { Aside } from '@astrojs/starlight/components';
 
-## Available Tokens
+## Overview
 
-### Card Layout
+Community RSS uses **CSS custom properties** (design tokens) for all
+themeable values. Override these tokens to match your brand without
+modifying framework source code.
 
-| Token                        | Default     | Description                     |
-|------------------------------|-------------|---------------------------------|
-| `--crss-surface-0`           | `#ffffff`   | Card background colour          |
-| `--crss-surface-2`           | `#e5e7eb`   | Card border colour              |
-| `--crss-radius-md`           | `8px`       | Card border radius              |
-| `--crss-space-md`            | `1rem`      | Card padding                    |
-| `--crss-space-lg`            | `1.5rem`    | Grid gap between cards          |
+## CSS Design Tokens
 
-### Typography
+All framework tokens are prefixed with `--crss-` to avoid namespace
+collisions with your own styles.
 
-| Token                        | Default               | Description              |
-|------------------------------|-----------------------|--------------------------|
-| `--crss-font-size-xs`        | `0.75rem`             | Meta text (date, source) |
-| `--crss-font-size-sm`        | `0.875rem`            | Summary text             |
-| `--crss-font-size-lg`        | `1.125rem`            | Card title               |
-| `--crss-font-family`         | `system-ui, ...`      | Font family              |
-
-### Colours
-
-| Token                        | Default     | Description                  |
-|------------------------------|-------------|------------------------------|
-| `--crss-text-primary`        | `#1a1a2e`   | Title colour                 |
-| `--crss-text-secondary`      | `#4b5563`   | Summary text colour          |
-| `--crss-text-muted`          | `#9ca3af`   | Meta text (date, author)     |
-| `--crss-brand-primary`       | `#4f46e5`   | Source label, links          |
-| `--crss-heart`               | `#ef4444`   | Heart icon colour            |
-| `--crss-star`                | `#f59e0b`   | Star icon colour             |
-
-## Overriding Tokens
-
-Add a stylesheet to your project that overrides the tokens:
+### Colour Tokens
 
 ```css
-/* src/styles/custom-theme.css */
 :root {
-  --crss-surface-0: #1a1a2e;
-  --crss-text-primary: #e0e0e0;
-  --crss-brand-primary: #00d4ff;
-  --crss-heart: #ff6b9d;
-  --crss-radius-md: 16px;
+  --crss-brand-primary: #0ea5e9;
+  --crss-brand-accent: #06b6d4;
+  --crss-brand-muted: #94a3b8;
+  --crss-bg-primary: #ffffff;
+  --crss-bg-secondary: #f8fafc;
+  --crss-text-primary: #0f172a;
+  --crss-text-secondary: #475569;
+  --crss-border-color: #e2e8f0;
 }
 ```
 
-Import it in your layout or page:
+### Typography Tokens
+
+```css
+:root {
+  --crss-font-family: system-ui, -apple-system, sans-serif;
+  --crss-font-size-sm: 0.875rem;
+  --crss-font-size-base: 1rem;
+  --crss-font-size-lg: 1.125rem;
+  --crss-font-size-xl: 1.25rem;
+  --crss-line-height: 1.6;
+}
+```
+
+### Spacing & Layout Tokens
+
+```css
+:root {
+  --crss-spacing-xs: 0.25rem;
+  --crss-spacing-sm: 0.5rem;
+  --crss-spacing-md: 1rem;
+  --crss-spacing-lg: 1.5rem;
+  --crss-spacing-xl: 2rem;
+  --crss-border-radius: 0.375rem;
+  --crss-max-width: 72rem;
+}
+```
+
+## Applying a Theme
+
+### Option 1: Theme CSS File
+
+Create a `theme.css` file (scaffolded by the CLI) and import it in your
+layout:
+
+```css
+/* src/styles/theme.css */
+:root {
+  --crss-brand-primary: #7c3aed;
+  --crss-brand-accent: #a78bfa;
+  --crss-font-family: 'Inter', sans-serif;
+}
+```
+
+### Option 2: Inline in Layout
+
+Override tokens directly in your layout's `<style>` tag:
 
 ```astro
 ---
 // src/layouts/Layout.astro
+import CommunityLayout from '@community-rss/core/layouts/CommunityLayout.astro';
 ---
+<CommunityLayout>
+  <slot />
+</CommunityLayout>
+
 <style is:global>
-  @import '../styles/custom-theme.css';
+  :root {
+    --crss-brand-primary: #059669;
+  }
 </style>
-<slot />
 ```
 
-## Grid Layout
+## Dark Mode
 
-The feed grid uses CSS Grid with `auto-fill` and a minimum column width of 300px. Override the grid behaviour with:
+The framework respects `prefers-color-scheme`. Override dark mode tokens
+with a media query:
 
 ```css
-.crss-feed-grid {
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: var(--crss-space-xl);
+@media (prefers-color-scheme: dark) {
+  :root {
+    --crss-bg-primary: #0f172a;
+    --crss-bg-secondary: #1e293b;
+    --crss-text-primary: #f1f5f9;
+    --crss-text-secondary: #94a3b8;
+    --crss-border-color: #334155;
+  }
 }
 ```
 
-## Card Hover Effect
+## Component-Level Overrides
 
-By default, cards lift slightly on hover. Customise or disable:
+Individual components can be styled by targeting their CSS classes.
+All framework components use BEM-style class names prefixed with `crss-`:
 
 ```css
-.crss-feed-card:hover {
-  box-shadow: none;
-  transform: none;
+.crss-article-card {
+  border: 2px solid var(--crss-brand-primary);
+}
+
+.crss-auth-button {
+  background: var(--crss-brand-accent);
 }
 ```
+
+<Aside type="tip">
+Since page routes are scaffolded into your project, you have full control
+over the page layout and can wrap or replace any component.
+</Aside>

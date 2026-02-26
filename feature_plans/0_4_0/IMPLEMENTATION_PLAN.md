@@ -686,63 +686,77 @@ cover new functionality. ≥80% coverage maintained.
 **Objective:** Starlight docs reoriented for developer-users deploying
 on VPS/Docker.
 
-- [ ] Rewrite `docs/src/content/docs/getting-started/installation.md`:
+- [x] Rewrite `docs/src/content/docs/getting-started/installation.md`:
   - `npm install @community-rss/core` + `npx @community-rss/core init`
   - Docker Compose setup
   - Verify with `docker-compose up`
-- [ ] Rewrite `docs/src/content/docs/getting-started/configuration.md`:
+- [x] Rewrite `docs/src/content/docs/getting-started/configuration.md`:
   - `.env` file reference (not `wrangler.toml`)
   - `astro.config.mjs` with `@astrojs/node` + `communityRss()` options
   - All environment variables documented
-- [ ] Rewrite `docs/src/content/docs/getting-started/local-development.md`:
+- [x] Rewrite `docs/src/content/docs/getting-started/local-development.md`:
   - Docker Compose (dev mode)
   - No wrangler; SQLite file; Mailpit
   - Dev workflow: edit pages → auto-reload
-- [ ] Create `docs/src/content/docs/getting-started/deployment.md`:
+- [x] Create `docs/src/content/docs/getting-started/deployment.md`:
   - Docker Compose on VPS
   - Production docker-compose.prod.yml explanation
   - Reverse proxy (Caddy/nginx) recommendation
   - SSL/TLS setup with Let's Encrypt
   - Backup strategy for SQLite + MinIO data
-- [ ] Update `docs/src/content/docs/guides/feed-sync.md`:
+- [x] Update `docs/src/content/docs/guides/feed-sync.md`:
   - node-cron instead of Cloudflare Cron Triggers
   - Inline processing instead of Queues
   - `syncSchedule` option in config
-- [ ] Update `docs/src/content/docs/guides/authentication.md`:
+- [x] Update `docs/src/content/docs/guides/authentication.md`:
   - Same flow, remove Cloudflare context
   - Update env var references
-- [ ] Update `docs/src/content/docs/guides/email-setup.md`:
+- [x] Update `docs/src/content/docs/guides/email-setup.md`:
   - File-based template customisation
   - Template directory structure
   - Variable reference per template
   - Mailpit for dev, Resend for production
-- [ ] Create `docs/src/content/docs/guides/customisation.md`:
+- [x] Create `docs/src/content/docs/guides/customisation.md`:
   - How to customise pages (edit scaffolded files)
   - How to customise components (props and slots)
   - How to customise email templates (edit HTML files)
   - How to customise themes (CSS custom properties)
-- [ ] Create `docs/src/content/docs/api-reference/cli.md`:
+- [x] Create `docs/src/content/docs/api-reference/cli.md`:
   - `npx @community-rss/core init` command reference
   - Flags: `--force`
   - Generated file reference
-- [ ] Update `docs/src/content/docs/api-reference/integration.md`:
+- [x] Update `docs/src/content/docs/api-reference/integration.md`:
   - Updated `CommunityRssOptions` with new options
   - Document middleware injection
   - Document API-only route injection
-- [ ] Update `docs/src/content/docs/api-reference/routes.md`:
+- [x] Update `docs/src/content/docs/api-reference/routes.md`:
   - Clarify injected API routes vs scaffolded pages
   - Remove page routes from injected list
-- [ ] Update `docs/src/content/docs/api-reference/options.md`:
+- [x] Update `docs/src/content/docs/api-reference/options.md`:
   - New options: `databasePath`, `syncSchedule`, `emailTemplateDir`
-- [ ] Update `docs/src/content/docs/contributing/architecture.md`:
+- [x] Update `docs/src/content/docs/contributing/architecture.md`:
   - Docker/VPS stack description
   - AppContext pattern
   - Component composition rules
   - Integration-with-overrides pattern
-- [ ] Update `docs/src/content/docs/contributing/setup.md`:
+- [x] Update `docs/src/content/docs/contributing/setup.md`:
   - Docker Compose development (no wrangler)
   - SQLite instead of D1
-- [ ] Update `docs/astro.config.mjs` sidebar with new pages
+- [x] Update `docs/astro.config.mjs` sidebar with new pages
+
+### Implementation Notes (Phase 11)
+
+- Rewrote all 16 existing docs files and created 3 new files (deployment.md,
+  customisation.md, cli.md) — 19 files total
+- Updated `docs/astro.config.mjs` sidebar: added Deployment, Customisation,
+  CLI pages; reordered sections (Guides before API Reference); renamed
+  "Customising Feed Cards" → "Theming", "Articles API" → "Articles"
+- Updated `index.mdx` hero tagline: "Cloudflare" → "Node.js"
+- All files use heredoc write approach (`cat > file << 'ENDOFFILE'`)
+- Verified zero Cloudflare/wrangler/D1/R2/Queues references via grep
+- Also updated: admin-feeds.md, theming.md, articles.md, contributing/testing.md
+  (minor updates to remove Cloudflare context and align with new architecture)
+- All 360 tests still passing across 32 test files
 
 ## Phase 12: Final Verification & Coverage
 

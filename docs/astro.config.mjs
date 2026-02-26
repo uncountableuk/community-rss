@@ -18,6 +18,18 @@ export default defineConfig({
               label: 'Local Development',
               slug: 'getting-started/local-development',
             },
+            { label: 'Deployment', slug: 'getting-started/deployment' },
+          ],
+        },
+        {
+          label: 'Guides',
+          items: [
+            { label: 'Feed Synchronisation', slug: 'guides/feed-sync' },
+            { label: 'Authentication', slug: 'guides/authentication' },
+            { label: 'Email Setup', slug: 'guides/email-setup' },
+            { label: 'Admin Feeds', slug: 'guides/admin-feeds' },
+            { label: 'Theming', slug: 'guides/theming' },
+            { label: 'Customisation', slug: 'guides/customisation' },
           ],
         },
         {
@@ -25,18 +37,9 @@ export default defineConfig({
           items: [
             { label: 'Integration', slug: 'api-reference/integration' },
             { label: 'Options', slug: 'api-reference/options' },
-            { label: 'Articles API', slug: 'api-reference/articles' },
             { label: 'Routes', slug: 'api-reference/routes' },
-          ],
-        },
-        {
-          label: 'Guides',
-          items: [
-            { label: 'Feed Synchronisation', slug: 'guides/feed-sync' },
-            { label: 'Customising Feed Cards', slug: 'guides/theming' },
-            { label: 'Authentication', slug: 'guides/authentication' },
-            { label: 'Email Setup', slug: 'guides/email-setup' },
-            { label: 'Admin Feeds', slug: 'guides/admin-feeds' },
+            { label: 'Articles', slug: 'api-reference/articles' },
+            { label: 'CLI', slug: 'api-reference/cli' },
           ],
         },
         {

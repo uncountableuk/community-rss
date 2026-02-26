@@ -1,185 +1,108 @@
 ---
 title: Feed Synchronisation
-description: How the FreshRSS-to-D1 sync pipeline works
+description: How Community RSS syncs feeds from FreshRSS.
 ---
 
-The Community RSS framework synchronises content from a FreshRSS
-instance into a Cloudflare D1 database using a background worker
-pipeline.
+import { Aside } from '@astrojs/starlight/components';
 
-## Architecture Overview
+## Overview
 
-```
-FreshRSS ──[Cron Trigger]──→ syncFeeds()
-               │                  │
-               │                  ├──→ D1 (feeds)
-               │                  │
-               │                  └──→ Queue ──→ processArticle()
-               │                                      │
-               │                                      └──→ D1 (articles)
-               │
-               └──[ClientLogin]──→ Auth token (cached)
-```
+Community RSS pulls articles from a **FreshRSS** instance on a configurable
+schedule. The sync process runs in-process using **node-cron** — no external
+queue or worker is needed.
 
-### 1. Authentication
-
-The framework uses the FreshRSS **Google Reader API**. Authentication
-is a two-step ClientLogin flow:
-
-1. POST `Email` + `Passwd` to
-   `/api/greader.php/accounts/ClientLogin`
-2. Parse the `Auth=<token>` line from the response
-3. Cache the token and use it in `Authorization: GoogleLogin auth=…`
-   headers for all subsequent requests
-
-The `FreshRssClient` class handles this automatically — it calls
-`login()` lazily on the first API request and reuses the token for
-the lifetime of the client instance.
-
-### 2. Sync Orchestrator
-
-A Cloudflare Cron Trigger calls the `scheduled()` handler exported
-by the framework. This invokes `syncFeeds(env)` which:
-
-1. Ensures the `system` user exists in D1 (owner of synced feeds)
-2. Authenticates with FreshRSS via ClientLogin
-3. Fetches all subscribed feeds
-4. Upserts feed metadata into D1
-5. Fetches articles for each feed
-6. Enqueues each article for processing via Cloudflare Queue
-
-### 3. Queue Consumer
-
-The `queue()` handler processes each enqueued article:
-
-1. **Sanitises HTML** — strips dangerous tags (scripts, iframes)
-   while preserving semantic content
-2. **Extracts summary** — generates a plain-text summary (max 200
-   chars) for feed card display
-3. **Upserts to D1** — uses `freshrss_item_id` as the idempotency
-   key to prevent duplicates
-
-### 4. Idempotency
-
-Every article stores a `freshrss_item_id` column with a UNIQUE
-index. The sync uses
-`INSERT … ON CONFLICT (freshrss_item_id) DO UPDATE` to handle:
-
-- **New articles**: inserted normally
-- **Modified articles**: updated with latest content
-- **Unchanged articles**: effectively a no-op
-
-This ensures repeated Cron runs never create duplicate articles.
-
-## Local Development vs Production
-
-The sync pipeline behaves differently depending on the runtime
-environment.
-
-### Local development (`astro dev` / `wrangler pages dev`)
-
-Cloudflare Pages does not support Cron Triggers or Queue consumers
-locally. Instead, the framework provides a manual sync endpoint that
-processes articles **inline**:
-
-```bash
-curl -s -X POST http://localhost:4321/api/v1/admin/sync \
-  -H "Origin: http://localhost:4321"
-```
-
-This endpoint:
-1. Calls `syncFeeds()` to fetch feeds and enqueue articles
-2. Intercepts the enqueued messages
-3. Runs `processArticle()` + `upsertArticle()` synchronously
-4. Returns results including `articlesProcessed` count
-
-The `Origin` header is required (Astro CSRF protection).
-
-:::caution[Dev-only endpoint]
-`POST /api/v1/admin/sync` is intended for local development. In
-production, the Cron Trigger handles sync automatically. Gate this
-endpoint with authentication before exposing publicly.
-:::
-
-### Cloudflare Workers (production)
-
-In production, the standard async pipeline is used:
+### Architecture
 
 ```
-Cron → scheduled() → syncFeeds() → Queue.send()
-                                      ↓
-                              queue() → processArticle() → D1
+     HTTP/API      ┌──────────────┐
+  Community   │ ◄──────────────── │   FreshRSS   │
+  RSS (Astro) │                   │  (Docker)    │
+                   └──────────────┘
+       │
+  node-cron
+  (in-process)
+       │
+       ▼
+
+   SQLite     │
+  (Drizzle)   │
+
 ```
 
-The `wrangler.toml` configuration for queue and cron:
-
-```toml
-[[queues.producers]]
-binding = "ARTICLE_QUEUE"
-queue = "article-processing"
-
-[[queues.consumers]]
-queue = "article-processing"
-max_batch_size = 10
-max_retries = 3
-
-[triggers]
-crons = ["*/15 * * * *"]
-```
-
-The worker entrypoint must export both handlers:
-
-```typescript
-// src/worker.ts
-import { scheduled, queue }
-  from '@community-rss/core/workers';
-
-export function createExports(manifest) {
-  const astroExports = astroCreateExports(manifest);
-  return {
-    default: {
-      ...astroExports.default,
-      scheduled,
-      queue,
-    },
-    scheduled,
-    queue,
-  };
-}
-```
-
-No code changes are needed between local dev and production — only
-the deployment target (Pages vs Workers) determines which path runs.
+1. **node-cron** fires on the configured schedule (default: every 30 minutes)
+2. `syncFeeds()` calls the FreshRSS GReader API to fetch new items
+3. New articles are mapped via `mapFreshRssItem()` and upserted into SQLite
+4. Feed metadata (title, site URL, last sync time) is updated
 
 ## Configuration
 
-### Environment Variables
+### Sync Schedule
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `FRESHRSS_URL` | Yes | FreshRSS instance URL |
-| `FRESHRSS_USER` | Yes | FreshRSS admin username |
-| `FRESHRSS_API_PASSWORD` | Yes | FreshRSS **API** password (not login password) |
-| `CF_ACCESS_CLIENT_ID` | No | Cloudflare Zero Trust client ID |
-| `CF_ACCESS_CLIENT_SECRET` | No | Cloudflare Zero Trust secret |
+Set the cron expression in your Astro config:
 
-:::note[Docker networking]
-In local dev, `FRESHRSS_URL` must be `http://freshrss:80` (the
-Docker Compose service name), not `http://localhost:8080`.
-:::
+```js
+communityRss({
+  syncSchedule: '*/15 * * * *', // every 15 minutes
+});
+```
 
-## HTML Sanitisation
+Or via environment variable (takes precedence):
 
-Articles are sanitised using `sanitize-html` with a carefully
-curated allow-list:
+```ini
+SYNC_SCHEDULE=*/15 * * * *
+```
 
-**Allowed tags:** headings, paragraphs, lists, links, images, code
-blocks, tables, blockquotes, emphasis.
+### FreshRSS Connection
 
-**Stripped:** scripts, iframes, event handlers, `javascript:` URLs.
+These environment variables are required:
 
-**Preserved:** external image URLs (media caching processes these
-asynchronously in a later release).
+```ini
+FRESHRSS_URL=http://freshrss:80
+FRESHRSS_USER=admin
+FRESHRSS_API_PASSWORD=your-api-password
+```
 
-Links are automatically enhanced with `target="_blank"` and
-`rel="noopener noreferrer"` for security.
+<Aside type="tip">
+The API password is separate from the FreshRSS login password. Set it under
+**Profile → API management** in the FreshRSS web UI.
+</Aside>
+
+## Feed Types
+
+### Community Feeds (System-Owned)
+
+The **System User** (`id: 'system'`) owns feeds imported from FreshRSS.
+These are global community feeds visible to all readers. The system user is
+seeded automatically during database setup.
+
+### Author Feeds
+
+Registered authors can add their own RSS feeds (up to `maxFeeds` per author).
+Author feeds are verified via domain ownership before activation.
+
+### Admin Feeds
+
+Admin users can add feeds without domain verification. See the
+[Admin Feeds](/guides/admin-feeds/) guide.
+
+## Manual Sync
+
+Trigger a sync manually via the admin API:
+
+```bash
+curl -X POST http://localhost:4321/api/v1/sync \
+  -H "Cookie: <admin-session-cookie>"
+```
+
+<Aside type="caution">
+The sync endpoint requires admin authentication. It is not publicly accessible.
+</Aside>
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| No articles appear | FreshRSS API password incorrect | Check `FRESHRSS_API_PASSWORD` in `.env` |
+| Sync runs but no new items | FreshRSS has no new items | Add feeds in FreshRSS and wait for it to fetch them |
+| `ECONNREFUSED` errors | FreshRSS container not running | Run `docker compose up -d freshrss` |
+| Duplicate articles | Feed URL changed | The system deduplicates by item GUID; URL changes are handled |

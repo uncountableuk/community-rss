@@ -11,7 +11,10 @@ object. All properties have sensible defaults.
 | Name | Type | Required | Default | Since | Description |
 |------|------|----------|---------|-------|-------------|
 | `maxFeeds` | `number` | No | `5` | 0.1.0 | Maximum feeds per verified author |
-| `commentTier` | `'verified' \| 'registered' \| 'guest'` | No | `'registered'` | 0.1.0 | Minimum user tier required to comment |
+| `commentTier` | `CommentTier` | No | `'registered'` | 0.1.0 | Minimum user tier required to comment |
+| `databasePath` | `string` | No | `'./data/community.db'` | 0.4.0 | Path to the SQLite database file |
+| `syncSchedule` | `string` | No | `'*/30 * * * *'` | 0.4.0 | Cron expression for feed sync schedule |
+| `emailTemplateDir` | `string` | No | `'./src/email-templates'` | 0.4.0 | Directory for custom email templates |
 | `email` | `EmailConfig` | No | See below | 0.3.0 | Email delivery configuration |
 
 ### EmailConfig
@@ -25,13 +28,20 @@ object. All properties have sensible defaults.
 
 ```js
 // astro.config.mjs
+import { defineConfig } from 'astro/config';
+import node from '@astrojs/node';
 import communityRss from '@community-rss/core';
 
 export default defineConfig({
+  output: 'server',
+  adapter: node({ mode: 'standalone' }),
   integrations: [
     communityRss({
       maxFeeds: 10,
       commentTier: 'guest',
+      databasePath: './data/community.db',
+      syncSchedule: '*/15 * * * *',
+      emailTemplateDir: './src/email-templates',
       email: {
         from: 'My Community <noreply@example.com>',
         appName: 'My Community',
@@ -44,7 +54,7 @@ export default defineConfig({
 ## CSS Design Tokens
 
 The framework ships with CSS custom properties for all visual values.
-Override tokens in your own stylesheet to customise the appearance:
+Override tokens in your `theme.css` or any stylesheet:
 
 ```css
 :root {
@@ -59,8 +69,7 @@ the full list of available tokens.
 
 ## Environment Variables
 
-The following environment variables must be set in your `.dev.vars` file
-(for local development) or as Cloudflare secrets (for production).
+The following environment variables must be set in your `.env` file.
 
 ### FreshRSS Connection
 
@@ -69,8 +78,12 @@ The following environment variables must be set in your `.dev.vars` file
 | `FRESHRSS_URL` | Yes | FreshRSS instance URL (e.g., `http://freshrss:80`) |
 | `FRESHRSS_USER` | Yes | FreshRSS admin username |
 | `FRESHRSS_API_PASSWORD` | Yes | FreshRSS **API** password (set in Profile → API management; not the login password) |
-| `CF_ACCESS_CLIENT_ID` | No | Cloudflare Zero Trust client ID |
-| `CF_ACCESS_CLIENT_SECRET` | No | Cloudflare Zero Trust client secret |
+
+### Database
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DATABASE_PATH` | No | Path to the SQLite database file (defaults to `./data/community.db`) |
 
 ### General
 
@@ -88,18 +101,3 @@ The following environment variables must be set in your `.dev.vars` file
 | `RESEND_API_KEY` | No | Resend API key for production email delivery. When set, emails use Resend instead of SMTP. |
 
 See the [Email Setup](/guides/email-setup/) guide for details.
-
-### Worker Exports
-
-Re-export the framework's background handlers in your worker entrypoint:
-
-```typescript
-export { scheduled, queue } from '@community-rss/core';
-```
-
-Configure your Cron schedule in `wrangler.toml`:
-
-```toml
-[triggers]
-crons = ["*/15 * * * *"]  # Sync every 15 minutes
-```

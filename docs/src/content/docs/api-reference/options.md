@@ -1,53 +1,106 @@
 ---
 title: Options Reference
-description: Full reference for CommunityRssOptions configuration.
+description: Complete reference for CommunityRssOptions configuration.
 ---
 
 ## CommunityRssOptions
 
-All configuration options for `communityRss()`.
-
-```typescript
-import type { CommunityRssOptions } from '@community-rss/core';
+```ts
+interface CommunityRssOptions {
+  maxFeeds?: number;
+  commentTier?: CommentTier;
+  databasePath?: string;
+  syncSchedule?: string;
+  emailTemplateDir?: string;
+  email?: EmailConfig;
+}
 ```
 
-| Name | Type | Required | Default | Since | Description |
-|------|------|----------|---------|-------|-------------|
-| `maxFeeds` | `number` | No | `5` | 0.1.0 | Maximum feeds per verified author |
-| `commentTier` | `CommentTier` | No | `'registered'` | 0.1.0 | Minimum user tier for commenting |
+### maxFeeds
 
-## CommentTier
+- **Type**: `number`
+- **Default**: `5`
+- **Since**: 0.1.0
 
-```typescript
-type CommentTier = 'verified' | 'registered' | 'guest';
+Maximum number of feeds a verified author can submit. Does not apply
+to admin or system feeds.
+
+### commentTier
+
+- **Type**: `CommentTier`
+- **Default**: `'registered'`
+- **Since**: 0.1.0
+
+Minimum user role required to post comments.
+
+```ts
+type CommentTier = 'guest' | 'registered' | 'author' | 'admin';
 ```
 
-| Value | Description |
-|-------|-------------|
-| `'verified'` | Only verified authors can comment |
-| `'registered'` | Registered users and above can comment |
-| `'guest'` | All users including guests can comment (moderated) |
+### databasePath
+
+- **Type**: `string`
+- **Default**: `'./data/community.db'`
+- **Since**: 0.4.0
+
+File path for the SQLite database. The directory is created automatically
+if it does not exist. Can also be set via the `DATABASE_PATH` environment
+variable.
+
+### syncSchedule
+
+- **Type**: `string`
+- **Default**: `'*/30 * * * *'`
+- **Since**: 0.4.0
+
+Cron expression controlling how often feeds are synced from FreshRSS.
+Uses standard 5-field cron syntax (minute, hour, day-of-month, month,
+day-of-week).
+
+Common values:
+
+| Expression | Frequency |
+|------------|-----------|
+| `*/5 * * * *` | Every 5 minutes |
+| `*/15 * * * *` | Every 15 minutes |
+| `*/30 * * * *` | Every 30 minutes (default) |
+| `0 * * * *` | Every hour |
+
+### emailTemplateDir
+
+- **Type**: `string`
+- **Default**: `'./src/email-templates'`
+- **Since**: 0.4.0
+
+Directory containing custom email templates. Templates in this directory
+override the built-in defaults. See [Email Setup](/guides/email-setup/)
+for template details.
+
+### email
+
+- **Type**: `EmailConfig`
+- **Default**: See below
+- **Since**: 0.3.0
+
+```ts
+interface EmailConfig {
+  from?: string;
+  appName?: string;
+}
+```
+
+| Property | Default | Description |
+|----------|---------|-------------|
+| `from` | `'Community RSS <noreply@localhost>'` | Email sender address |
+| `appName` | `'Community RSS'` | App name used in email subjects and `{{appName}}` template variable |
 
 ## CSS Tokens
 
-The framework injects CSS custom properties. Override any token in
-your own stylesheet:
+All CSS custom properties use the `--crss-` prefix. See the
+[Theming](/guides/theming/) guide for the complete token list.
 
-| Token | Default | Category |
-|-------|---------|----------|
-| `--crss-surface-0` | `#ffffff` | Surface |
-| `--crss-surface-1` | `#f3f4f6` | Surface |
-| `--crss-surface-2` | `#e5e7eb` | Surface |
-| `--crss-surface-3` | `#d1d5db` | Surface |
-| `--crss-text-primary` | `#1a1a2e` | Text |
-| `--crss-text-secondary` | `#4b5563` | Text |
-| `--crss-text-muted` | `#9ca3af` | Text |
-| `--crss-brand-primary` | `#4f46e5` | Brand |
-| `--crss-brand-accent` | `#7c3aed` | Brand |
-| `--crss-heart` | `#ef4444` | Interaction |
-| `--crss-star` | `#f59e0b` | Interaction |
-| `--crss-comment` | `#3b82f6` | Interaction |
-| `--crss-font-family` | `system-ui, ...` | Typography |
-| `--crss-radius-sm` | `4px` | Border Radius |
-| `--crss-radius-md` | `8px` | Border Radius |
-| `--crss-radius-lg` | `12px` | Border Radius |
+## Environment Variables
+
+Environment variables can override or supplement options. See
+[Configuration](/getting-started/configuration/#environment-variables)
+for the full list.
