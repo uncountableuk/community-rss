@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from 'vitest';
 import { setupServer } from 'msw/node';
 import { http, HttpResponse } from 'msw';
-import { syncFeeds, generateFeedId, itemToQueueMessage } from '@utils/build/sync';
+import { syncFeeds, generateFeedId, mapFreshRssItem } from '@utils/build/sync';
 import { mockFeedsResponse, mockArticlesResponse } from '@fixtures/freshrss-responses';
 import type { AppContext } from '@core-types/context';
 
@@ -64,10 +64,10 @@ describe('Sync Utilities', () => {
         });
     });
 
-    describe('itemToQueueMessage', () => {
-        it('maps a FreshRSS item to a queue message', () => {
+    describe('mapFreshRssItem', () => {
+        it('maps a FreshRSS item to an article payload', () => {
             const item = mockArticlesResponse.items[0];
-            const message = itemToQueueMessage(item, 'feed_1');
+            const message = mapFreshRssItem(item, 'feed_1');
 
             expect(message.freshrssItemId).toBe(item.id);
             expect(message.feedId).toBe('feed_1');
@@ -79,7 +79,7 @@ describe('Sync Utilities', () => {
 
         it('handles items without content', () => {
             const item = mockArticlesResponse.items[1]; // No content field
-            const message = itemToQueueMessage(item, 'feed_1');
+            const message = mapFreshRssItem(item, 'feed_1');
 
             expect(message.content).toBe('Some CSS tips.');
             expect(message.summary).toBe('Some CSS tips.');

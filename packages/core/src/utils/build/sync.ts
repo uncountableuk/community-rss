@@ -19,11 +19,11 @@ export function generateFeedId(freshrssId: string): string {
 }
 
 /**
- * Maps a FreshRSS item to a queue message payload.
+ * Maps a FreshRSS item to an article payload.
  *
  * @since 0.2.0
  */
-export interface ArticleQueueMessage {
+export interface ArticlePayload {
     freshrssItemId: string;
     feedId: string;
     title: string;
@@ -35,14 +35,14 @@ export interface ArticleQueueMessage {
 }
 
 /**
- * Converts a FreshRSS item to a queue message payload.
+ * Converts a FreshRSS item to an article payload.
  *
  * @param item - FreshRSS item
  * @param feedId - Internal feed ID
- * @returns Queue message payload
+ * @returns Article payload
  * @since 0.2.0
  */
-export function itemToQueueMessage(item: FreshRssItem, feedId: string): ArticleQueueMessage {
+export function mapFreshRssItem(item: FreshRssItem, feedId: string): ArticlePayload {
     return {
         freshrssItemId: item.id,
         feedId,
@@ -99,7 +99,7 @@ export async function syncFeeds(app: AppContext): Promise<{
         // 4. Process each article inline (replaces queue-based processing)
         for (const item of stream.items) {
             try {
-                const message = itemToQueueMessage(item, feedId);
+                const message = mapFreshRssItem(item, feedId);
                 const processed = processArticle(message);
 
                 await upsertArticle(app.db, {

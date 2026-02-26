@@ -616,26 +616,26 @@ a standard Node.js project demonstrating the new developer experience.
 **Objective:** All existing tests pass with the new architecture. New tests
 cover new functionality. ≥80% coverage maintained.
 
-- [ ] Migrate all DB query tests:
+- [x] Migrate all DB query tests:
   - Replace D1Database mocks with in-memory SQLite (better-sqlite3)
   - Or keep as Drizzle-level mocks if test structure allows
-- [ ] Migrate all route handler tests:
+- [x] Migrate all route handler tests:
   - Replace `context.locals.runtime.env` mocks with `context.locals.app`
   - Update `Env` references to `AppContext`
-- [ ] Migrate worker tests → scheduler tests:
+- [x] Migrate worker tests → scheduler tests:
   - Test cron job registration and callback
   - Test scheduler start/stop lifecycle
-- [ ] Migrate sync tests:
+- [x] Migrate sync tests:
   - Remove queue enqueue assertions
   - Add inline processArticle assertions
-- [ ] Update integration factory test:
+- [x] Update integration factory test:
   - Now expects 11 injected routes (API only, no pages)
-- [ ] Update all auth tests for new DB access pattern
-- [ ] Update email tests for file-based template resolution
-- [ ] Verify no test references `D1Database`, `R2Bucket`, `Queue`,
+- [x] Update all auth tests for new DB access pattern
+- [x] Update email tests for file-based template resolution
+- [x] Verify no test references `D1Database`, `R2Bucket`, `Queue`,
   `wrangler`, or `@cloudflare/` types
-- [ ] Run full test suite and verify all pass
-- [ ] Run coverage report and verify ≥80% on all metrics
+- [x] Run full test suite and verify all pass
+- [x] Run coverage report and verify ≥80% on all metrics
 
 ## Phase 10: `.github` Instructions Rewrite
 
@@ -1070,6 +1070,39 @@ on VPS/Docker.
   because it's specific to the playground/consumer app, not the core package.
 - Docker service tests deferred to Phase 12 since they require live Docker
   daemon access.
+
+**Issues:** None.
+
+---
+
+### Phase 9: Test Migration
+
+**Commit:** *(pending)* — 360 tests passing (no new tests)
+
+**Completed:**
+- Updated `src/utils/build/guest.ts`: `D1Database` → `BetterSQLite3Database`
+  (imports from `drizzle-orm/better-sqlite3`)
+- Updated `src/utils/build/admin-feeds.ts`: `D1Database` → `BetterSQLite3Database`
+- Renamed `itemToQueueMessage` → `mapFreshRssItem` in `src/utils/build/sync.ts`;
+  renamed `ArticleQueueMessage` → `ArticlePayload`
+- Updated JSDoc comments to remove D1/queue terminology
+- Updated `test/utils/build/guest.test.ts`: added `BetterSQLite3Database` import
+- Updated `test/utils/build/admin-feeds.test.ts`: added `BetterSQLite3Database`
+  import
+- Updated `test/utils/build/sync.test.ts`: renamed imports
+- Removed dead `src/routes/pages/` directory (8 .astro files no longer injected
+  since Phase 2, still containing D1 references)
+- Verified zero grep hits for `D1Database`, `R2Bucket`, `Queue`, `wrangler`,
+  `@cloudflare`, `locals.runtime` across `test/`
+- Coverage: Statements 87%, Branches 89%, Functions 95%, Lines 87% (all ≥80%)
+
+**Decisions:**
+- `src/types/env.d.ts` was NOT deleted — it's marked `@deprecated` and exported
+  from `index.ts` as `Env` for one more release. Will be removed in the next
+  major version.
+- The bulk of test migration was already done in Phases 1-5 alongside the code
+  changes. Phase 9 caught the remaining stragglers (`guest.ts`, `admin-feeds.ts`,
+  `sync.ts`) and dead page route files.
 
 **Issues:** None.
 

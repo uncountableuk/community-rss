@@ -27,6 +27,7 @@ afterAll(() => {
 });
 
 import { validateFeedUrl, submitAdminFeed } from '@utils/build/admin-feeds';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 
 describe('Admin Feeds', () => {
     describe('validateFeedUrl', () => {
@@ -101,7 +102,7 @@ describe('Admin Feeds', () => {
     });
 
     describe('submitAdminFeed', () => {
-        const mockDb = {} as D1Database;
+        const mockDb = {} as BetterSQLite3Database;
 
         it('should create an approved feed when URL is valid', async () => {
             mocks.mockFetch.mockResolvedValue(

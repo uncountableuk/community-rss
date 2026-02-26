@@ -11,16 +11,17 @@ vi.mock('@db/queries/users', () => ({
 }));
 
 import { createShadowProfile, migrateGuestToUser } from '@utils/build/guest';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 
 describe('server guest management', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
 
-    const mockDb = {} as D1Database;
+    const mockDb = {} as BetterSQLite3Database;
 
     describe('createShadowProfile', () => {
-        it('should create a guest user in D1', async () => {
+        it('should create a guest user', async () => {
             const guestId = 'guest-uuid-123';
             mockCreateGuestUser.mockResolvedValueOnce({ id: guestId, isGuest: true, role: 'user' });
 
