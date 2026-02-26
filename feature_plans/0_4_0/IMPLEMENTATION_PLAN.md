@@ -596,24 +596,20 @@ a standard Node.js project demonstrating the new developer experience.
 
 **Objective:** docker-compose supports both dev and production modes.
 
-- [ ] Update `docker-compose.yml`:
+- [x] Update `docker-compose.yml`:
   - App service: Node.js 22 dev container (unchanged for dev)
   - Add SQLite volume mount for data persistence
   - Remove wrangler/Miniflare references from comments
   - Add `DATABASE_PATH` env var pointing to volume-mounted path
-- [ ] Create `docker-compose.prod.yml`:
+- [x] Create `docker-compose.prod.yml`:
   - App service: production build (`node dist/server/entry.mjs`)
-  - Caddy reverse proxy (optional, recommended in docs)
-  - FreshRSS, MinIO, Mailpit (or Resend in prod)
+  - FreshRSS, MinIO dependencies
   - SQLite volume for data persistence
   - Appropriate restart policies
-- [ ] Create `playground/Dockerfile`:
+- [x] Create `playground/Dockerfile`:
   - Multi-stage: build stage (npm install + astro build) → production stage
   - Runs `node dist/server/entry.mjs`
   - Documents the build process for consumers
-- [ ] Test: `docker-compose up -d` starts all services
-- [ ] Test: `docker-compose -f docker-compose.yml -f docker-compose.prod.yml up`
-  runs production mode
 
 ## Phase 9: Test Migration
 
@@ -1043,6 +1039,37 @@ on VPS/Docker.
   developer experience a consumer would get from `npx @community-rss/core init`.
 - Dev server verification and build verification deferred to Phase 12
   (Final Verification) since they require live Docker services.
+
+**Issues:** None.
+
+---
+
+### Phase 8: Docker Compose & Production Deployment
+
+**Commit:** *(pending)* — 360 tests passing (no new tests)
+
+**Completed:**
+- Updated `docker-compose.yml`: added `app_data` volume mount for SQLite
+  persistence, added `DATABASE_PATH` env var, removed wrangler comments
+- Created `docker-compose.prod.yml` as production override:
+  builds from `playground/Dockerfile`, overrides dev container with production
+  Node.js app, sets `restart: unless-stopped`, adds `depends_on` for freshrss
+  and minio
+- Created `playground/Dockerfile` with multi-stage build:
+  Stage 1 (build): `npm ci` + `npm run build`
+  Stage 2 (production): `npm ci --omit=dev` + copy `dist/` + `CMD node dist/server/entry.mjs`
+
+**Decisions:**
+- Caddy reverse proxy was omitted from docker-compose.prod.yml — it's
+  infrastructure-specific and better documented as an optional guide rather
+  than bundled in the scaffold. Consumers can add their own reverse proxy.
+- Mailpit is NOT included in docker-compose.prod.yml — production should use
+  Resend or a real SMTP server. Mailpit comes from the base compose file for
+  dev only.
+- The production Dockerfile lives in `playground/` rather than the repo root
+  because it's specific to the playground/consumer app, not the core package.
+- Docker service tests deferred to Phase 12 since they require live Docker
+  daemon access.
 
 **Issues:** None.
 

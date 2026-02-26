@@ -5,13 +5,15 @@ services:
     container_name: community_rss_app
     volumes:
       - ./:/app
+      - app_data:/app/playground/data
     working_dir: /app
     ports:
       - "4321:4321" # Astro dev server (Playground)
       - "4322:4322" # Starlight docs
     command: sleep infinity
     environment:
-      - CHOKIDAR_USEPOLLING=true # Helps Astro watch for file changes in Docker volumes
+      - CHOKIDAR_USEPOLLING=true
+      - DATABASE_PATH=/app/playground/data/community.db
 
   # 2. FreshRSS: The ingestion engine
   freshrss:
@@ -44,10 +46,11 @@ services:
     image: axllent/mailpit
     container_name: local_mailpit
     ports:
-      - "8025:8025" # Web UI to view caught emails on host
+      - "8025:8025" # Web UI
     environment:
       - MP_MAX_MESSAGES=500
 
 volumes:
   freshrss_data:
   minio_data:
+  app_data:
