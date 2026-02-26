@@ -1,8 +1,8 @@
 /**
  * SQLite database connection factory for Community RSS.
  *
- * Replaces the Cloudflare D1 binding with a standard `better-sqlite3`
- * connection wrapped by Drizzle ORM. Uses WAL mode for concurrent
+ * Creates a `better-sqlite3` connection wrapped by Drizzle ORM.
+ * Uses WAL mode for concurrent
  * read performance and a singleton pattern for connection reuse.
  *
  * @since 0.4.0

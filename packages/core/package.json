@@ -50,6 +50,7 @@
     "astro-integration",
     "rss",
     "community",
-    "cloudflare"
+    "docker",
+    "self-hosted"
   ]
 }

@@ -2,8 +2,6 @@
  * Astro middleware that creates the AppContext and sets it on
  * `context.locals.app` for all route handlers.
  *
- * Replaces the Cloudflare `context.locals.runtime.env` pattern.
- *
  * @since 0.4.0
  */
 

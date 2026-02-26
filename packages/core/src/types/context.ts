@@ -1,6 +1,5 @@
 /**
  * Runtime context available to all route handlers via `context.locals.app`.
- * Replaces the Cloudflare `Env` interface.
  *
  * @since 0.4.0
  */
@@ -25,7 +24,7 @@ export interface AppContext {
 }
 
 /**
- * Standard environment variables (replaces Cloudflare bindings).
+ * Standard environment variables read from `process.env`.
  *
  * @since 0.4.0
  */

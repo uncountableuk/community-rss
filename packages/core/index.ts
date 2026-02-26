@@ -35,8 +35,6 @@ export default function communityRss(options?: CommunityRssOptions): AstroIntegr
 // Public type exports
 export type { CommunityRssOptions, EmailConfig, ResolvedCommunityRssOptions } from './src/types/options';
 export type { AppContext, EnvironmentVariables } from './src/types/context';
-/** @deprecated Use AppContext and EnvironmentVariables from types/context instead */
-export type { Env } from './src/types/env';
 export type {
   UserTier,
   UserRole,
@@ -88,5 +86,5 @@ export { renderEmailTemplate } from './src/utils/build/email-renderer';
 // Database exports
 export { createDatabase, closeDatabase } from './src/db/connection';
 
-// Scheduler exports (replacing Cloudflare Workers)
+// Scheduler exports
 export { startScheduler, stopScheduler, isSchedulerRunning } from './src/utils/build/scheduler';

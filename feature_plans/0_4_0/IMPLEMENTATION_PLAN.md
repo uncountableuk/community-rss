@@ -762,7 +762,7 @@ on VPS/Docker.
 
 **Objective:** Everything works end-to-end. All tests pass. Coverage ≥80%.
 
-- [ ] Run `npm run test:coverage` from root — all tests pass, ≥80% coverage
+- [x] Run `npm run test:coverage` from root — all tests pass, ≥80% coverage
 - [ ] Run `npm run build --workspace=playground` — builds successfully
 - [ ] Run `npm run build --workspace=docs` — builds successfully
 - [ ] Start `docker-compose up -d` — all services healthy
@@ -773,13 +773,26 @@ on VPS/Docker.
 - [ ] Test profile edit → profile updates
 - [ ] Test email change flow end-to-end
 - [ ] Verify `npx @community-rss/core init` scaffolds correctly
-- [ ] Verify no Cloudflare-specific code remains in `packages/core/`
-- [ ] Verify no references to `wrangler`, `D1Database`, `R2Bucket`, `Queue`
+- [x] Verify no Cloudflare-specific code remains in `packages/core/`
+- [x] Verify no references to `wrangler`, `D1Database`, `R2Bucket`, `Queue`
   remain in source (test mocks are acceptable during migration)
-- [ ] Update `packages/core/package.json` keywords (remove "cloudflare")
+- [x] Update `packages/core/package.json` keywords (remove "cloudflare")
 - [ ] Verify playground demonstrates the new developer experience correctly
 
----
+### Implementation Notes (Phase 12)
+
+- Coverage: Statements 87%, Branches 89%, Functions 95%, Lines 87% (all ≥80%)
+- Removed `src/types/env.d.ts` (legacy Cloudflare `Env` interface) and its
+  `export type { Env }` from `index.ts` — not imported anywhere in source or tests
+- Fixed comment-level Cloudflare references in: `context.ts`, `middleware.ts`,
+  `email-transports.ts`, `schema.ts`, `connection.ts`, `index.ts`
+- Updated `package.json` keywords: removed "cloudflare", added "docker", "self-hosted"
+- Removed stale build artifacts: `playground/dist/` (old Cloudflare worker build),
+  `playground/.wrangler/` (old wrangler cache) — both gitignored
+- Verified zero Cloudflare/D1/R2/wrangler references remain in source and tests
+- Items marked [ ] are manual E2E testing tasks requiring running services (Docker,
+  FreshRSS, Mailpit) — cannot be automated in this session
+- All 360 tests still passing across 32 test files
 
 ## Implementation Notes
 
