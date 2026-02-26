@@ -392,81 +392,81 @@ export { startScheduler, stopScheduler } from './src/utils/build/scheduler';
 **Objective:** Replace D1 with better-sqlite3 while keeping Drizzle ORM
 as the query builder. All DB query tests must pass.
 
-- [ ] Install `better-sqlite3` and `@types/better-sqlite3` in `packages/core`
-- [ ] Create `packages/core/src/db/connection.ts`
+- [x] Install `better-sqlite3` and `@types/better-sqlite3` in `packages/core`
+- [x] Create `packages/core/src/db/connection.ts`
   - `createDatabase(path: string): BetterSQLite3Database` — connection factory
   - Enables WAL mode for concurrent read performance
   - Creates parent directories if database path doesn't exist
   - Singleton pattern for connection reuse
   - `closeDatabase()` — cleanup for graceful shutdown
-- [ ] Update `packages/core/drizzle.config.ts` — switch to `better-sqlite3` driver
-- [ ] Update all `src/db/queries/*.ts` files:
+- [x] Update `packages/core/drizzle.config.ts` — switch to `better-sqlite3` driver
+- [x] Update all `src/db/queries/*.ts` files:
   - Change parameter from `D1Database` to Drizzle `BetterSQLite3Database`
   - `users.ts`, `feeds.ts`, `articles.ts`, `pending-signups.ts`
-- [ ] Update `src/db/seed.ts` — change DB parameter type
-- [ ] Test: `test/db/connection.test.ts` (file creation, WAL mode, singleton)
-- [ ] Update all DB query test files to use in-memory SQLite instead of D1 mocks
-- [ ] Verify all existing DB tests pass
+- [x] Update `src/db/seed.ts` — change DB parameter type
+- [x] Test: `test/db/connection.test.ts` (file creation, WAL mode, singleton)
+- [x] Update all DB query test files to use in-memory SQLite instead of D1 mocks
+- [x] Verify all existing DB tests pass
 
 ## Phase 2: Runtime Context & Middleware
 
 **Objective:** Replace Cloudflare `Env` with `AppContext` accessible via
 Astro middleware at `context.locals.app`.
 
-- [ ] Create `packages/core/src/types/context.ts` — `AppContext` and
+- [x] Create `packages/core/src/types/context.ts` — `AppContext` and
   `EnvironmentVariables` interfaces
-- [ ] Deprecate `packages/core/src/types/env.d.ts` — add `@deprecated` JSDoc;
+- [x] Deprecate `packages/core/src/types/env.d.ts` — add `@deprecated` JSDoc;
   keep as type alias for one release
-- [ ] Create `packages/core/src/middleware.ts`
+- [x] Create `packages/core/src/middleware.ts`
   - Reads `process.env` for environment variables
   - Creates/reuses database connection via `createDatabase()`
   - Sets `context.locals.app` with `AppContext`
   - Handles errors (missing env vars → 503 with helpful message)
-- [ ] Update `packages/core/src/types/options.ts` — add `databasePath`,
+- [x] Update `packages/core/src/types/options.ts` — add `databasePath`,
   `syncSchedule`, `emailTemplateDir` options
-- [ ] Update `packages/core/src/integration.ts`:
+- [x] Update `packages/core/src/integration.ts`:
   - Register middleware via `addMiddleware()` in `astro:config:setup`
   - Remove all page route injections (8 pages)
   - Keep all API route injections (11 routes)
   - Add `astro:server:start`/`astro:server:done` hooks for scheduler lifecycle
-- [ ] Update every route handler (`src/routes/api/**/*.ts`) to access
+- [x] Update every route handler (`src/routes/api/**/*.ts`) to access
   `context.locals.app` instead of `context.locals.runtime.env`
-- [ ] Test: `test/middleware.test.ts` (context creation, env validation)
-- [ ] Update `test/integration/integration-factory.test.ts` (now expects 11
+- [ ] Test: `test/middleware.test.ts` (context creation, env validation) — *deferred; middleware tested implicitly via integration-factory hooks*
+- [x] Update `test/integration/integration-factory.test.ts` (now expects 11
   injected API routes instead of 19)
-- [ ] Update all route handler tests to mock `context.locals.app`
+- [x] Update all route handler tests to mock `context.locals.app`
 
 ## Phase 3: Background Processing Migration
 
 **Objective:** Replace Cloudflare Workers (Cron Triggers + Queues) with
 node-cron and inline article processing.
 
-- [ ] Install `node-cron` and `@types/node-cron` in `packages/core`
-- [ ] Create `packages/core/src/utils/build/scheduler.ts`
-  - `startScheduler(config, db, env)` — registers cron job calling `syncFeeds`
+- [x] Install `node-cron` and `@types/node-cron` in `packages/core`
+- [x] Create `packages/core/src/utils/build/scheduler.ts`
+  - `startScheduler(app)` — registers cron job calling `syncFeeds`
   - `stopScheduler()` — stops all cron tasks
   - Uses `node-cron` with configurable schedule expression
   - Defaults to `*/30 * * * *` (every 30 minutes)
   - Logs sync results (feeds processed, articles processed)
-- [ ] Update `packages/core/src/utils/build/sync.ts`:
+- [x] Update `packages/core/src/utils/build/sync.ts`:
   - Remove `env.ARTICLE_QUEUE.send()` calls
   - After upserting articles, call `processArticle()` inline for each
   - Update `syncFeeds()` signature: accept `AppContext` instead of `Env`
   - Return enhanced result: `{ feedsProcessed, articlesProcessed }`
-- [ ] Update `packages/core/src/routes/api/v1/admin/sync.ts`:
+- [x] Update `packages/core/src/routes/api/v1/admin/sync.ts`:
   - Remove inline queue workaround
   - Call `syncFeeds()` with AppContext directly
   - Remove queue-related code and comments
-- [ ] Remove `packages/core/src/workers/` directory entirely
-- [ ] Remove `playground/src/worker.ts`
-- [ ] Remove worker-related entries from `playground/wrangler.toml`
-  (file will be deleted entirely in Phase 6)
-- [ ] Update `packages/core/index.ts` — remove `scheduled`/`queue` exports;
+- [x] Remove `packages/core/src/workers/` directory entirely
+- [x] Remove `playground/src/worker.ts`
+- [x] Remove worker-related entries from `playground/wrangler.toml`
+  (file will be deleted entirely in Phase 7)
+- [x] Update `packages/core/index.ts` — remove `scheduled`/`queue` exports;
   add `startScheduler`/`stopScheduler`
-- [ ] Update `packages/core/package.json` — remove `./workers` export path
-- [ ] Test: `test/utils/build/scheduler.test.ts` (cron registration, execution, cleanup)
-- [ ] Update `test/utils/build/sync.test.ts` (inline processing, no queue)
-- [ ] Remove `test/workers/` and create equivalent scheduler tests
+- [x] Update `packages/core/package.json` — remove `./workers` export path
+- [x] Test: `test/utils/build/scheduler.test.ts` (cron registration, execution, cleanup)
+- [x] Update `test/utils/build/sync.test.ts` (inline processing, no queue)
+- [x] Remove `test/workers/` and create equivalent scheduler tests
 
 ## Phase 4: Auth & Email Migration
 
@@ -474,41 +474,41 @@ node-cron and inline article processing.
 templates to file-based rendering.
 
 ### Auth
-- [ ] Update `packages/core/src/utils/build/auth.ts`:
+- [x] Update `packages/core/src/utils/build/auth.ts`:
   - Change `drizzle(env.DB)` to accept Drizzle instance from AppContext
-  - `createAuth(db, env)` instead of `createAuth(env)` with D1
+  - `createAuth(app)` instead of `createAuth(env)` with D1
   - better-auth natively supports `better-sqlite3` — use its built-in adapter
   - Verify `baseURL` sourced from `env.PUBLIC_SITE_URL` (unchanged)
-- [ ] Update `packages/core/src/routes/api/auth/[...all].ts` — use AppContext
-- [ ] Update auth-related test mocks
+- [x] Update `packages/core/src/routes/api/auth/[...all].ts` — use AppContext
+- [x] Update auth-related test mocks
 
 ### File-Based Email Templates
-- [ ] Create `packages/core/src/templates/email/sign-in.html`
+- [x] Create `packages/core/src/templates/email/sign-in.html`
   - Variables: `{{appName}}`, `{{greeting}}`, `{{url}}`, `{{email}}`
   - Subject in HTML comment: `<!-- subject: Sign in to {{appName}} -->`
-- [ ] Create `packages/core/src/templates/email/welcome.html`
+- [x] Create `packages/core/src/templates/email/welcome.html`
   - Variables: `{{appName}}`, `{{greeting}}`, `{{url}}`, `{{email}}`, `{{name}}`
-- [ ] Create `packages/core/src/templates/email/email-change.html`
+- [x] Create `packages/core/src/templates/email/email-change.html`
   - Variables: `{{appName}}`, `{{greeting}}`, `{{url}}`, `{{email}}`, `{{newEmail}}`
-- [ ] Create `packages/core/src/utils/build/email-renderer.ts`:
-  - `renderEmailTemplate(name, data, templateDir?)` — resolves and renders
+- [x] Create `packages/core/src/utils/build/email-renderer.ts`:
+  - `renderEmailTemplate(name, data, developerDir?)` — resolves and renders
   - Template resolution: developer dir → package defaults
   - Subject extraction from `<!-- subject: ... -->` comment
   - `{{variable}}` replacement
   - Plain text generation (strip HTML tags)
   - Error handling for missing templates
-- [ ] Update `packages/core/src/utils/build/email-service.ts`:
+- [x] Update `packages/core/src/utils/build/email-service.ts`:
   - Check for file-based template first (via renderer)
   - Fall back to code-based template functions (existing)
   - Code-based `emailConfig.templates` overrides take highest priority
-- [ ] Test: `test/utils/build/email-renderer.test.ts`
+- [x] Test: `test/utils/build/email-renderer.test.ts`
   - Template file resolution (developer dir, fallback to package)
   - Variable substitution
   - Subject extraction
   - Plain text generation
   - Missing template error handling
-- [ ] Update `test/utils/build/email-service.test.ts` for new resolution order
-- [ ] Update `test/utils/build/email.test.ts` for file-based templates
+- [x] Update `test/utils/build/email-service.test.ts` for new resolution order
+- [x] Update `test/utils/build/email.test.ts` for file-based templates
 
 ## Phase 5: Component Architecture Upgrade
 
@@ -516,34 +516,34 @@ templates to file-based rendering.
 named slots, and message overrides. Components must work identically
 when imported by developer-owned pages.
 
-- [ ] Update `packages/core/src/layouts/BaseLayout.astro`:
+- [x] Update `packages/core/src/layouts/BaseLayout.astro`:
   - Add named slots: `head`, `header`, `footer`
   - Default header includes `AuthButton`, overridable via slot
   - Default footer, overridable via slot
   - Accept `title` and `description` props
-- [ ] Update `packages/core/src/components/SignUpForm.astro`:
+- [x] Update `packages/core/src/components/SignUpForm.astro`:
   - Add `messages` prop (all copy/labels configurable)
   - Add `errorMessages` prop (all error strings configurable)
   - Default messages match current behaviour
-- [ ] Update `packages/core/src/components/MagicLinkForm.astro`:
+- [x] Update `packages/core/src/components/MagicLinkForm.astro`:
   - Add `messages` prop (submit label, success text, error texts)
-- [ ] Update `packages/core/src/components/AuthButton.astro`:
+- [x] Update `packages/core/src/components/AuthButton.astro`:
   - Add `labels` prop (signIn, signOut, profile link text)
-- [ ] Update `packages/core/src/components/ConsentModal.astro`:
+- [x] Update `packages/core/src/components/ConsentModal.astro`:
   - Add `messages` prop (title, body, accept/decline labels)
-- [ ] Update `packages/core/src/components/ArticleModal.astro`:
+- [x] Update `packages/core/src/components/ArticleModal.astro`:
   - Add `labels` prop (close, next, previous)
-- [ ] Update `packages/core/src/components/FeedCard.astro`:
+- [x] Update `packages/core/src/components/FeedCard.astro`:
   - Add `labels` prop (read more, heart, star)
-- [ ] Verify all components use CSS custom properties exclusively (no hard-coded values)
-- [ ] Verify all components are importable from `@community-rss/core/components/*`
+- [x] Verify all components use CSS custom properties exclusively (no hard-coded values)
+- [x] Verify all components are importable from `@community-rss/core/components/*`
 
 ## Phase 6: CLI Scaffold Command
 
 **Objective:** Create `npx @community-rss/core init` that scaffolds a
 working project for the developer.
 
-- [ ] Create `packages/core/src/cli/init.ts`:
+- [x] Create `packages/core/src/cli/init.mjs`:
   - Detect project root (look for `package.json`)
   - Create `src/pages/` with default pages importing package components
   - Create `src/email-templates/` with default HTML email templates
@@ -554,17 +554,17 @@ working project for the developer.
   - Skip existing files (warn, don't overwrite)
   - Support `--force` flag to overwrite
   - Output summary of created files
-- [ ] Create all scaffold template files in `src/cli/templates/`:
+- [x] Create all scaffold template files in `src/cli/templates/`:
   - Pages import components from `@community-rss/core/components/*`
   - Pages use `BaseLayout` from `@community-rss/core/layouts/BaseLayout.astro`
   - Pages pass through slot overrides where appropriate
-- [ ] Add `bin` field to `packages/core/package.json`:
+- [x] Add `bin` field to `packages/core/package.json`:
   ```json
   "bin": {
-    "community-rss": "./src/cli/init.ts"
+    "community-rss": "./src/cli/init.mjs"
   }
   ```
-- [ ] Test: `test/cli/init.test.ts`
+- [x] Test: `test/cli/init.test.ts`
   - Files created in correct locations
   - Existing files not overwritten (without --force)
   - Generated pages contain correct imports
@@ -776,7 +776,269 @@ on VPS/Docker.
 
 ## Implementation Notes
 
-*This section is initially empty. It is populated during implementation.*
+### Phase 1: Database Layer Migration
+
+**Commit:** `81ab4c9` — 318 tests passing
+
+**Completed:**
+- Created `src/db/connection.ts` with singleton pattern, WAL mode, foreign keys
+  enabled, and auto-creation of parent directories via `mkdirSync`
+- Added `_resetDatabaseSingleton()` export for test isolation
+- Changed all 4 DB query files (`users.ts`, `feeds.ts`, `articles.ts`,
+  `pending-signups.ts`) from `D1Database` param + `drizzle(db)` wrapping to
+  accepting `BetterSQLite3Database` directly (Drizzle instance passed in)
+- Updated `seed.ts` param type
+- Updated `drizzle.config.ts` to `better-sqlite3` driver
+- Created 7 unit tests for connection factory
+- Removed `@cloudflare/workers-types` and `wrangler` dev dependencies
+
+**Decisions:**
+- DB query functions accept Drizzle `BetterSQLite3Database` directly instead of
+  raw `better-sqlite3` Database. This avoids redundant `drizzle()` wrapping at
+  every call site — the connection factory creates the Drizzle instance once.
+- The `_resetDatabaseSingleton()` function is prefixed with underscore to signal
+  it's test-only. It's needed because the singleton pattern would otherwise leak
+  state between test files.
+
+**Issues:** None.
+
+---
+
+### Phase 2: Runtime Context & Middleware
+
+**Commit:** `d416802` — 318 tests passing
+
+**Completed:**
+- Created `src/types/context.ts` with `AppContext` and `EnvironmentVariables`
+  interfaces
+- Created `src/middleware.ts` using Astro `defineMiddleware`
+- Updated `src/types/options.ts` with `databasePath`, `syncSchedule`,
+  `emailTemplateDir` options and `ResolvedCommunityRssOptions` type
+- Updated `integration.ts`: removed 8 page route injections (kept 11 API
+  routes), added `registerMiddleware()`, added `astro:server:start` and
+  `astro:server:done` hooks
+- Updated all 11 route handlers to use `(locals as { app?: AppContext }).app`
+  pattern
+- Updated all route and utility test files to mock `context.locals.app`
+- Auth migrated: `createAuth(app)`, `requireAuth(request, app)`,
+  `requireAdmin(request, app)` — all accept `AppContext`
+- Email service migrated: `createEmailService(app)` reads config from
+  `app.config.email`
+- Updated `index.ts` exports: added `AppContext`, `EnvironmentVariables`,
+  `ResolvedCommunityRssOptions`, `createDatabase`, `closeDatabase`
+
+**Decisions:**
+- Route handlers use `(locals as { app?: AppContext }).app` casting because
+  Astro's `locals` type is `Record<string, unknown>` and the framework can't
+  modify the consumer's type declarations. The `as` cast is safe since the
+  middleware always sets `locals.app`.
+- `test/middleware.test.ts` was deferred — middleware is tested implicitly via
+  the integration factory test's lifecycle hook tests. A dedicated middleware
+  test would require mocking Astro's `defineMiddleware` virtual module.
+- `syncFeeds()` signature changed to `syncFeeds(app: AppContext)`. The return
+  type changed from `{ feedsProcessed, articlesEnqueued }` to
+  `{ feedsProcessed, articlesProcessed }` to reflect inline processing.
+
+**Issues:**
+1. **JSDoc `*/` in comment breaks esbuild** — The `@default '*/30 * * * *'`
+   JSDoc tag in `options.ts` was interpreted by esbuild as closing the JSDoc
+   comment block, causing a build error. Fixed by rewording to descriptive
+   text: `"Defaults to every 30 minutes (STAR/30 STAR STAR STAR STAR)"`.
+   **Lesson:** Avoid literal `*/` inside JSDoc comments; use descriptive text
+   or escape the asterisk.
+2. **`astro:middleware` virtual module unavailable in Vitest** — Importing
+   `defineMiddleware` from `astro:middleware` in `integration.ts` caused the
+   integration-factory test to fail because Vitest cannot resolve Astro virtual
+   modules. Fixed by removing the import — the middleware file is registered
+   via file path (`addMiddleware({ entrypoint, order })`) not direct import.
+   **Lesson:** Never import Astro virtual modules (`astro:middleware`,
+   `astro:content`, etc.) in files that are also imported by test code. Use
+   file-path-based registration instead.
+
+---
+
+### Phase 3: Background Processing Migration
+
+**Commit:** `0246818` — 326 tests passing (8 new tests)
+
+**Completed:**
+- Created `src/utils/build/scheduler.ts` with `startScheduler(app)`,
+  `stopScheduler()`, `isSchedulerRunning()`
+- Scheduler validates cron expression via `node-cron.validate()` and uses
+  singleton active-task pattern
+- Removed `src/workers/` directory (3 files), `test/workers/` directory,
+  and `playground/src/worker.ts`
+- Updated `sync.ts` to process articles inline with `processArticle()` +
+  `upsertArticle()`
+- Updated `admin/sync.ts` route to call `syncFeeds(app)` directly
+- Removed `./workers` export path from `package.json`
+- Added `startScheduler`, `stopScheduler`, `isSchedulerRunning` exports
+- Created 11 scheduler unit tests
+
+**Decisions:**
+- `startScheduler` accepts full `AppContext` (not separate params) for
+  consistency with the rest of the codebase.
+- Scheduler uses `isSchedulerRunning()` guard to prevent double-start, which
+  is important during dev server HMR restarts.
+- `wrangler.toml` was NOT deleted in this phase (plan said Phase 6, but Phase 7
+  is more appropriate since playground migration is Phase 7).
+
+**Issues:**
+1. **Vitest hoisting with `vi.mock()` factories** — The scheduler test initially
+   declared `const mockSchedule = vi.fn()` before the `vi.mock()` call. Even
+   though `vi.mock()` is hoisted to the top of the file, the variable
+   declarations are not, causing the mock factory to reference `undefined`.
+   Fixed by using the `vi.hoisted()` pattern — wrapping all mock references
+   in a `const mocks = vi.hoisted(() => ({ ... }))` block that is hoisted
+   alongside `vi.mock()`.
+   **Lesson:** Always use `vi.hoisted()` when mock factories need to reference
+   variables. Never declare mock variables with `const`/`let` outside the
+   hoisted block.
+2. **Sed double-prefix during refactor** — While renaming `mockSchedule` →
+   `mocks.mockSchedule` via `sed`, the substitution also affected the
+   `vi.hoisted` block itself, creating `mocks.mocks.mockSchedule`. This
+   required a manual correction pass.
+   **Lesson:** When using `sed` to rename variables, exclude the declaration
+   site (e.g., use line-range restrictions or more specific patterns).
+
+---
+
+### Phase 4: File-Based Email Template Renderer
+
+**Commit:** `7dd81de` — 348 tests passing (22 new tests)
+
+**Completed:**
+- Created `src/utils/build/email-renderer.ts` with 5 exported functions:
+  `renderEmailTemplate()`, `resolveTemplatePath()`, `extractSubject()`,
+  `substituteVariables()`, `htmlToPlainText()`
+- Created 3 default email templates in `src/templates/email/`:
+  `sign-in.html`, `welcome.html`, `email-change.html`
+- Updated `email-service.ts` with 3-tier template resolution:
+  1. Code-based custom templates (`emailConfig.templates`) — highest priority
+  2. File-based templates (developer dir → package defaults via renderer)
+  3. Code-based default templates (built-in fallback)
+- Added `renderEmailTemplate` export to `index.ts`
+- Created 22 unit tests covering all renderer functions
+
+**Decisions:**
+- Template resolution uses a two-stage file lookup: developer's project dir
+  first, then the package's built-in `src/templates/email/` directory. This
+  lets developers override individual templates without copying all of them.
+- `htmlToPlainText()` uses regex-based HTML stripping rather than a full DOM
+  parser. This keeps the dependency tree small and is sufficient for the simple
+  email templates used.
+- Subject is extracted from an HTML comment (`<!-- subject: ... -->`) rather
+  than a separate metadata file, keeping templates self-contained.
+
+**Issues:**
+1. **Multi-line anchor tags in `htmlToPlainText()`** — The initial regex
+   `<a[^>]*href="([^"]*?)"[^>]*>(.*?)</a>` used `(.*?)` which does not match
+   newlines. The email templates had multi-line `<a>` tags (href on one line,
+   text on the next), causing the regex to fail silently and output raw HTML.
+   Fixed by replacing `(.*?)` with `([\s\S]*?)` and using a callback function
+   for `String.replace()` to trim the matched text content.
+   **Lesson:** When writing regex to match HTML content, always account for
+   newlines in tag bodies. Use `[\s\S]*?` instead of `.*?` or use the `s`
+   (dotAll) flag.
+
+---
+
+### Phase 5: Component Architecture Upgrade
+
+**Commit:** `bdd2200` — 348 tests passing (no new tests)
+
+**Completed:**
+- Updated `BaseLayout.astro`: added named slots (`head`, `header`, `footer`),
+  conditional header rendering (only shown when no `header` slot override)
+- Updated `AuthButton.astro`: added `labels` prop (`signIn`, `signOut`,
+  `profileLink`)
+- Updated `ArticleModal.astro`: added `labels` prop (`close`, `next`,
+  `previous`, `readOriginal`)
+- Updated `FeedCard.astro`: added `labels` prop (`hearts`, `stars`)
+- Updated `ConsentModal.astro`: added `messages` prop (`title`, `body`,
+  `detail`, `acceptLabel`, `declineLabel`)
+- Updated `MagicLinkForm.astro`: added `messages` prop (`emailLabel`,
+  `submitLabel`, `successText`, `errorText`, `networkErrorText`); uses
+  `data-*` attributes for passing strings to client-side JS
+- Updated `SignUpForm.astro`: added `messages` + `errorMessages` props;
+  uses `data-*` attributes for client-side strings
+
+**Decisions:**
+- Components with client-side JavaScript (`MagicLinkForm`, `SignUpForm`) pass
+  configurable strings via `data-*` attributes on the form element, which the
+  `<script>` block reads at runtime. This avoids the need for a separate i18n
+  runtime or global variable injection.
+- No new tests were added for component changes because Astro components
+  cannot be unit-tested in Vitest without a full Astro build pipeline. The
+  components are tested via the playground's manual/visual testing. Future
+  consideration: add E2E tests with Playwright.
+- `BaseLayout.astro` uses `Astro.slots.has('header')` to conditionally render
+  the default header, allowing full header replacement via slot override.
+
+**Issues:** None.
+
+---
+
+### Phase 6: CLI Scaffold Command
+
+**Commit:** *(pending)* — 360 tests passing (12 new tests)
+
+**Completed:**
+- Created `src/cli/init.mjs` with `scaffold()` function, `findProjectRoot()`,
+  `FILE_MAP` (15 template→target mappings), `--force` and `--help` flags
+- Created 15 template files in `src/cli/templates/`:
+  - 8 page templates (`index.astro`, `article/[id].astro`, `auth/signin.astro`,
+    `auth/signup.astro`, `auth/verify.astro`, `auth/verify-email-change.astro`,
+    `profile.astro`, `terms.astro`)
+  - 3 email templates (`sign-in.html`, `welcome.html`, `email-change.html`)
+  - 4 config templates (`astro.config.mjs`, `env.example`, `docker-compose.yml`,
+    `theme.css`)
+- Added `"bin": { "community-rss": "./src/cli/init.mjs" }` to `package.json`
+- Added `@cli` path alias to `vitest.config.ts`
+- Excluded `src/cli/**` from coverage (standalone script, not library code)
+- Created 12 unit tests covering file creation, skip/force, error handling,
+  content validation for pages, emails, config, and docker-compose
+
+**Decisions:**
+- CLI entry point is `.mjs` (not `.ts`) to avoid requiring a TypeScript build
+  step for `npx` execution. The `scaffold()` function is exported so tests
+  can import it directly.
+- Scaffold pages use client-side API fetching (`/api/v1/articles`) rather than
+  SSR database queries. This is intentional — the DB query functions are not
+  exported from the package's public API, so scaffold pages should only use
+  the public API surface (routes, components, layouts).
+- `init.mjs` detects direct execution via `process.argv[1]` comparison rather
+  than `import.meta.main` (which is not universally supported in Node.js ESM).
+- The `docker-compose.yml` template includes FreshRSS, MinIO, and Mailpit but
+  NOT the Node.js app itself — the developer runs `npm run dev` or `node
+  dist/server/entry.mjs` on the host.
+- `findProjectRoot()` walks up from `cwd` looking for `package.json`, which
+  correctly handles invocation from subdirectories.
+
+**Issues:** None.
+
+---
+
+### Cross-Phase Lessons Learned
+
+1. **Mock hoisting is the #1 Vitest footgun** — Always use `vi.hoisted()` for
+   any variable referenced inside a `vi.mock()` factory. This came up in
+   Phase 3 and would have been avoided with a consistent pattern from the start.
+2. **Astro virtual modules break tests** — Files that import from `astro:*`
+   virtual modules cannot be directly imported in Vitest. Design modules to
+   be registered by file path rather than direct import when they use Astro
+   virtual modules.
+3. **JSDoc and `*/`** — Never put literal `*/` in JSDoc tags (e.g., cron
+   expressions). Bundlers and parsers interpret it as end-of-comment.
+4. **Regex and HTML** — Always use `[\s\S]*?` (or the `s` flag) when matching
+   HTML content that may span multiple lines. The `.` character class does not
+   match newlines by default.
+5. **Sed is fragile for code refactoring** — Prefer editor-based find/replace
+   or purpose-built AST tools over `sed` for renaming variables in code.
+   Line-level text substitution easily causes double-replacements or misses.
+6. **Test count is a useful progress signal** — Tracking test count at each
+   phase commit (318 → 318 → 326 → 348 → 348) helps catch accidental test
+   deletion or regression.
 
 ---
 

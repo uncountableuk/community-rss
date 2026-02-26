@@ -12,6 +12,7 @@ export default defineConfig({
       include: ['src/**/*.ts'],
       exclude: [
         'src/**/*.d.ts',
+        'src/cli/**',
         'src/db/migrations/**',
         'src/db/queries/**',
         'src/db/schema.ts',
@@ -34,6 +35,7 @@ export default defineConfig({
       '@db': path.resolve(__dirname, 'src/db'),
       '@core-types': path.resolve(__dirname, 'src/types'),
       '@layouts': path.resolve(__dirname, 'src/layouts'),
+      '@cli': path.resolve(__dirname, 'src/cli'),
       '@fixtures': path.resolve(__dirname, 'test/fixtures'),
       '@test': path.resolve(__dirname, 'test'),
     },
