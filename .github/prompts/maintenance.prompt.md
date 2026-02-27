@@ -17,10 +17,11 @@ to stay consistent.
 
 ### Source of Truth
 - `feature_plans/0_0_1/Community-RSS-Framework-Spec.md` — Project spec
-- `feature_plans/0_0_1/Framework-Dev-Workflow.md` — Dev workflow
-- `feature_plans/0_0_1/Local-Dev-Setup.md` — Local environment
+- `.github/copilot-instructions.md` — Playground architecture & dev workflow
+- `scripts/reset-playground.sh` — Playground rebuild script
 - `packages/core/index.ts` — Public API surface
 - `packages/core/src/types/` — TypeScript interfaces
+- `packages/core/src/config-store.ts` — Config bridge (integration → middleware)
 - `packages/core/package.json` — Dependencies & version
 
 ### Target Configurations
@@ -29,7 +30,10 @@ to stay consistent.
 - `.github/prompts/*.prompt.md` — Workflow prompts
 - `.github/skills/*/SKILL.md` — Agent skills
 - `.github/pull_request_template.md` — PR checklist
-- Root `package.json` — Workspace config
+- Root `package.json` — Workspace config & dev scripts
+- `scripts/reset-playground.sh` — Playground rebuild script
+- `scripts/playground.env` — Dev environment variables template
+- `.devcontainer/devcontainer.json` — Dev Container configuration
 - `docker-compose.yml` — Dev environment
 - `docker-compose.prod.yml` — Production overrides
 

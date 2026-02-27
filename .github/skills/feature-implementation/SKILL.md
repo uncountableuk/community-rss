@@ -61,10 +61,16 @@ through testing and documentation in the `@community-rss/core` NPM monorepo.
 - NOTE: Do NOT update changelog or version — release finalization only
 
 ### Step 6: Playground Verification
-- Confirm playground app still builds with new framework code
-- Test injected routes respond correctly
-- Verify scaffolded pages work
-- Verify HMR works with code changes
+- The playground is ephemeral (gitignored) — rebuild via
+  `npm run reset:playground` (keeps DB) or `npm run hardreset:playground`
+  (full clean)
+- Backend changes (routes, middleware, utils, components) auto-reload via
+  workspace symlink — no reset needed
+- After changing CLI scaffold templates, run `npm run reset:playground` to
+  refresh pages and email templates while keeping test data
+- Confirm injected API routes respond: `curl http://localhost:4321/api/v1/health`
+- Verify scaffolded pages render in the browser at `http://localhost:4321`
+- Test that the integration config works with default options
 
 ## Standards Compliance
 This agent enforces:

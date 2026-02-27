@@ -32,21 +32,24 @@ own the frontend.
 /
  packages/core/     # The @community-rss/core framework
    ├── src/
-   │   ├── cli/       # CLI scaffold command
-   │   ├── components/# Astro components (thin wrappers)
-   │   ├── db/        # Drizzle schema, migrations, queries
-   │   ├── layouts/   # Base layouts
-   │   ├── routes/    # Injected API routes
-   │   ├── styles/    # Default CSS (design tokens)
-   │   ├── templates/ # Default email templates
-   │   ├── types/     # TypeScript types (context, options)
-   │   ├── utils/     # Business logic (build/, client/, shared/)
-   │   └── workers/   # Background processing (node-cron)
-   ├── test/          # Vitest tests
-   └── index.ts       # Public API exports
- playground/        # Reference implementation (consumes core)
- docs/              # Starlight documentation site
- feature_plans/     # Release planning documents
+   │   ├── cli/          # CLI scaffold command
+   │   ├── components/   # Astro components (thin wrappers)
+   │   ├── config-store.ts # Config bridge (integration → middleware)
+   │   ├── db/           # Drizzle schema, migrations, queries
+   │   ├── integration.ts# Astro integration entry point
+   │   ├── layouts/      # Base layouts
+   │   ├── middleware.ts  # Astro middleware (creates AppContext)
+   │   ├── routes/       # Injected API routes
+   │   ├── styles/       # Default CSS (design tokens)
+   │   ├── templates/    # Default email templates
+   │   ├── types/        # TypeScript types (context, options)
+   │   └── utils/        # Business logic (build/, client/, shared/)
+   ├── test/             # Vitest tests
+   └── index.ts          # Public API exports
+ playground/           # Ephemeral dev app (gitignored, rebuilt on demand)
+ docs/                 # Starlight documentation site
+ scripts/              # Dev tooling (reset-playground.sh, playground.env)
+ feature_plans/        # Release planning documents
 ```
 
 ## Integration Architecture
@@ -74,7 +77,21 @@ interface AppContext {
 ```
 
 The middleware creates this context on every request, initialising the
-database connection and validating the session.
+database connection and reading config from the config-store bridge.
+
+### Config Bridge
+
+The integration and middleware run at different times — the integration
+during Astro config setup, and the middleware at request time. They
+can't share an import because Astro virtual modules aren't available
+during config-load. Instead, `config-store.ts` bridges the gap:
+
+1. `integration.ts` calls `setGlobalConfig(config)` during `astro:config:setup`
+2. `middleware.ts` calls `getGlobalConfig()` on each request
+3. Config is passed via `globalThis.__communityRssConfig`
+
+This keeps the config bridge lightweight (zero Astro imports) and
+works reliably in both dev and production.
 
 ### Component Composition
 

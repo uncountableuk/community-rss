@@ -8,26 +8,50 @@ architecture, code reuse, and adherence to established patterns.
 
 ## Project Context
 - **Monorepo layout** (NPM Workspaces): `packages/core/` (the framework),
-  `playground/` (the reference implementation / dev testing app), and
+  `playground/` (ephemeral dev testing app, gitignored), and
   `docs/` (Starlight documentation site)
 - **Stack**: Astro SSR + Node.js (`@astrojs/node`) + Docker/VPS + FreshRSS
   + Drizzle ORM (better-sqlite3) + better-auth (authentication)
   + node-cron (scheduling) + MinIO (S3 storage) + Starlight (docs)
 - **Licence**: GPL-3.0 — all contributions must be compatible
 - **Local dev**: Docker Compose (FreshRSS, MinIO, Mailpit) + Dev Container
-- The playground consumes `@community-rss/core` exactly as an end-user would
 - **Architecture**: "Integration with overrides" — the package injects API
   routes and middleware; developers own page routes (scaffolded via CLI)
+
+### Playground Architecture
+- The playground is **ephemeral** — gitignored and rebuilt on demand via
+  `scripts/reset-playground.sh`. It is never committed to version control.
+- `npm run reset:playground` tears down the playground and rebuilds it from
+  CLI scaffold templates. It preserves the database by default (`--keep-db`).
+- `npm run hardreset:playground` does a full clean including wiping the database.
+- The playground consumes `@community-rss/core` exactly as an end-user would.
+- **What auto-reloads**: Backend API routes, middleware, components, and
+  utilities are symlinked from `packages/core/` via NPM workspaces. Edit
+  these and the dev server hot-reloads instantly.
+- **What needs a reset**: Pages and email templates are scaffolded (copied)
+  into the playground by the CLI. After editing CLI templates in
+  `packages/core/src/cli/templates/`, run `npm run reset:playground` to
+  see the changes. The database and test data are preserved.
+
+### Config Bridge (config-store.ts)
+- `packages/core/src/config-store.ts` passes resolved integration config
+  from `astro:config:setup` (where the integration runs) to the middleware
+  (which runs at request time) via `globalThis.__communityRssConfig`.
+- `setGlobalConfig(config)` is called in `integration.ts` during setup.
+- `getGlobalConfig()` is called in `middleware.ts` on each request.
+- This avoids Astro virtual module imports at config-load time, which fail
+  because virtual modules are only available inside Vite's plugin system.
 
 ## Critical Rules
 
 ### Monorepo Awareness
 - Root `package.json` defines workspaces — never add app dependencies there
-- Framework code lives in `packages/core/`; playground-specific code in `playground/`
+- Framework code lives in `packages/core/`; playground is ephemeral (gitignored)
 - Documentation site lives in `docs/` (Starlight) — independent workspace
 - Shared dev tooling (ESLint, Prettier, Vitest config) lives at the root
 - Run `npm install` from the root to wire workspace symlinks
 - Publishing is done from `packages/core/` only
+- After cloning, run `npm run reset:playground` to scaffold the playground
 
 ### Architecture
 - Extract ALL business logic to `packages/core/src/utils/` — components are thin wrappers

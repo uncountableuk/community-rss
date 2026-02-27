@@ -1,5 +1,13 @@
 # **Local Development Environment Setup**
 
+> **⚠️ SUPERSEDED** — This document was written for the initial 0.0.1 design
+> using Cloudflare (D1, Queues, Wrangler). As of 0.4.0, the stack uses
+> Docker/VPS with better-sqlite3, node-cron, and `@astrojs/node`. See
+> `.github/copilot-instructions.md` and `docs/src/content/docs/contributing/setup.md`
+> for the current local dev setup.
+
+---
+
 This document outlines the architecture and setup instructions for developing the **Community RSS Framework** locally. We use Docker Compose, Cloudflare Wrangler, and VS Code Dev Containers to simulate the production environment entirely on your local machine.
 
 Because you are building an installable framework, this setup uses an **NPM Workspaces (Monorepo)** structure. You will develop the core package in /packages/core and instantly test the UI in the /playground Astro app.

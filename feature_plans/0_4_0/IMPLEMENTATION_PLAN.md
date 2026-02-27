@@ -1326,6 +1326,70 @@ on VPS/Docker.
 
 ---
 
+### Phase 15: Documentation & Dev Workflow Polish
+
+**Commits:** (pending) — 360 tests passing (no code changes, docs only)
+
+**Completed:**
+- **NPM Script Changes**:
+  - Changed `reset:playground` to use `--keep-db` by default (preserves
+    database and test data on every reset)
+  - Added `hardreset:playground` for full clean including database wipe
+  - Updated `scripts/reset-playground.sh` header comments with detailed
+    explanation of what gets refreshed vs preserved
+- **README.md**:
+  - Replaced the single-line README with a comprehensive project overview
+  - Quick Start, architecture diagram, dev workflow, key commands table,
+    stack reference, and licence
+  - Explains the ephemeral playground model and symlink hot-reload pattern
+- **`.github/` Configuration Updates**:
+  - `copilot-instructions.md` — Added Playground Architecture section
+    (ephemeral model, reset vs hardreset, what auto-reloads vs needs reset)
+    and Config Bridge section (config-store.ts pattern via globalThis)
+  - `instructions/implementation.instructions.md` — Added Config Bridge,
+    Middleware, and Playground Development sections
+  - `prompts/implement.prompt.md` — Updated Playground Testing section with
+    concrete reset workflow (when to reset, when HMR is enough)
+  - `prompts/maintenance.prompt.md` — Updated Source of Truth to reference
+    copilot-instructions.md and config-store.ts instead of legacy docs;
+    added new target configs (reset script, playground.env, devcontainer)
+  - `prompts/plan.prompt.md` — Removed outdated Framework-Dev-Workflow.md
+    and Local-Dev-Setup.md from context references
+  - `skills/feature-implementation/SKILL.md` — Updated Step 6 (Playground
+    Verification) with concrete reset/test workflow instructions
+  - `pull_request_template.md` — Added playground reset verification checkbox
+- **Starlight Docs Site**:
+  - `contributing/setup.md` — Complete rewrite: ephemeral playground concept,
+    "What auto-reloads" vs "What needs a reset" sections, key commands table,
+    Dev Container note, updated common issues
+  - `contributing/architecture.md` — Removed stale `workers/` from directory
+    tree, added `config-store.ts`, `integration.ts`, `middleware.ts` to tree,
+    added Config Bridge section explaining globalThis pattern, updated
+    playground description to "ephemeral"
+  - `getting-started/local-development.md` — Updated for consumer-facing
+    workflow (scaffold → configure → develop), auto-migration note, updated
+    Node.js requirement to 22+
+- **Legacy Docs**:
+  - `feature_plans/0_0_1/Framework-Dev-Workflow.md` — Marked as SUPERSEDED
+    with pointer to current docs
+  - `feature_plans/0_0_1/Local-Dev-Setup.md` — Marked as SUPERSEDED with
+    pointer to current docs
+
+**Decisions:**
+- `reset:playground` defaults to `--keep-db` because in day-to-day development,
+  wiping the database is almost never desired — it forces re-running auth
+  flows, re-syncing feeds, and recreating test data. The separate
+  `hardreset:playground` command makes the destructive option explicit.
+- Legacy 0.0.1 planning docs are marked SUPERSEDED rather than deleted to
+  preserve the project's decision history. The canonical dev workflow is now
+  in `.github/copilot-instructions.md` and the Starlight docs.
+- The README targets both consumers (quick start) and contributors (monorepo
+  structure, dev workflow). Detailed setup docs live in the Starlight site.
+
+**Issues:** None (documentation-only changes).
+
+---
+
 ### Cross-Phase Lessons Learned
 
 1. **Mock hoisting is the #1 Vitest footgun** — Always use `vi.hoisted()` for

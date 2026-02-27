@@ -3,19 +3,26 @@
 # reset-playground.sh — Tear down and rebuild the playground from scratch.
 #
 # Usage:
-#   bash scripts/reset-playground.sh          # fresh reset
-#   bash scripts/reset-playground.sh --keep-db # keep existing database
-#   npm run reset:playground                   # via npm script
+#   bash scripts/reset-playground.sh            # full clean (removes DB too)
+#   bash scripts/reset-playground.sh --keep-db   # preserve database & test data
+#   npm run reset:playground                     # keeps DB (default for dev)
+#   npm run hardreset:playground                 # full clean incl. DB
 #
 # What it does:
-#   1. Removes the playground directory (preserving .env if --keep-db)
-#   2. Creates a minimal Astro project structure
-#   3. Runs `npx @community-rss/core init --force` to scaffold pages/config
-#   4. Copies the dev .env from scripts/playground.env
+#   1. Removes the playground directory contents (preserving DB if --keep-db)
+#   2. Creates a minimal Astro project structure (package.json, tsconfig.json)
+#   3. Runs the CLI scaffold: `npx @community-rss/core init --force`
+#   4. Copies the dev .env template from scripts/playground.env
 #   5. Runs `npm install` from root to wire workspace symlinks
 #
 # The playground is an ephemeral, non-version-controlled workspace used to
 # test the framework exactly as a consumer would experience it.
+#
+# Understanding what gets refreshed:
+#   - Pages, email templates, config, styles → rebuilt from latest templates
+#   - Backend API routes, middleware, components → always live via symlink
+#   - Database (test accounts, articles) → preserved with --keep-db
+#   - .env (environment variables) → always recopied from scripts/playground.env
 # ──────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 

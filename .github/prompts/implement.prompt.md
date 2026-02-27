@@ -50,10 +50,15 @@ After completing **every phase** in the feature plan, you MUST update the
 
 ## Playground Testing
 After implementing core framework code:
-1. Verify the playground picks up changes via HMR
-2. Test that the integration config works with default options
-3. Confirm injected API routes respond correctly
-4. Verify scaffolded pages render properly
+1. Backend changes (API routes, middleware, utils, components) are picked up
+   automatically by HMR — no reset needed
+2. If you changed CLI scaffold templates (`src/cli/templates/`), run
+   `npm run reset:playground` to rebuild the playground. This preserves the
+   database and test data while refreshing pages and templates.
+3. If you need a completely clean environment, run
+   `npm run hardreset:playground` to wipe everything including the DB
+4. Confirm injected API routes respond correctly (e.g., `GET /api/v1/health`)
+5. Verify scaffolded pages render properly
 
 ## After Implementation
 - [ ] All business logic is in `packages/core/src/utils/`

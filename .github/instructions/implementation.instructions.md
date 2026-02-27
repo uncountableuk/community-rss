@@ -6,9 +6,9 @@ applyTo: "packages/core/src/utils/**/*.ts,packages/core/src/components/**/*.astr
 
 ## Monorepo Context
 You are working inside an NPM Workspaces monorepo. The framework lives in
-`packages/core/` and the reference app in `playground/`. All business logic
-belongs in `packages/core/src/utils/`. The playground imports the framework
-only via `@community-rss/core`.
+`packages/core/` and the playground in `playground/` (ephemeral, gitignored).
+All business logic belongs in `packages/core/src/utils/`. The playground
+imports the framework only via `@community-rss/core`.
 
 ## Utils Organization
 Before creating a new utility:
@@ -108,6 +108,35 @@ Before creating a new utility:
 - Cron jobs registered during integration `astro:server:setup` hook
 - Direct function calls replace the old queue pattern
 - `syncFeeds()` and `processArticles()` run in-process on the server
+
+## Config Bridge (config-store.ts)
+- `src/config-store.ts` passes resolved integration config from
+  `astro:config:setup` (where the integration runs) to the middleware
+  (which runs at request time) via `globalThis.__communityRssConfig`
+- `setGlobalConfig(config)` is called in `integration.ts` during setup
+- `getGlobalConfig()` is called in `middleware.ts` on each request
+- This avoids Astro virtual module imports at config-load time, which
+  fail because virtual modules are only available inside Vite's plugin
+  system
+- `config-store.ts` has zero Astro imports to keep it safe for both
+  integration hooks and middleware runtime
+
+## Middleware
+- `middleware.ts` exports `onRequest` directly (not a factory function)
+- It reads config via `getGlobalConfig()` from the config-store bridge
+- It creates `AppContext` with `{ db, config, env }` and sets `locals.app`
+- Database connection uses a singleton pattern with auto-migration
+
+## Playground Development
+- The playground is **ephemeral** — gitignored and rebuilt via
+  `scripts/reset-playground.sh`
+- **Backend changes are instant**: API routes, middleware, components, and
+  utils are symlinked from `packages/core/` via NPM workspaces. Edit and
+  the dev server hot-reloads automatically.
+- **Page/template changes need a reset**: After editing CLI templates in
+  `src/cli/templates/`, run `npm run reset:playground` to rebuild. The
+  database and test accounts are preserved by default.
+- `npm run hardreset:playground` does a full clean including wiping the DB.
 
 ## Styling
 - Use CSS custom properties (e.g., `--crss-surface`, `--crss-text`, `--crss-brand`)

@@ -10,12 +10,10 @@ following project guidelines and the NPM monorepo methodology.
 
 ## Context Files to Reference
 - Project Spec: `feature_plans/0_0_1/Community-RSS-Framework-Spec.md`
-- Dev Workflow: `feature_plans/0_0_1/Framework-Dev-Workflow.md`
-- Local Dev Setup: `feature_plans/0_0_1/Local-Dev-Setup.md`
+- Copilot Instructions: `.github/copilot-instructions.md`
 - Feature Plan Guidelines: `.github/instructions/feature-plan.instructions.md`
 - API Design Rules: `.github/instructions/api-design.instructions.md`
 - Implementation Rules: `.github/instructions/implementation.instructions.md`
-- Copilot Instructions: `.github/copilot-instructions.md`
 
 ## Your Task
 1. Analyse the feature request provided by the user

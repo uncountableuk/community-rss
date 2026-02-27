@@ -49,6 +49,7 @@ Feature plan: `feature_plans/___/___/FEATURE_PLAN.md`
 ### Build & Integration
 - [ ] Build succeeds (`npm run build` from root)
 - [ ] Playground app builds and runs correctly
+- [ ] Playground reset tested (`npm run reset:playground`)
 - [ ] No console errors or warnings
 
 ### Documentation
