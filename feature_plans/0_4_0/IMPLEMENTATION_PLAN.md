@@ -1189,15 +1189,153 @@ on VPS/Docker.
 
 ---
 
+### Phase 13: Ephemeral Playground Infrastructure
+
+**Commits:** `e58d8f1` — 360 tests passing (no new tests)
+
+**Completed:**
+- Fixed `docker-compose.yml`:
+  - Removed `app_data:/app/playground/data` volume mount (was causing root
+    ownership issues)
+  - Removed `DATABASE_PATH` env variable from app service (now loaded from .env)
+  - Kept `./:/app` root bind mount for live code changes
+- Created `scripts/reset-playground.sh` — ephemeral playground teardown/rebuild:
+  - Gracefully removes playground contents (handles stuck Docker mounts)
+  - Creates minimal `package.json` + `tsconfig.json`
+  - Runs `node packages/core/src/cli/init.mjs init --force` to scaffold all files
+  - Copies `scripts/playground.env` to `.env`
+  - Runs `npm install` to wire workspace symlink
+  - Supports `--keep-db` flag to preserve database across resets
+- Created `scripts/playground.env` — dev environment template:
+  - Sets `DATABASE_PATH=./data/community.db` (relative path, no absolute /app ref)
+  - Ready to be copied to playground/.env on each reset
+- Updated `package.json` with new scripts:
+  - `"dev:playground"` — runs `astro dev --port 4321` from playground
+  - `"dev:docs"` — runs `astro dev --port 4322` from docs
+  - `"dev"` — runs both in parallel with backgrounding & `wait`
+  - `"reset:playground"` — calls `scripts/reset-playground.sh`
+- Updated `.devcontainer/devcontainer.json`:
+  - `postCreateCommand` now runs `npm install && bash scripts/reset-playground.sh`
+  - Auto-initializes playground on container creation
+- Updated `.gitignore`:
+  - Added `playground/` directory exclusion (ephemeral, not version-controlled)
+  - All playground files removed from git tracking via `git rm -r --cached playground/`
+- Added `ASTRO_TELEMETRY_DISABLED=1` to scripts/devcontainer to suppress Astro telemetry
+
+**Decisions:**
+- Playground is now a "working directory" workspace that's rebuilt fresh via
+  `reset-playground.sh`, not a committed scaffold. Allows:
+  - Testing the exact developer experience (running `npx @community-rss/core init`)
+  - Hot-reload from core package changes (symlink in node_modules)
+  - Clean database state between resets
+  - No version control bloat from generated files
+- The `--keep-db` flag lets developers preserve their test data across
+  page/config resets without re-running auth flows.
+- Volume mount removal avoids the cascading issues of file ownership (Docker
+  runs services as root, bind mounts inherit root ownership). With no bind
+  mount for data/, the SQLite file is created with user ownership.
+
+**Issues:** None (infrastructure fixes, no code/test impact).
+
+---
+
+### Phase 14: Middleware Injection Fix & Automatic Database Migration
+
+**Commits:** `2633fee` — 360 tests passing (11 tests fixed, 0 new tests)
+
+**Completed:**
+- **Middleware Export Fix**: 
+  - Identified root cause: `middleware.ts` exported `createMiddleware(config)`
+    factory function, but Astro's `addMiddleware()` requires a file exporting
+    `onRequest` directly
+  - Created new `src/config-store.ts` — config bridge module with no Astro
+    dependencies:
+    - `setGlobalConfig(config)` — called from integration in `astro:config:setup`
+    - `getGlobalConfig()` — called from middleware at request-time
+    - Uses `globalThis.__communityRssConfig` to pass config across module boundary
+  - Updated `middleware.ts`:
+    - Now exports `onRequest` directly (not a factory)
+    - Calls `getGlobalConfig()` from config-store
+    - Calls `buildEnvironmentVariables()` inline
+  - Updated `integration.ts`:
+    - Imports `setGlobalConfig` from config-store
+    - Calls `setGlobalConfig(config)` in `astro:config:setup` before registering
+      middleware
+    - Now has all required parameters for `astro:config:done` (`config.root`)
+      and `astro:server:start` (`{ logger }`)
+  - Result: Middleware correctly injects `AppContext` into `locals.app` on
+    every request; all route handlers now receive `app.db`
+- **Automatic Database Migration**:
+  - Added `import { migrate } from 'drizzle-orm/better-sqlite3/migrator'` to
+    `src/db/connection.ts`
+  - Added auto-migration in `createDatabase()`:
+    - Constant `MIGRATIONS_DIR` resolved via `import.meta.url`
+    - Calls `migrate(db, { migrationsFolder })` immediately after creating
+      Drizzle instance
+    - Ensures all schema tables exist on first connection (no "no such table"
+      errors at runtime)
+  - Fixed migration `0003_fresh_puff_adder.sql` — removed duplicate
+    `ALTER TABLE users ADD pending_email_expires_at integer;` statement
+    (was present twice, causing validation error)
+- **Integration Test Fixes**:
+  - Updated `test/integration/integration-factory.test.ts`:
+    - `astro:config:done` hook now receives `{ config: { root }, logger }`
+      mock with proper URL fixture
+    - `astro:server:start` hook now receives `{ logger }` mock
+    - All 11 integration tests now pass
+- **Verification**:
+  - Dev server starts: `npm run dev:playground` → both playground (4321)
+    and docs (4322) online
+  - Health endpoint: `GET /api/v1/health` → HTTP 200 with valid JSON
+  - Articles endpoint: `GET /api/v1/articles` → HTTP 200 with `{ data, pagination }`
+    (was HTTP 503 before fix)
+  - Auth endpoints: `GET /api/auth/get-session` → HTTP 200 (was HTTP 503)
+  - Sign-up: `POST /api/v1/auth/signup` with terms → HTTP 200, email sent
+  - Full test suite: 360 tests passing across 32 files (no regressions)
+
+**Decisions:**
+- Config bridge uses `globalThis` instead of module-level exports because
+  Astro virtual modules (`astro:middleware`) aren't available during app config
+  loading. The integration and middleware both run in the same Node.js process,
+  so `globalThis` is safe for this one-time setup handshake.
+- `config-store.ts` has zero Astro imports to avoid triggering Vite config
+  during integration hook execution. This keeps it lightweight and safe to
+  import in both the integration and middleware.
+- Auto-migration runs in `createDatabase()` (not in a hook) so it happens:
+  - Once per app instance (singleton pattern)
+  - At the right time: after DB connection, before first query
+  - Consistently in all execution contexts (dev server, build, tests)
+- Each API route was already checking `app?.db` and returning 503, so the
+  infrastructure to use the injected context was in place — the middleware
+  just wasn't running.
+
+**Issues:**
+1. **Astro virtual modules unavailable at config-load time** — Attempting to
+   import `astro:middleware` in `integration.ts` failed during config
+   evaluation. The virtual module is only available inside Vite's plugin
+   system, not during the initial `astro:config:setup` hook.
+   **Lesson:** Never import Astro virtual modules in integration hook files.
+   Use file-path-based registration (`addMiddleware({ entrypoint })`) and
+   keep module resolution logic separate via `globalThis` or config stores.
+2. **Duplicate migration statement silently breaks schema** — Migration 0003
+   had `ALTER TABLE users ADD pending_email_expires_at integer;` twice.
+   Drizzle ran the file without error during development (in-memory), but in
+   production the duplicate would cause a "column already exists" error.
+   **Lesson:** Always run migrations against a fresh database during testing.
+   In-memory SQLite worked fine, but should have tested a persistent file too.
+
+---
+
 ### Cross-Phase Lessons Learned
 
 1. **Mock hoisting is the #1 Vitest footgun** — Always use `vi.hoisted()` for
    any variable referenced inside a `vi.mock()` factory. This came up in
    Phase 3 and would have been avoided with a consistent pattern from the start.
-2. **Astro virtual modules break tests** — Files that import from `astro:*`
-   virtual modules cannot be directly imported in Vitest. Design modules to
-   be registered by file path rather than direct import when they use Astro
-   virtual modules.
+2. **Astro virtual modules can't be imported at config-load time** — The
+   `astro:middleware`, `astro:content`, etc. virtual modules are only available
+   inside Vite's plugin system. Importing them in integration hook code fails.
+   Use file-path-based registration (`addMiddleware({ entrypoint })`) and pass
+   config via `globalThis` bridges to avoid early module resolution.
 3. **JSDoc and `*/`** — Never put literal `*/` in JSDoc tags (e.g., cron
    expressions). Bundlers and parsers interpret it as end-of-comment.
 4. **Regex and HTML** — Always use `[\s\S]*?` (or the `s` flag) when matching
@@ -1209,6 +1347,18 @@ on VPS/Docker.
 6. **Test count is a useful progress signal** — Tracking test count at each
    phase commit (318 → 318 → 326 → 348 → 348) helps catch accidental test
    deletion or regression.
+7. **Database migrations need fresh-database testing** — In-memory SQLite works
+   great for unit tests but can mask migration bugs (e.g., duplicate ALTER
+   statements). Always test migrations against a persistent file or fresh
+   in-memory instance at least once.
+8. **Docker volume mounts cause file ownership cascades** — When Docker runs
+   services as root and you bind-mount directories, the files inherit root
+   ownership. This breaks subsequent user access. Prefer creating files inside
+   the container (no mount) or using named volumes with proper permissions.
+9. **globalThis is safe for one-time setup handshakes between Astro hooks** —
+   Because both the integration and middleware run in the same Node.js process,
+   `globalThis` is suitable for passing resolved config from `astro:config:setup`
+   to runtime middleware. Avoids circular imports and virtual module issues.
 
 ---
 
