@@ -1,3 +1,5 @@
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { AstroIntegration } from 'astro';
 import type { CommunityRssOptions } from './types/options';
 import { resolveOptions } from './types/options';
@@ -32,6 +34,7 @@ import type { EnvironmentVariables } from './types/context';
  */
 export function createIntegration(options: CommunityRssOptions = {}): AstroIntegration {
   const config = resolveOptions(options);
+  let projectRoot: string = process.cwd();
 
   return {
     name: 'community-rss',
@@ -112,7 +115,13 @@ export function createIntegration(options: CommunityRssOptions = {}): AstroInteg
         });
       },
 
-      'astro:config:done': ({ logger }) => {
+      'astro:config:done': ({ config: astroConfig, logger }) => {
+        // astroConfig.root may be a URL or a string depending on Astro version
+        const root = astroConfig.root;
+        projectRoot = root instanceof URL ? fileURLToPath(root) : String(root);
+        // Strip trailing slash for consistent join() behavior
+        projectRoot = projectRoot.replace(/\/$/, '');
+
         logger.info(`Community RSS integration loaded`);
         logger.info(`  maxFeeds: ${config.maxFeeds}`);
         logger.info(`  commentTier: ${config.commentTier}`);
@@ -120,7 +129,17 @@ export function createIntegration(options: CommunityRssOptions = {}): AstroInteg
         logger.info(`  syncSchedule: ${config.syncSchedule}`);
       },
 
-      'astro:server:start': () => {
+      'astro:server:start': ({ logger }) => {
+        // Load .env from project root into process.env.
+        // process.loadEnvFile does NOT override already-set vars, so explicit
+        // environment variables (e.g. from Docker/CI) take precedence.
+        const envPath = join(projectRoot, '.env');
+        try {
+          process.loadEnvFile(envPath);
+        } catch {
+          logger.warn(`No .env file found at ${envPath} — using environment variables only`);
+        }
+
         // Build environment variables from process.env
         const env: EnvironmentVariables = {
           DATABASE_PATH: process.env.DATABASE_PATH ?? config.databasePath,

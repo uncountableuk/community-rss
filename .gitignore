@@ -154,3 +154,7 @@ data/
 *.db
 *.db-shm
 *.db-wal
+
+# Playground — ephemeral, rebuilt via: npm run reset:playground
+# Kept as a workspace for symlink resolution but not version-controlled.
+playground/
