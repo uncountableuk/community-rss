@@ -3,7 +3,7 @@ name: "feature-implementation"
 description: "End-to-end feature implementation for the Community RSS Framework monorepo"
 ---
 
-# Feature Implementation Agent
+# feature-implementation
 
 An autonomous agent that handles complete feature implementation from planning
 through testing and documentation in the `@community-rss/core` NPM monorepo.

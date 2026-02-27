@@ -173,7 +173,7 @@ import FeedGrid from '@community-rss/core/components/FeedGrid.astro';
   (async () => {
     try {
       const res = await fetch('/api/auth/get-session', { credentials: 'include' });
-      const data: SessionResponse = res.ok ? await res.json() : null;
+      const data: SessionResponse | null = res.ok ? await res.json() : null;
       const isAuthenticated = data?.user && !data.user.isGuest;
       if (!isAuthenticated) {
         const cta = document.getElementById('crss-homepage-cta');
