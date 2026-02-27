@@ -117,4 +117,4 @@ and test accounts are preserved by default.
 
 ## Licence
 
-[GPL-3.0](LICENSE)
+[Apache-2.0](LICENSE)

@@ -1,0 +1,109 @@
+import { describe, it, expect, vi } from 'vitest';
+// Mock scheduler and database modules imported by integration.ts
+vi.mock('../../src/utils/build/scheduler', () => ({
+    startScheduler: vi.fn(),
+    stopScheduler: vi.fn(),
+}));
+vi.mock('../../src/db/connection', () => ({
+    createDatabase: vi.fn().mockReturnValue({}),
+    closeDatabase: vi.fn(),
+}));
+import { createIntegration } from '../../src/integration';
+describe('Integration Factory', () => {
+    describe('createIntegration', () => {
+        it('should return an object with name "community-rss"', () => {
+            const integration = createIntegration();
+            expect(integration.name).toBe('community-rss');
+        });
+        it('should have astro:config:setup hook', () => {
+            const integration = createIntegration();
+            expect(integration.hooks['astro:config:setup']).toBeDefined();
+            expect(typeof integration.hooks['astro:config:setup']).toBe('function');
+        });
+        it('should have astro:config:done hook', () => {
+            const integration = createIntegration();
+            expect(integration.hooks['astro:config:done']).toBeDefined();
+            expect(typeof integration.hooks['astro:config:done']).toBe('function');
+        });
+        it('should accept empty options', () => {
+            const integration = createIntegration({});
+            expect(integration.name).toBe('community-rss');
+        });
+        it('should accept options with maxFeeds', () => {
+            const integration = createIntegration({ maxFeeds: 10 });
+            expect(integration.name).toBe('community-rss');
+        });
+        it('should accept options with commentTier', () => {
+            const integration = createIntegration({ commentTier: 'guest' });
+            expect(integration.name).toBe('community-rss');
+        });
+        it('should inject all API routes via astro:config:setup', () => {
+            const integration = createIntegration();
+            const injectedRoutes = [];
+            const mockInjectRoute = (route) => {
+                injectedRoutes.push(route);
+            };
+            const mockAddMiddleware = vi.fn();
+            // Call the hook with a mock injectRoute and addMiddleware
+            const setupHook = integration.hooks['astro:config:setup'];
+            setupHook({ injectRoute: mockInjectRoute, addMiddleware: mockAddMiddleware });
+            expect(injectedRoutes).toHaveLength(11);
+            const patterns = injectedRoutes.map((r) => r.pattern);
+            expect(patterns).toContain('/api/v1/health');
+            expect(patterns).toContain('/api/v1/articles');
+            expect(patterns).toContain('/api/v1/admin/sync');
+            expect(patterns).toContain('/api/v1/admin/feeds');
+            expect(patterns).toContain('/api/auth/[...all]');
+            expect(patterns).toContain('/api/v1/auth/check-email');
+            expect(patterns).toContain('/api/v1/auth/signup');
+            expect(patterns).toContain('/api/v1/profile');
+            expect(patterns).toContain('/api/v1/profile/change-email');
+            expect(patterns).toContain('/api/v1/profile/confirm-email-change');
+            expect(patterns).toContain('/api/dev/seed');
+            // Verify middleware was registered
+            expect(mockAddMiddleware).toHaveBeenCalledWith(expect.objectContaining({ order: 'pre' }));
+            const healthRoute = injectedRoutes.find((r) => r.pattern === '/api/v1/health');
+            expect(healthRoute?.entrypoint).toContain('health.ts');
+        });
+        it('should log config via astro:config:done', () => {
+            const integration = createIntegration({ maxFeeds: 15 });
+            const logs = [];
+            const mockLogger = {
+                info: (msg) => logs.push(msg),
+                warn: vi.fn(),
+            };
+            const doneHook = integration.hooks['astro:config:done'];
+            doneHook({ config: { root: new URL('file:///app/playground/') }, logger: mockLogger });
+            expect(logs).toContainEqual(expect.stringContaining('Community RSS'));
+            expect(logs).toContainEqual(expect.stringContaining('15'));
+        });
+        it('should have astro:server:start hook', () => {
+            const integration = createIntegration();
+            expect(integration.hooks['astro:server:start']).toBeDefined();
+            expect(typeof integration.hooks['astro:server:start']).toBe('function');
+        });
+        it('should have astro:server:done hook', () => {
+            const integration = createIntegration();
+            expect(integration.hooks['astro:server:done']).toBeDefined();
+            expect(typeof integration.hooks['astro:server:done']).toBe('function');
+        });
+        it('should start scheduler on server start and stop on done', async () => {
+            const { startScheduler } = await import('../../src/utils/build/scheduler');
+            const { closeDatabase } = await import('../../src/db/connection');
+            const { stopScheduler } = await import('../../src/utils/build/scheduler');
+            const integration = createIntegration();
+            // astro:config:done must run first to set projectRoot
+            const configDoneHook = integration.hooks['astro:config:done'];
+            configDoneHook({ config: { root: new URL('file:///app/playground/') }, logger: { info: vi.fn(), warn: vi.fn() } });
+            const mockLogger = { info: vi.fn(), warn: vi.fn() };
+            const startHook = integration.hooks['astro:server:start'];
+            startHook({ logger: mockLogger });
+            expect(startScheduler).toHaveBeenCalledOnce();
+            const doneHook = integration.hooks['astro:server:done'];
+            doneHook();
+            expect(stopScheduler).toHaveBeenCalledOnce();
+            expect(closeDatabase).toHaveBeenCalledOnce();
+        });
+    });
+});
+//# sourceMappingURL=integration-factory.test.js.map

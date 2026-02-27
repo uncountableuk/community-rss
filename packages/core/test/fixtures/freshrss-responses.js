@@ -1,0 +1,61 @@
+export const mockFeedsResponse = {
+    subscriptions: [
+        {
+            id: 'feed/1',
+            title: 'Tech Blog',
+            categories: [{ id: 'user/-/label/Tech', label: 'Tech' }],
+            url: 'https://techblog.example.com/rss',
+            htmlUrl: 'https://techblog.example.com',
+            iconUrl: 'https://techblog.example.com/favicon.ico',
+        },
+        {
+            id: 'feed/2',
+            title: 'Design News',
+            categories: [{ id: 'user/-/label/Design', label: 'Design' }],
+            url: 'https://designnews.example.com/feed',
+            htmlUrl: 'https://designnews.example.com',
+            iconUrl: 'https://designnews.example.com/favicon.ico',
+        },
+    ],
+};
+export const mockArticlesResponse = {
+    direction: 'ltr',
+    id: 'feed/1',
+    title: 'Tech Blog',
+    description: 'Latest tech news',
+    self: { href: 'https://techblog.example.com/rss' },
+    updated: 1672531200,
+    updatedUsec: '1672531200000000',
+    items: [
+        {
+            id: 'tag:google.com,2005:reader/item/0000000000000001',
+            crawlTimeMsec: '1672531200000',
+            timestampUsec: '1672531200000000',
+            categories: ['user/-/state/com.google/read'],
+            title: 'New Framework Released',
+            published: 1672531200,
+            updated: 1672531200,
+            canonical: [{ href: 'https://techblog.example.com/new-framework', type: 'text/html' }],
+            alternate: [{ href: 'https://techblog.example.com/new-framework', type: 'text/html' }],
+            summary: { direction: 'ltr', content: 'A new framework has been released.' },
+            content: { direction: 'ltr', content: '<p>A new framework has been released.</p><img src="https://techblog.example.com/image.jpg" />' },
+            author: 'Jane Doe',
+            origin: { streamId: 'feed/1', title: 'Tech Blog', htmlUrl: 'https://techblog.example.com' },
+        },
+        {
+            id: 'tag:google.com,2005:reader/item/0000000000000002',
+            crawlTimeMsec: '1672444800000',
+            timestampUsec: '1672444800000000',
+            categories: [],
+            title: 'CSS Tips',
+            published: 1672444800,
+            updated: 1672444800,
+            canonical: [{ href: 'https://techblog.example.com/css-tips', type: 'text/html' }],
+            alternate: [{ href: 'https://techblog.example.com/css-tips', type: 'text/html' }],
+            summary: { direction: 'ltr', content: 'Some CSS tips.' },
+            author: 'John Smith',
+            origin: { streamId: 'feed/1', title: 'Tech Blog', htmlUrl: 'https://techblog.example.com' },
+        },
+    ],
+};
+//# sourceMappingURL=freshrss-responses.js.map

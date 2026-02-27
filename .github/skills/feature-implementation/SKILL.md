@@ -1,5 +1,5 @@
 ---
-name: "Feature Implementation Agent"
+name: "feature-implementation"
 description: "End-to-end feature implementation for the Community RSS Framework monorepo"
 ---
 

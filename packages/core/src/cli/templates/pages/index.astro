@@ -147,10 +147,33 @@ import FeedGrid from '@community-rss/core/components/FeedGrid.astro';
 
 <script>
   // Show the sign-up CTA for unauthenticated or guest users
+  interface SessionResponse {
+    user?: {
+      id: string;
+      isGuest: boolean;
+    };
+  }
+
+  interface ArticleResponse {
+    data: Array<{
+      id: string;
+      title: string;
+      summary?: string;
+      feedTitle?: string;
+      publishedAt?: string;
+      authorName?: string;
+      heartCount?: number;
+      starCount?: number;
+    }>;
+    pagination?: {
+      hasMore?: boolean;
+    };
+  }
+
   (async () => {
     try {
       const res = await fetch('/api/auth/get-session', { credentials: 'include' });
-      const data = res.ok ? await res.json() : null;
+      const data: SessionResponse = res.ok ? await res.json() : null;
       const isAuthenticated = data?.user && !data.user.isGuest;
       if (!isAuthenticated) {
         const cta = document.getElementById('crss-homepage-cta');
@@ -249,7 +272,7 @@ import FeedGrid from '@community-rss/core/components/FeedGrid.astro';
     isLoading = true;
     try {
       const response = await fetch(`/api/v1/articles?page=${page}&limit=20`);
-      const data = await response.json();
+      const data: ArticleResponse = await response.json();
 
       if (loadingState) loadingState.style.display = 'none';
 
