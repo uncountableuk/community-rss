@@ -8,35 +8,73 @@ architecture, code reuse, and adherence to established patterns.
 
 ## Project Context
 - **Monorepo layout** (NPM Workspaces): `packages/core/` (the framework),
-  `playground/` (the reference implementation / dev testing app), and
+  `playground/` (ephemeral dev testing app, gitignored), and
   `docs/` (Starlight documentation site)
-- **Stack**: Astro SSR + Cloudflare (D1, R2, Queues, Workers, Pages) + FreshRSS
-  + Drizzle ORM (D1/SQLite) + better-auth (authentication) + Starlight (docs)
+- **Stack**: Astro SSR + Node.js (`@astrojs/node`) + Docker/VPS + FreshRSS
+  + Drizzle ORM (better-sqlite3) + better-auth (authentication)
+  + node-cron (scheduling) + MinIO (S3 storage) + Starlight (docs)
 - **Licence**: GPL-3.0 — all contributions must be compatible
 - **Local dev**: Docker Compose (FreshRSS, MinIO, Mailpit) + Dev Container
-- The playground consumes `@community-rss/core` exactly as an end-user would
+- **Architecture**: "Integration with overrides" — the package injects API
+  routes and middleware; developers own page routes (scaffolded via CLI)
+
+### Playground Architecture
+- The playground is **ephemeral** — gitignored and rebuilt on demand via
+  `scripts/reset-playground.sh`. It is never committed to version control.
+- `npm run reset:playground` tears down the playground and rebuilds it from
+  CLI scaffold templates. It preserves the database by default (`--keep-db`).
+- `npm run hardreset:playground` does a full clean including wiping the database.
+- The playground consumes `@community-rss/core` exactly as an end-user would.
+- **What auto-reloads**: Backend API routes, middleware, components, and
+  utilities are symlinked from `packages/core/` via NPM workspaces. Edit
+  these and the dev server hot-reloads instantly.
+- **What needs a reset**: Pages and email templates are scaffolded (copied)
+  into the playground by the CLI. After editing CLI templates in
+  `packages/core/src/cli/templates/`, run `npm run reset:playground` to
+  see the changes. The database and test data are preserved.
+
+### Config Bridge (config-store.ts)
+- `packages/core/src/config-store.ts` passes resolved integration config
+  from `astro:config:setup` (where the integration runs) to the middleware
+  (which runs at request time) via `globalThis.__communityRssConfig`.
+- `setGlobalConfig(config)` is called in `integration.ts` during setup.
+- `getGlobalConfig()` is called in `middleware.ts` on each request.
+- This avoids Astro virtual module imports at config-load time, which fail
+  because virtual modules are only available inside Vite's plugin system.
 
 ## Critical Rules
 
 ### Monorepo Awareness
 - Root `package.json` defines workspaces — never add app dependencies there
-- Framework code lives in `packages/core/`; playground-specific code in `playground/`
+- Framework code lives in `packages/core/`; playground is ephemeral (gitignored)
 - Documentation site lives in `docs/` (Starlight) — independent workspace
 - Shared dev tooling (ESLint, Prettier, Vitest config) lives at the root
 - Run `npm install` from the root to wire workspace symlinks
 - Publishing is done from `packages/core/` only
+- After cloning, run `npm run reset:playground` to scaffold the playground
 
 ### Architecture
 - Extract ALL business logic to `packages/core/src/utils/` — components are thin wrappers
 - Respect execution context boundaries:
-  - `utils/build/` — Node.js / Worker APIs only (cron, sync, queue consumers)
+  - `utils/build/` — Node.js server-side only (cron, sync, email, auth)
   - `utils/client/` — Browser APIs only (DOM interactions, hearts/stars UI)
   - `utils/shared/` — Pure functions only (validation, formatting, scoring)
 - Database queries & migrations live in `packages/core/src/db/`
 - Database schema is defined in Drizzle ORM TypeScript (`src/db/schema.ts`).
   Migrations are generated via `drizzle-kit generate` — never hand-written.
+- Database uses better-sqlite3 with Drizzle ORM (`BetterSQLite3Database`)
 - Authentication uses `better-auth` configured in `src/utils/build/auth.ts`
-- Cloudflare bindings (D1, R2, Queues) are typed in `packages/core/src/types/env.d.ts`
+- Runtime context: `AppContext` (in `src/types/context.ts`) provides `db`,
+  `env`, and `config` — accessed via `context.locals.app` in route handlers
+- Environment variables are typed in `EnvironmentVariables` interface
+  (`src/types/context.ts`) and read from `process.env`
+- **Route split**: API routes (11) are injected by the integration; page
+  routes (8) are scaffolded into the developer's project via
+  `npx @community-rss/core init` and are developer-owned
+- Email templates use file-based HTML with `{{variable}}` substitution;
+  resolution: developer dir → package defaults → code-based fallbacks
+- Components accept `messages`/`labels` props — all user-facing strings
+  are configurable; no hard-coded copy in components
 - Before creating new functions, search for existing utilities that can be reused
 - The "System User" (`id: 'system'`) owns global/community feeds imported
   from FreshRSS. It is seeded during database setup and checked defensively
@@ -58,14 +96,15 @@ architecture, code reuse, and adherence to established patterns.
   internal tsconfig aliases when the package is consumed as a workspace dep.
 - **Test code** (`packages/core/test/`): Use **path aliases** for all imports
   from source and fixtures. Vitest resolves aliases via its own config.
-- Core test aliases: `@utils/`, `@components/`, `@routes/`, `@db/`, `@core-types/`
+- Core test aliases: `@utils/`, `@components/`, `@routes/`, `@db/`, `@core-types/`, `@cli/`
 - Test-only aliases: `@fixtures/`, `@test/`
 - Same-directory imports may use relative paths (`./sibling`)
 - Playground imports the framework as `@community-rss/core` (never path-relative)
 
 ### Styling (Framework Defaults)
 - Use CSS custom properties for all themeable values
-- Provide sensible defaults; consumers override via Astro integration config
+- Prefix all framework tokens with `--crss-` to avoid namespace collisions
+- Provide sensible defaults; consumers override via theme.css or integration config
 - No hard-coded colour values — use design tokens that consumers can remap
 - Framework components must be compatible with any design system
 
@@ -75,7 +114,8 @@ architecture, code reuse, and adherence to established patterns.
 - Test both success and error paths
 - Use path aliases in test imports
 - Before code review: run `npm run test:coverage` from root and verify no decrease
-- D1 tests use Miniflare's local SQLite simulation
+- DB tests use in-memory SQLite via better-sqlite3 (not D1 or Miniflare)
+- Use `vi.hoisted()` for any variable referenced inside `vi.mock()` factories
 
 ### Release Process
 - Feature plans go in `feature_plans/X_Y_Z/{feature_name}/`
@@ -106,7 +146,7 @@ architecture, code reuse, and adherence to established patterns.
 - ❌ Define business logic functions inside test files
 - ❌ Put business logic in Astro components — extract to utils
 - ❌ Use `fs` or `path` in client utils
-- ❌ Use `document` or `window` in build/worker utils
+- ❌ Use `document` or `window` in build/server utils
 - ❌ Add breaking changes to public API without a MAJOR version bump (post-1.0.0)
 - ❌ Use relative imports from test files to source code
 - ❌ Skip writing tests for new utility functions
@@ -115,9 +155,11 @@ architecture, code reuse, and adherence to established patterns.
 - ❌ Add app dependencies to root package.json
 - ❌ Import from `packages/core/src/` in playground — use `@community-rss/core`
 - ❌ Import from `docs/` in packages/core or playground — docs is independent
-- ❌ Hard-code Cloudflare binding names — use typed env interfaces
 - ❌ Begin implementation without an approved feature plan
 - ❌ Use raw SQL strings — use Drizzle ORM query builders in `src/db/`
 - ❌ Hand-write SQL migration files — always generate via `drizzle-kit generate`
 - ❌ Implement custom session/auth logic — use better-auth patterns
 - ❌ Write misleading Implementation Notes — describe actual code, not intent
+- ❌ Inject page routes from the package — pages are developer-owned (scaffolded)
+- ❌ Hard-code user-facing strings in components — use `messages`/`labels` props
+- ❌ Declare mock variables outside `vi.hoisted()` when used in `vi.mock()` factories

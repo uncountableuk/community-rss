@@ -1,16 +1,12 @@
 import type { APIRoute } from 'astro';
 import { syncFeeds } from '../../../../utils/build/sync';
-import { processArticle } from '../../../../utils/build/article-processor';
-import { upsertArticle } from '../../../../db/queries/articles';
-import type { Env } from '../../../../types/env';
-import type { ArticleQueueMessage } from '../../../../utils/build/sync';
+import type { AppContext } from '../../../../types/context';
 
 /**
  * POST /api/v1/admin/sync
  *
- * Manually triggers a FreshRSS → D1 feed sync.
- * In local dev mode (default), processes articles inline since
- * wrangler pages dev does not support queue consumers.
+ * Manually triggers a FreshRSS feed sync. Articles are processed
+ * inline (no queue needed with Node.js long-lived process).
  *
  * Intended for local development use only — gate with authentication
  * before exposing in production.
@@ -18,9 +14,9 @@ import type { ArticleQueueMessage } from '../../../../utils/build/sync';
  * @since 0.2.0
  */
 export const POST: APIRoute = async ({ locals }) => {
-    const env = (locals as { runtime?: { env?: Env } }).runtime?.env;
+    const app = (locals as { app?: AppContext }).app;
 
-    if (!env?.FRESHRSS_URL) {
+    if (!app?.env?.FRESHRSS_URL) {
         return new Response(
             JSON.stringify({ error: 'FreshRSS not configured' }),
             { status: 503, headers: { 'Content-Type': 'application/json' } },
@@ -28,45 +24,13 @@ export const POST: APIRoute = async ({ locals }) => {
     }
 
     try {
-        // Collect enqueued messages so we can process them inline
-        const collectedMessages: ArticleQueueMessage[] = [];
-        const originalSend = env.ARTICLE_QUEUE.send.bind(env.ARTICLE_QUEUE);
-        env.ARTICLE_QUEUE.send = async (message: unknown) => {
-            collectedMessages.push(message as ArticleQueueMessage);
-            return originalSend(message);
-        };
-
-        const result = await syncFeeds(env);
-
-        // Process articles inline (queue consumer doesn't work in Pages dev)
-        let articlesProcessed = 0;
-        for (const msg of collectedMessages) {
-            try {
-                const processed = processArticle(msg);
-                await upsertArticle(env.DB, {
-                    id: `art_${msg.freshrssItemId.replace(/[^a-zA-Z0-9]/g, '_')}`,
-                    feedId: processed.feedId,
-                    freshrssItemId: processed.freshrssItemId,
-                    title: processed.title,
-                    content: processed.content,
-                    summary: processed.summary,
-                    originalLink: processed.originalLink,
-                    authorName: processed.authorName,
-                    publishedAt: processed.publishedAt,
-                    mediaPending: true,
-                });
-                articlesProcessed++;
-            } catch (articleError) {
-                console.error(`[sync] Failed to process article ${msg.freshrssItemId}:`, articleError);
-            }
-        }
+        const result = await syncFeeds(app);
 
         return new Response(
             JSON.stringify({
                 ok: true,
                 feedsProcessed: result.feedsProcessed,
-                articlesEnqueued: result.articlesEnqueued,
-                articlesProcessed,
+                articlesProcessed: result.articlesProcessed,
             }),
             { status: 200, headers: { 'Content-Type': 'application/json' } },
         );

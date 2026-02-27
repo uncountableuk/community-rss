@@ -7,7 +7,8 @@
  * @since 0.3.0
  */
 
-import type { Env } from '../../types/env';
+import type { AppContext } from '../../types/context';
+import type { EnvironmentVariables } from '../../types/context';
 import type { EmailConfig } from '../../types/options';
 import type {
     EmailService,
@@ -19,17 +20,18 @@ import type {
 } from '../../types/email';
 import { defaultTemplates } from './email-templates';
 import { createResendTransport, createSmtpTransport } from './email-transports';
+import { renderEmailTemplate } from './email-renderer';
 
 /**
  * Resolves the transport adapter from configuration.
  *
- * @param env - Cloudflare environment bindings
+ * @param env - Environment variables
  * @param emailConfig - Email configuration from integration options
  * @returns Resolved EmailTransport or null if not configured
  * @since 0.3.0
  */
 export function resolveTransport(
-    env: Env,
+    env: EnvironmentVariables,
     emailConfig?: EmailConfig,
 ): EmailTransport | null {
     // 1. EmailConfig.transport (integration options) has highest priority
@@ -98,26 +100,25 @@ export function resolveTemplate(
  * Creates a unified email service instance.
  *
  * The service resolves templates and transport from the provided
- * configuration, then exposes a single `send()` method for all
+ * application context, then exposes a single `send()` method for all
  * email types.
  *
- * @param env - Cloudflare environment bindings
- * @param emailConfig - Optional email configuration from integration options
+ * @param app - Application context
  * @returns EmailService instance
  * @since 0.3.0
  *
  * @example
  * ```typescript
- * const emailService = createEmailService(env, options.email);
+ * const emailService = createEmailService(app);
  * await emailService.send('sign-in', 'user@example.com', { url }, { name: 'Jim' });
  * ```
  */
 export function createEmailService(
-    env: Env,
-    emailConfig?: EmailConfig,
+    app: AppContext,
 ): EmailService {
-    const transport = resolveTransport(env, emailConfig);
-    const from = emailConfig?.from ?? env.SMTP_FROM ?? 'noreply@localhost';
+    const emailConfig = app.config.email;
+    const transport = resolveTransport(app.env, emailConfig);
+    const from = emailConfig?.from ?? app.env.SMTP_FROM ?? 'noreply@localhost';
     const appName = emailConfig?.appName ?? 'Community RSS';
 
     return {
@@ -136,6 +137,38 @@ export function createEmailService(
                 return;
             }
 
+            // Resolution order:
+            // 1. Code-based custom templates (emailConfig.templates) — highest priority
+            // 2. File-based templates (developer dir → package defaults)
+            // 3. Code-based default templates (built-in)
+
+            // 1. Check code-based custom templates first
+            const customTemplate = emailConfig?.templates?.[type];
+            if (customTemplate) {
+                const context: EmailTemplateContext = { appName, email: to, profile };
+                const content = (customTemplate as EmailTemplateFunction<Record<string, unknown>>)(
+                    context, data as any,
+                );
+                await transport.send({ from, to, subject: content.subject, text: content.text, html: content.html });
+                return;
+            }
+
+            // 2. Try file-based template
+            const greetingText = profile?.name ? `Hi ${profile.name},` : 'Hi there,';
+            const templateVars: Record<string, string> = {
+                appName,
+                greeting: greetingText,
+                email: to,
+                ...(data as Record<string, unknown>) as Record<string, string>,
+            };
+            const templateDir = emailConfig?.templateDir ?? app.config.emailTemplateDir;
+            const fileContent = renderEmailTemplate(type, templateVars, templateDir);
+            if (fileContent) {
+                await transport.send({ from, to, subject: fileContent.subject, text: fileContent.text, html: fileContent.html });
+                return;
+            }
+
+            // 3. Fall back to code-based default template
             const template = resolveTemplate(type, emailConfig);
             if (!template) {
                 console.warn(
@@ -144,22 +177,9 @@ export function createEmailService(
                 return;
             }
 
-            const context: EmailTemplateContext = {
-                appName,
-                email: to,
-                profile,
-            };
-
-            // Cast data as any since template function is generic but data is type-specific
+            const context: EmailTemplateContext = { appName, email: to, profile };
             const content = template(context, data as any);
-
-            await transport.send({
-                from,
-                to,
-                subject: content.subject,
-                text: content.text,
-                html: content.html,
-            });
+            await transport.send({ from, to, subject: content.subject, text: content.text, html: content.html });
         },
     };
 }

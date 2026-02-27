@@ -13,18 +13,20 @@ minimal test setup — these instructions apply to the **core package**.
 Mirror source structure under a `test/` directory:
 - `src/utils/shared/scoring.ts` → `test/utils/shared/scoring.test.ts`
 - `src/db/queries/articles.ts` → `test/db/queries/articles.test.ts`
+- `src/cli/init.mjs` → `test/cli/init.test.ts`
 - Integration tests: `{feature}.integration.test.ts`
 - Performance tests: `{feature}.performance.test.ts`
 
 ## Import Standards (CRITICAL)
-✅ CORRECT:
+ CORRECT:
 ```typescript
 import { functionToTest } from '@utils/shared/scoring';
 import { mockArticle } from '@fixtures/articles';
 import type { Article } from '@core-types/models';
+import { scaffold } from '@cli/init.mjs';
 ```
 
-❌ WRONG:
+ WRONG:
 ```typescript
 import { functionToTest } from '../../../src/utils/shared/scoring';
 ```
@@ -58,8 +60,9 @@ describe('ModuleName', () => {
 - NEVER define business logic functions in test files
 - Use fixtures from `@fixtures/` for test data
 - Use `vi.mock()` for mocking, not manual implementations
+- Use `vi.hoisted()` for any variable referenced inside `vi.mock()` factories
 - Follow AAA pattern: Arrange, Act, Assert
-- Mock Cloudflare bindings (D1, R2, Queues) using Miniflare or `vi.mock()`
+- Mock the database using in-memory SQLite via better-sqlite3 or `vi.mock()`
 
 ## Coverage Requirements (MANDATORY)
 
@@ -84,11 +87,13 @@ npm run test:coverage
 - ✅ All exported functions
 - ✅ Both success and error paths
 - ✅ Edge cases and boundary conditions
-- ✅ Cloudflare binding interactions (D1 queries, R2 uploads, Queue messages)
+- ✅ Database interactions (SQLite queries via Drizzle ORM)
 - ✅ API route handlers (request/response)
 - ✅ DOM manipulation and event handlers (client code)
 - ✅ Integration between modules
 - ✅ Forward-compatibility of public APIs
+- ✅ Email template resolution and rendering
+- ✅ CLI scaffold operations (file creation, --force flag)
 
 ### Coverage Anti-Patterns
 - ❌ Writing tests that don't assert behaviour (coverage padding)
@@ -96,11 +101,12 @@ npm run test:coverage
 - ❌ Skipping tests for "simple" configuration files
 - ❌ Not testing error handlers because they're "unlikely to execute"
 
-## D1 Database Testing
-- Use Miniflare's local SQLite simulation for D1 tests
+## Database Testing
+- Use in-memory SQLite via better-sqlite3 for database tests
 - Apply schema migrations before each test suite
 - Use transactions + rollback to keep test isolation
 - Test both query success and constraint violation paths
+- Never use D1 or Miniflare — the stack uses better-sqlite3 directly
 
 ## Performance Requirements
 
@@ -119,3 +125,4 @@ npm run test:coverage
 - ❌ Using `beforeEach` with cache clearing for read-only tests
 - ❌ No fixtures for unit tests
 - ❌ Missing timeouts on integration tests
+- ❌ Declaring mock variables outside `vi.hoisted()` when used in `vi.mock()` factories

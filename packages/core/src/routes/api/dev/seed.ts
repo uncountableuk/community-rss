@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { seedDatabase } from '../../../db/seed';
-import type { Env } from '../../../types/env';
+import type { AppContext } from '../../../types/context';
 
 /**
  * GET /api/dev/seed
@@ -8,10 +8,6 @@ import type { Env } from '../../../types/env';
  * Dev-only endpoint that seeds the database with essential data
  * (System User, etc.). Protected by `import.meta.env.DEV` check
  * so it cannot be called in production.
- *
- * This exists because executing a .ts script directly against a local
- * Cloudflare D1 database is difficult — D1 runs inside Miniflare/Wrangler
- * and standard Node SQLite drivers can't access the .wrangler state files.
  *
  * Usage: `curl http://localhost:4321/api/dev/seed`
  *
@@ -26,9 +22,9 @@ export const GET: APIRoute = async ({ locals }) => {
         );
     }
 
-    const env = (locals as { runtime?: { env?: Env } }).runtime?.env;
+    const app = (locals as { app?: AppContext }).app;
 
-    if (!env?.DB) {
+    if (!app?.db) {
         return new Response(
             JSON.stringify({ error: 'Database not available' }),
             { status: 503, headers: { 'Content-Type': 'application/json' } },
@@ -36,7 +32,7 @@ export const GET: APIRoute = async ({ locals }) => {
     }
 
     try {
-        const result = await seedDatabase(env.DB);
+        const result = await seedDatabase(app.db);
 
         return new Response(
             JSON.stringify({ ok: true, ...result }),

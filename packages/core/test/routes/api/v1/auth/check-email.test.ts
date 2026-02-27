@@ -13,15 +13,18 @@ vi.mock('@db/queries/users', () => ({
 import { GET } from '@routes/api/v1/auth/check-email';
 import { mockUsers } from '@fixtures/users';
 
-const mockEnv = {
-    DB: {} as D1Database,
-    PUBLIC_SITE_URL: 'http://localhost:4321',
+const mockApp = {
+    db: {} as Record<string, unknown>,
+    config: { email: undefined } as Record<string, unknown>,
+    env: {
+        PUBLIC_SITE_URL: 'http://localhost:4321',
+    } as Record<string, unknown>,
 };
 
-function createContext(request: Request, env: Record<string, unknown> = mockEnv) {
+function createContext(request: Request, app: Record<string, unknown> | null = mockApp) {
     return {
         request,
-        locals: { runtime: { env } },
+        locals: { app },
         params: {},
         redirect: (url: string) => new Response(null, { status: 302, headers: { Location: url } }),
         url: new URL(request.url),

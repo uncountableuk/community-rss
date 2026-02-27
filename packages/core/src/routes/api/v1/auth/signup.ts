@@ -2,7 +2,7 @@ import type { APIRoute } from 'astro';
 import { createAuth } from '../../../../utils/build/auth';
 import { createPendingSignup } from '../../../../db/queries/pending-signups';
 import { getUserByEmail } from '../../../../db/queries/users';
-import type { Env } from '../../../../types/env';
+import type { AppContext } from '../../../../types/context';
 
 /**
  * Sign-up endpoint for new user registration.
@@ -17,9 +17,9 @@ import type { Env } from '../../../../types/env';
  * @since 0.3.0
  */
 export const POST: APIRoute = async ({ request, locals }) => {
-    const env = (locals as { runtime?: { env?: Env } }).runtime?.env;
+    const app = (locals as { app?: AppContext }).app;
 
-    if (!env?.DB) {
+    if (!app?.db) {
         return new Response(
             JSON.stringify({ error: 'Database not available' }),
             { status: 503, headers: { 'Content-Type': 'application/json' } },
@@ -73,11 +73,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
         // Check if this email already belongs to a registered (non-guest) user.
         // If so, send a sign-in magic link rather than a welcome link so the
         // existing account data is never overwritten.
-        const existingUser = await getUserByEmail(env.DB, email);
+        const existingUser = await getUserByEmail(app.db, email);
         if (existingUser && !existingUser.isGuest) {
-            const auth = createAuth(env);
+            const auth = createAuth(app);
             await auth.handler(
-                new Request(`${env.PUBLIC_SITE_URL}/api/auth/sign-in/magic-link`, {
+                new Request(`${app.env.PUBLIC_SITE_URL}/api/auth/sign-in/magic-link`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, callbackURL: '/profile' }),
@@ -99,14 +99,14 @@ export const POST: APIRoute = async ({ request, locals }) => {
         }
 
         // Store pending sign-up data (will be applied after magic link verification)
-        await createPendingSignup(env.DB, email, name);
+        await createPendingSignup(app.db, email, name);
 
         // Trigger magic link email via better-auth's internal API
         // The sendMagicLink callback in auth.ts will detect the pending signup
         // and send a welcome email template
-        const auth = createAuth(env);
+        const auth = createAuth(app);
         const magicLinkResponse = await auth.handler(
-            new Request(`${env.PUBLIC_SITE_URL}/api/auth/sign-in/magic-link`, {
+            new Request(`${app.env.PUBLIC_SITE_URL}/api/auth/sign-in/magic-link`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

@@ -5,18 +5,16 @@ import {
     resolveTemplate,
 } from '@utils/build/email-service';
 import { signInTemplate, welcomeTemplate, emailChangeTemplate } from '@utils/build/email-templates';
-import type { Env } from '@core-types/env';
-import type { EmailConfig } from '@core-types/options';
+import type { AppContext, EnvironmentVariables } from '@core-types/context';
+import type { EmailConfig, ResolvedCommunityRssOptions } from '@core-types/options';
 import type { EmailTransport, EmailTemplateFunction, SignInEmailData } from '@core-types/email';
 
 // Mock global fetch (needed by transport adapters)
 const mockFetch = vi.fn();
 vi.stubGlobal('fetch', mockFetch);
 
-const baseEnv: Env = {
-    DB: {} as D1Database,
-    MEDIA_BUCKET: {} as R2Bucket,
-    ARTICLE_QUEUE: {} as Queue,
+const baseEnv: EnvironmentVariables = {
+    DATABASE_PATH: './data/test.db',
     FRESHRSS_URL: 'http://freshrss:80',
     FRESHRSS_USER: 'admin',
     FRESHRSS_API_PASSWORD: 'password',
@@ -30,6 +28,14 @@ const baseEnv: Env = {
     S3_BUCKET: 'bucket',
     MEDIA_BASE_URL: 'http://localhost:9000/bucket',
 };
+
+function makeApp(emailConfig?: EmailConfig, envOverrides?: Partial<EnvironmentVariables>): AppContext {
+    return {
+        db: {} as any,
+        config: { email: emailConfig } as ResolvedCommunityRssOptions,
+        env: { ...baseEnv, ...envOverrides },
+    };
+}
 
 describe('email-service', () => {
     beforeEach(() => {
@@ -156,7 +162,7 @@ describe('email-service', () => {
     describe('createEmailService', () => {
         it('should skip sending and warn when no transport configured', async () => {
             const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => { });
-            const service = createEmailService(baseEnv);
+            const service = createEmailService(makeApp());
 
             await service.send('sign-in', 'user@example.com', { url: 'https://example.com' });
 
@@ -169,8 +175,7 @@ describe('email-service', () => {
 
         it('should skip sending and warn for unknown email type', async () => {
             const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => { });
-            const config: EmailConfig = { transport: 'smtp' };
-            const service = createEmailService(baseEnv, config);
+            const service = createEmailService(makeApp({ transport: 'smtp' }));
 
             await service.send('nonexistent', 'user@example.com', {});
 
@@ -183,8 +188,7 @@ describe('email-service', () => {
         it('should send sign-in email via configured transport', async () => {
             mockFetch.mockResolvedValueOnce({ ok: true });
 
-            const config: EmailConfig = { transport: 'smtp', appName: 'Test App' };
-            const service = createEmailService(baseEnv, config);
+            const service = createEmailService(makeApp({ transport: 'smtp', appName: 'Test App' }));
 
             await service.send('sign-in', 'user@example.com', { url: 'https://example.com/verify' });
 
@@ -202,9 +206,7 @@ describe('email-service', () => {
         it('should send welcome email with profile personalisation', async () => {
             mockFetch.mockResolvedValueOnce({ ok: true });
 
-            const env = { ...baseEnv, RESEND_API_KEY: 'key' };
-            const config: EmailConfig = { transport: 'resend' };
-            const service = createEmailService(env, config);
+            const service = createEmailService(makeApp({ transport: 'resend' }, { RESEND_API_KEY: 'key' }));
 
             await service.send(
                 'welcome',
@@ -222,8 +224,7 @@ describe('email-service', () => {
         it('should send email-change email via transport', async () => {
             mockFetch.mockResolvedValueOnce({ ok: true });
 
-            const config: EmailConfig = { transport: 'smtp' };
-            const service = createEmailService(baseEnv, config);
+            const service = createEmailService(makeApp({ transport: 'smtp' }));
 
             await service.send('email-change', 'new@example.com', {
                 verificationUrl: 'https://example.com/confirm?token=abc',
@@ -237,9 +238,9 @@ describe('email-service', () => {
         it('should use emailConfig.from for sender address', async () => {
             mockFetch.mockResolvedValueOnce({ ok: true });
 
-            const env = { ...baseEnv, RESEND_API_KEY: 'key' };
-            const config: EmailConfig = { transport: 'resend', from: 'custom@example.com' };
-            const service = createEmailService(env, config);
+            const service = createEmailService(
+                makeApp({ transport: 'resend', from: 'custom@example.com' }, { RESEND_API_KEY: 'key' }),
+            );
 
             await service.send('sign-in', 'user@example.com', { url: 'https://example.com' });
 
@@ -250,9 +251,7 @@ describe('email-service', () => {
         it('should fall back to SMTP_FROM when emailConfig.from is not set', async () => {
             mockFetch.mockResolvedValueOnce({ ok: true });
 
-            const env = { ...baseEnv, RESEND_API_KEY: 'key' };
-            const config: EmailConfig = { transport: 'resend' };
-            const service = createEmailService(env, config);
+            const service = createEmailService(makeApp({ transport: 'resend' }, { RESEND_API_KEY: 'key' }));
 
             await service.send('sign-in', 'user@example.com', { url: 'https://example.com' });
 
@@ -269,13 +268,12 @@ describe('email-service', () => {
                 text: `Custom: ${data.url}`,
             });
 
-            const env = { ...baseEnv, RESEND_API_KEY: 'key' };
-            const config: EmailConfig = {
-                transport: 'resend',
-                appName: 'My App',
-                templates: { 'sign-in': customTemplate },
-            };
-            const service = createEmailService(env, config);
+            const service = createEmailService(
+                makeApp(
+                    { transport: 'resend', appName: 'My App', templates: { 'sign-in': customTemplate } },
+                    { RESEND_API_KEY: 'key' },
+                ),
+            );
 
             await service.send('sign-in', 'user@example.com', { url: 'https://example.com/magic' });
 
@@ -288,8 +286,7 @@ describe('email-service', () => {
             const customSend = vi.fn().mockResolvedValue(undefined);
             const customTransport: EmailTransport = { send: customSend };
 
-            const config: EmailConfig = { transport: customTransport };
-            const service = createEmailService(baseEnv, config);
+            const service = createEmailService(makeApp({ transport: customTransport }));
 
             await service.send('sign-in', 'user@example.com', { url: 'https://example.com' });
 

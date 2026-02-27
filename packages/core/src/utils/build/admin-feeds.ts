@@ -8,6 +8,7 @@
  * @since 0.3.0
  */
 
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import { upsertFeed } from '../../db/queries/feeds';
 
 /**
@@ -85,7 +86,7 @@ export interface SubmitAdminFeedOptions {
  * Validates the URL, then creates an approved feed owned by the admin.
  * No domain verification is required — admin privilege is sufficient.
  *
- * @param db - D1 database binding
+ * @param db - Drizzle database instance
  * @param adminUserId - The admin user's ID
  * @param feedUrl - The RSS/Atom feed URL
  * @param options - Optional title and category overrides
@@ -94,7 +95,7 @@ export interface SubmitAdminFeedOptions {
  * @since 0.3.0
  */
 export async function submitAdminFeed(
-    db: D1Database,
+    db: BetterSQLite3Database,
     adminUserId: string,
     feedUrl: string,
     options?: SubmitAdminFeedOptions,

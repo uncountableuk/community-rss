@@ -1,0 +1,29 @@
+# Production override — use with:
+#   docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# The base docker-compose.yml provides FreshRSS, MinIO, and Mailpit.
+# This file replaces the dev container with a production Node.js app.
+
+services:
+  # Override the dev container with the production app
+  app:
+    build:
+      context: ./playground
+      dockerfile: Dockerfile
+    image: community-rss-app:latest
+    container_name: community_rss_app
+    volumes:
+      - app_data:/app/data
+    ports:
+      - "4321:4321"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=4321
+      - DATABASE_PATH=/app/data/community.db
+    env_file:
+      - ./playground/.env
+    restart: unless-stopped
+    depends_on:
+      - freshrss
+      - minio
+    command: ["node", "dist/server/entry.mjs"]

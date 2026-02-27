@@ -5,9 +5,11 @@
   "type": "module",
   "main": "./index.ts",
   "types": "./index.ts",
+  "bin": {
+    "community-rss": "./src/cli/init.mjs"
+  },
   "exports": {
     ".": "./index.ts",
-    "./workers": "./src/workers/index.ts",
     "./layouts/*": "./src/layouts/*",
     "./components/*": "./src/components/*",
     "./styles/*": "./src/styles/*"
@@ -25,17 +27,19 @@
   "dependencies": {
     "@types/sanitize-html": "^2.16.0",
     "better-auth": "^1.4.19",
+    "better-sqlite3": "^12.6.2",
     "cheerio": "^1.2.0",
     "drizzle-orm": "^0.38.0",
+    "node-cron": "^4.2.1",
     "sanitize-html": "^2.17.1"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.0.0",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node-cron": "^3.0.11",
     "astro": "^5.0.0",
     "drizzle-kit": "^0.30.0",
     "jsdom": "^28.1.0",
-    "msw": "^2.12.10",
-    "wrangler": "^4.0.0"
+    "msw": "^2.12.10"
   },
   "peerDependencies": {
     "astro": "^5.0.0"
@@ -46,6 +50,7 @@
     "astro-integration",
     "rss",
     "community",
-    "cloudflare"
+    "docker",
+    "self-hosted"
   ]
 }

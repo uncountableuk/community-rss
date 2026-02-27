@@ -1,29 +1,26 @@
 import { eq } from 'drizzle-orm';
-import { drizzle } from 'drizzle-orm/d1';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import { feeds } from '../schema';
 
-export async function getFeeds(db: D1Database) {
-    const d1 = drizzle(db);
-    return d1.select().from(feeds).all();
+export async function getFeeds(db: BetterSQLite3Database) {
+    return db.select().from(feeds).all();
 }
 
-export async function getFeedById(db: D1Database, id: string) {
-    const d1 = drizzle(db);
-    const result = await d1.select().from(feeds).where(eq(feeds.id, id)).all();
+export async function getFeedById(db: BetterSQLite3Database, id: string) {
+    const result = await db.select().from(feeds).where(eq(feeds.id, id)).all();
     return result[0] || null;
 }
 
 /**
  * Returns all feeds owned by a specific user.
  *
- * @param db - D1 database binding
+ * @param db - Drizzle database instance
  * @param userId - The feed owner's user ID
  * @returns Array of feed records
  * @since 0.3.0
  */
-export async function getFeedsByUserId(db: D1Database, userId: string) {
-    const d1 = drizzle(db);
-    return d1.select().from(feeds).where(eq(feeds.userId, userId)).all();
+export async function getFeedsByUserId(db: BetterSQLite3Database, userId: string) {
+    return db.select().from(feeds).where(eq(feeds.userId, userId)).all();
 }
 
 /**
@@ -31,18 +28,17 @@ export async function getFeedsByUserId(db: D1Database, userId: string) {
  *
  * Cascading foreign keys handle article and interaction cleanup.
  *
- * @param db - D1 database binding
+ * @param db - Drizzle database instance
  * @param id - The feed ID to delete
  * @returns The deleted feed record(s)
  * @since 0.3.0
  */
-export async function deleteFeed(db: D1Database, id: string) {
-    const d1 = drizzle(db);
-    return d1.delete(feeds).where(eq(feeds.id, id)).returning().all();
+export async function deleteFeed(db: BetterSQLite3Database, id: string) {
+    return db.delete(feeds).where(eq(feeds.id, id)).returning().all();
 }
 
 export async function upsertFeed(
-    db: D1Database,
+    db: BetterSQLite3Database,
     feed: {
         id: string;
         userId: string;
@@ -53,8 +49,7 @@ export async function upsertFeed(
         status?: 'pending' | 'approved' | 'rejected';
     }
 ) {
-    const d1 = drizzle(db);
-    return d1
+    return db
         .insert(feeds)
         .values({
             id: feed.id,

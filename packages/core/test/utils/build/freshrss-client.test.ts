@@ -3,17 +3,27 @@ import { setupServer } from 'msw/node';
 import { http, HttpResponse } from 'msw';
 import { FreshRssClient } from '@utils/build/freshrss-client';
 import { mockFeedsResponse, mockArticlesResponse } from '@fixtures/freshrss-responses';
-import type { Env } from '@core-types/env';
+import type { EnvironmentVariables } from '@core-types/context';
 
 const MOCK_AUTH_TOKEN = 'admin/abc123mocktoken';
 
-const mockEnv: Env = {
+const mockEnv: EnvironmentVariables = {
+    DATABASE_PATH: './data/test.db',
     FRESHRSS_URL: 'https://freshrss.example.com',
     FRESHRSS_USER: 'admin',
     FRESHRSS_API_PASSWORD: 'password123',
     CF_ACCESS_CLIENT_ID: 'client-id',
     CF_ACCESS_CLIENT_SECRET: 'client-secret',
-} as unknown as Env;
+    PUBLIC_SITE_URL: 'http://localhost:4321',
+    SMTP_HOST: 'localhost',
+    SMTP_PORT: '1025',
+    SMTP_FROM: 'noreply@localhost',
+    S3_ENDPOINT: 'http://minio:9000',
+    S3_ACCESS_KEY: 'key',
+    S3_SECRET_KEY: 'secret',
+    S3_BUCKET: 'bucket',
+    MEDIA_BASE_URL: 'http://localhost:9000/bucket',
+};
 
 const server = setupServer(
     // ClientLogin endpoint — validates credentials and returns auth token

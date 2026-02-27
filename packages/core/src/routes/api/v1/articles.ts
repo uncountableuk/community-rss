@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { getArticles } from '../../../db/queries/articles';
+import type { AppContext } from '../../../types/context';
 
 /**
  * Paginated article list endpoint.
@@ -18,15 +19,15 @@ export const GET: APIRoute = async ({ request, locals }) => {
         const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || '20', 10)));
         const offset = (page - 1) * limit;
 
-        const env = (locals as { runtime?: { env?: { DB?: D1Database } } }).runtime?.env;
-        if (!env?.DB) {
+        const app = (locals as { app?: AppContext }).app;
+        if (!app?.db) {
             return new Response(
                 JSON.stringify({ error: 'Database not available' }),
                 { status: 503, headers: { 'Content-Type': 'application/json' } },
             );
         }
 
-        const articles = await getArticles(env.DB, limit, offset);
+        const articles = await getArticles(app.db, limit, offset);
 
         return new Response(
             JSON.stringify({

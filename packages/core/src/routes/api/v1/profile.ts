@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { requireAuth } from '../../../utils/build/auth';
 import { getUserById, updateUser } from '../../../db/queries/users';
-import type { Env } from '../../../types/env';
+import type { AppContext } from '../../../types/context';
 
 /**
  * User profile API endpoint.
@@ -15,9 +15,9 @@ import type { Env } from '../../../types/env';
  * @since 0.3.0
  */
 export const GET: APIRoute = async ({ request, locals }) => {
-    const env = (locals as { runtime?: { env?: Env } }).runtime?.env;
+    const app = (locals as { app?: AppContext }).app;
 
-    if (!env?.DB) {
+    if (!app?.db) {
         return new Response(
             JSON.stringify({ error: 'Database not available' }),
             { status: 503, headers: { 'Content-Type': 'application/json' } },
@@ -25,8 +25,8 @@ export const GET: APIRoute = async ({ request, locals }) => {
     }
 
     try {
-        const session = await requireAuth(request, env);
-        const user = await getUserById(env.DB, session.user.id);
+        const session = await requireAuth(request, app);
+        const user = await getUserById(app.db, session.user.id);
 
         if (!user) {
             return new Response(
@@ -68,9 +68,9 @@ export const GET: APIRoute = async ({ request, locals }) => {
  * @since 0.3.0
  */
 export const PATCH: APIRoute = async ({ request, locals }) => {
-    const env = (locals as { runtime?: { env?: Env } }).runtime?.env;
+    const app = (locals as { app?: AppContext }).app;
 
-    if (!env?.DB) {
+    if (!app?.db) {
         return new Response(
             JSON.stringify({ error: 'Database not available' }),
             { status: 503, headers: { 'Content-Type': 'application/json' } },
@@ -78,7 +78,7 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
     }
 
     try {
-        const session = await requireAuth(request, env);
+        const session = await requireAuth(request, app);
 
         let body: { name?: string; bio?: string };
         try {
@@ -128,7 +128,7 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
             );
         }
 
-        const updated = await updateUser(env.DB, session.user.id, updateData);
+        const updated = await updateUser(app.db, session.user.id, updateData);
 
         if (!updated) {
             return new Response(

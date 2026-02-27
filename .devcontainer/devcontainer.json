@@ -3,8 +3,15 @@
   "dockerComposeFile": "../docker-compose.yml",
   "service": "app",
   "workspaceFolder": "/app",
-  "forwardPorts": [4321, 4322, 8025, 8080, 9000, 9001],
-  "postCreateCommand": "npm install",
+  "forwardPorts": [
+    4321,
+    4322,
+    8025,
+    8080,
+    9000,
+    9001
+  ],
+  "postCreateCommand": "npm install && bash scripts/reset-playground.sh",
   "customizations": {
     "vscode": {
       "extensions": [

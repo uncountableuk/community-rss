@@ -26,10 +26,6 @@ vi.mock('better-auth/plugins/magic-link', () => ({
     magicLink: vi.fn((opts: Record<string, unknown>) => ({ id: 'magic-link', opts })),
 }));
 
-vi.mock('drizzle-orm/d1', () => ({
-    drizzle: vi.fn(() => ({})),
-}));
-
 vi.mock('@utils/build/email', () => ({
     sendMagicLinkEmail: mockSendMagicLinkEmail,
 }));
@@ -43,24 +39,26 @@ vi.mock('@db/queries/users', () => ({
 }));
 
 import { createAuth, requireAuth, requireAdmin } from '@utils/build/auth';
-import type { Env } from '@core-types/env';
+import type { AppContext } from '@core-types/context';
 
-const mockEnv: Env = {
-    DB: {} as D1Database,
-    MEDIA_BUCKET: {} as R2Bucket,
-    ARTICLE_QUEUE: {} as Queue,
-    FRESHRSS_URL: 'http://freshrss:80',
-    FRESHRSS_USER: 'admin',
-    FRESHRSS_API_PASSWORD: 'password',
-    PUBLIC_SITE_URL: 'http://localhost:4321',
-    SMTP_HOST: 'mailpit',
-    SMTP_PORT: '1025',
-    SMTP_FROM: 'noreply@localhost',
-    S3_ENDPOINT: 'http://minio:9000',
-    S3_ACCESS_KEY: 'key',
-    S3_SECRET_KEY: 'secret',
-    S3_BUCKET: 'bucket',
-    MEDIA_BASE_URL: 'http://localhost:9000/bucket',
+const mockApp: AppContext = {
+    db: {} as any,
+    config: { email: undefined } as any,
+    env: {
+        DATABASE_PATH: './data/test.db',
+        FRESHRSS_URL: 'http://freshrss:80',
+        FRESHRSS_USER: 'admin',
+        FRESHRSS_API_PASSWORD: 'password',
+        PUBLIC_SITE_URL: 'http://localhost:4321',
+        SMTP_HOST: 'mailpit',
+        SMTP_PORT: '1025',
+        SMTP_FROM: 'noreply@localhost',
+        S3_ENDPOINT: 'http://minio:9000',
+        S3_ACCESS_KEY: 'key',
+        S3_SECRET_KEY: 'secret',
+        S3_BUCKET: 'bucket',
+        MEDIA_BASE_URL: 'http://localhost:9000/bucket',
+    },
 };
 
 describe('auth', () => {
@@ -70,14 +68,14 @@ describe('auth', () => {
 
     describe('createAuth', () => {
         it('should return a valid better-auth instance', () => {
-            const auth = createAuth(mockEnv);
+            const auth = createAuth(mockApp);
             expect(auth).toBeDefined();
             expect(auth.api).toBeDefined();
             expect(auth.handler).toBeDefined();
         });
 
         it('should configure betterAuth with correct baseURL', () => {
-            createAuth(mockEnv);
+            createAuth(mockApp);
             expect(mockBetterAuth).toHaveBeenCalledWith(
                 expect.objectContaining({
                     baseURL: 'http://localhost:4321',
@@ -86,7 +84,7 @@ describe('auth', () => {
         });
 
         it('should include magic-link plugin', () => {
-            createAuth(mockEnv);
+            createAuth(mockApp);
             const calls = mockBetterAuth.mock.calls as unknown[][];
             const config = ((calls[0]?.[0] as unknown) as Record<string, unknown>) || {};
             expect(config.plugins).toBeDefined();
@@ -95,7 +93,7 @@ describe('auth', () => {
         });
 
         it('should configure additionalFields for user', () => {
-            createAuth(mockEnv);
+            createAuth(mockApp);
             const calls = mockBetterAuth.mock.calls as unknown[][];
             const config = ((calls[0]?.[0] as unknown) as Record<string, unknown>) || {};
             expect((config.user as Record<string, unknown>).additionalFields).toEqual(
@@ -116,7 +114,7 @@ describe('auth', () => {
             mockGetSession.mockResolvedValueOnce(mockSession);
 
             const request = new Request('http://localhost:4321/api/v1/test');
-            const session = await requireAuth(request, mockEnv);
+            const session = await requireAuth(request, mockApp);
 
             expect(session).toEqual(mockSession);
             expect(mockGetSession).toHaveBeenCalledWith({
@@ -130,7 +128,7 @@ describe('auth', () => {
             const request = new Request('http://localhost:4321/api/v1/test');
 
             try {
-                await requireAuth(request, mockEnv);
+                await requireAuth(request, mockApp);
                 expect.fail('Should have thrown');
             } catch (error) {
                 expect(error).toBeInstanceOf(Response);
@@ -151,7 +149,7 @@ describe('auth', () => {
             mockGetSession.mockResolvedValueOnce(mockSession);
 
             const request = new Request('http://localhost:4321/api/v1/admin/test');
-            const session = await requireAdmin(request, mockEnv);
+            const session = await requireAdmin(request, mockApp);
 
             expect(session).toEqual(mockSession);
         });
@@ -166,7 +164,7 @@ describe('auth', () => {
             const request = new Request('http://localhost:4321/api/v1/admin/test');
 
             try {
-                await requireAdmin(request, mockEnv);
+                await requireAdmin(request, mockApp);
                 expect.fail('Should have thrown');
             } catch (error) {
                 expect(error).toBeInstanceOf(Response);
@@ -183,7 +181,7 @@ describe('auth', () => {
             const request = new Request('http://localhost:4321/api/v1/admin/test');
 
             try {
-                await requireAdmin(request, mockEnv);
+                await requireAdmin(request, mockApp);
                 expect.fail('Should have thrown');
             } catch (error) {
                 expect(error).toBeInstanceOf(Response);

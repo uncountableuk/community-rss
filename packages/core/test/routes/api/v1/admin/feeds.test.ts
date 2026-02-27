@@ -27,15 +27,18 @@ vi.mock('@db/queries/feeds', () => ({
 import { POST, GET, DELETE } from '@routes/api/v1/admin/feeds';
 import { mockUsers } from '@fixtures/users';
 
-const mockEnv = {
-    DB: {} as D1Database,
-    PUBLIC_SITE_URL: 'http://localhost:4321',
+const mockApp = {
+    db: {} as Record<string, unknown>,
+    config: { email: undefined } as Record<string, unknown>,
+    env: {
+        PUBLIC_SITE_URL: 'http://localhost:4321',
+    } as Record<string, unknown>,
 };
 
-function createContext(request: Request, env: Record<string, unknown> = mockEnv) {
+function createContext(request: Request, app: Record<string, unknown> | null = mockApp) {
     return {
         request,
-        locals: { runtime: { env } },
+        locals: { app },
         // Minimal APIContext stubs
         params: {},
         redirect: (url: string) => new Response(null, { status: 302, headers: { Location: url } }),

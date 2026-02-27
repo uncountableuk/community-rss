@@ -2,16 +2,15 @@
  * Database seed logic for the Community RSS framework.
  *
  * Seeds essential data such as the System User. Designed to be
- * called from a dev-only API route (`GET /api/dev/seed`) since
- * local D1 runs inside Miniflare/Wrangler and cannot be accessed
- * via standard Node.js SQLite drivers.
+ * called from a dev-only API route (`GET /api/dev/seed`) or
+ * post-migration script.
  *
  * Idempotent — safe to run multiple times.
  *
  * @since 0.3.0
  */
 
-import { drizzle } from 'drizzle-orm/d1';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import { users } from './schema';
 
 /**
@@ -26,13 +25,12 @@ const SYSTEM_USER_ID = 'system';
  * The System User owns global/community feeds imported from FreshRSS.
  * It cannot sign in and has `role: 'system'`.
  *
- * @param db - D1 database binding
+ * @param db - Drizzle database instance
  * @returns Object indicating whether the system user was created or already existed
  * @since 0.3.0
  */
-export async function seedSystemUser(db: D1Database): Promise<{ created: boolean }> {
-    const d1 = drizzle(db);
-    const result = await d1
+export async function seedSystemUser(db: BetterSQLite3Database): Promise<{ created: boolean }> {
+    const result = await db
         .insert(users)
         .values({
             id: SYSTEM_USER_ID,
@@ -55,11 +53,11 @@ export async function seedSystemUser(db: D1Database): Promise<{ created: boolean
  *
  * Call this from the dev-only seed route or post-migration script.
  *
- * @param db - D1 database binding
+ * @param db - Drizzle database instance
  * @returns Summary of seed operations
  * @since 0.3.0
  */
-export async function seedDatabase(db: D1Database): Promise<{
+export async function seedDatabase(db: BetterSQLite3Database): Promise<{
     systemUser: { created: boolean };
 }> {
     const systemUser = await seedSystemUser(db);

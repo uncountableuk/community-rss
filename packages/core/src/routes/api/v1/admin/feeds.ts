@@ -2,7 +2,7 @@ import type { APIRoute } from 'astro';
 import { requireAdmin } from '../../../../utils/build/auth';
 import { submitAdminFeed } from '../../../../utils/build/admin-feeds';
 import { getFeedsByUserId, getFeedById, deleteFeed } from '../../../../db/queries/feeds';
-import type { Env } from '../../../../types/env';
+import type { AppContext } from '../../../../types/context';
 
 /**
  * POST /api/v1/admin/feeds
@@ -16,9 +16,9 @@ import type { Env } from '../../../../types/env';
  * @since 0.3.0
  */
 export const POST: APIRoute = async ({ request, locals }) => {
-    const env = (locals as { runtime?: { env?: Env } }).runtime?.env;
+    const app = (locals as { app?: AppContext }).app;
 
-    if (!env?.DB) {
+    if (!app?.db) {
         return new Response(
             JSON.stringify({ error: 'Database not available' }),
             { status: 503, headers: { 'Content-Type': 'application/json' } },
@@ -26,7 +26,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     }
 
     try {
-        const session = await requireAdmin(request, env);
+        const session = await requireAdmin(request, app);
 
         const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
         if (!body || typeof body.url !== 'string' || !(body.url as string).trim()) {
@@ -36,7 +36,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
             );
         }
 
-        const feed = await submitAdminFeed(env.DB, session.user.id, (body.url as string).trim(), {
+        const feed = await submitAdminFeed(app.db, session.user.id, (body.url as string).trim(), {
             title: body.title as string | undefined,
             category: body.category as string | undefined,
         });
@@ -67,9 +67,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
  * @since 0.3.0
  */
 export const GET: APIRoute = async ({ request, locals }) => {
-    const env = (locals as { runtime?: { env?: Env } }).runtime?.env;
+    const app = (locals as { app?: AppContext }).app;
 
-    if (!env?.DB) {
+    if (!app?.db) {
         return new Response(
             JSON.stringify({ error: 'Database not available' }),
             { status: 503, headers: { 'Content-Type': 'application/json' } },
@@ -77,8 +77,8 @@ export const GET: APIRoute = async ({ request, locals }) => {
     }
 
     try {
-        const session = await requireAdmin(request, env);
-        const feeds = await getFeedsByUserId(env.DB, session.user.id);
+        const session = await requireAdmin(request, app);
+        const feeds = await getFeedsByUserId(app.db, session.user.id);
 
         return new Response(
             JSON.stringify({ ok: true, feeds }),
@@ -107,9 +107,9 @@ export const GET: APIRoute = async ({ request, locals }) => {
  * @since 0.3.0
  */
 export const DELETE: APIRoute = async ({ request, locals }) => {
-    const env = (locals as { runtime?: { env?: Env } }).runtime?.env;
+    const app = (locals as { app?: AppContext }).app;
 
-    if (!env?.DB) {
+    if (!app?.db) {
         return new Response(
             JSON.stringify({ error: 'Database not available' }),
             { status: 503, headers: { 'Content-Type': 'application/json' } },
@@ -117,7 +117,7 @@ export const DELETE: APIRoute = async ({ request, locals }) => {
     }
 
     try {
-        const session = await requireAdmin(request, env);
+        const session = await requireAdmin(request, app);
 
         const url = new URL(request.url);
         const feedId = url.searchParams.get('id');
@@ -129,7 +129,7 @@ export const DELETE: APIRoute = async ({ request, locals }) => {
             );
         }
 
-        const feed = await getFeedById(env.DB, feedId);
+        const feed = await getFeedById(app.db, feedId);
         if (!feed) {
             return new Response(
                 JSON.stringify({ code: 'NOT_FOUND', message: 'Feed not found' }),
@@ -144,7 +144,7 @@ export const DELETE: APIRoute = async ({ request, locals }) => {
             );
         }
 
-        await deleteFeed(env.DB, feedId);
+        await deleteFeed(app.db, feedId);
 
         return new Response(
             JSON.stringify({ ok: true }),

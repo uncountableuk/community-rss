@@ -11,7 +11,7 @@ services:
       - "4322:4322" # Starlight docs
     command: sleep infinity
     environment:
-      - CHOKIDAR_USEPOLLING=true # Helps Astro watch for file changes in Docker volumes
+      - CHOKIDAR_USEPOLLING=true
 
   # 2. FreshRSS: The ingestion engine
   freshrss:
@@ -44,7 +44,7 @@ services:
     image: axllent/mailpit
     container_name: local_mailpit
     ports:
-      - "8025:8025" # Web UI to view caught emails on host
+      - "8025:8025" # Web UI
     environment:
       - MP_MAX_MESSAGES=500
 

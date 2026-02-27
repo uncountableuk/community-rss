@@ -1,104 +1,178 @@
 ---
 title: Architecture
-description: Monorepo structure, execution contexts, and key architectural decisions.
+description: Technical architecture of the Community RSS framework.
 ---
 
-## Monorepo Layout
+import { Aside } from '@astrojs/starlight/components';
 
-The project uses NPM Workspaces with three packages:
+## Overview
 
-| Workspace | Package | Purpose |
-|-----------|---------|---------|
-| `packages/core` | `@community-rss/core` | Published framework |
-| `playground` | `playground` (private) | Reference implementation |
-| `docs` | `@community-rss/docs` (private) | Documentation site |
+Community RSS is an **Astro integration** that transforms any Astro project
+into a community-driven RSS reader. It follows an "integration with
+overrides" pattern: the framework injects backend logic while developers
+own the frontend.
+
+## Stack
+
+| Layer | Technology | Purpose |
+|-------|-----------|---------|
+| **Runtime** | Node.js + Astro SSR | Server-side rendering |
+| **Adapter** | `@astrojs/node` | Standalone Node.js server |
+| **Database** | SQLite (better-sqlite3) | Persistent storage |
+| **ORM** | Drizzle ORM | Type-safe queries and migrations |
+| **Auth** | better-auth | Passwordless magic link authentication |
+| **RSS Source** | FreshRSS | RSS aggregation and feed management |
+| **Scheduling** | node-cron | In-process feed sync scheduling |
+| **Storage** | MinIO (S3) | File/image uploads |
+| **Email** | Nodemailer / Resend | Transactional email delivery |
+
+## Monorepo Structure
+
+```
+/
+ packages/core/     # The @community-rss/core framework
+   ├── src/
+   │   ├── cli/          # CLI scaffold command
+   │   ├── components/   # Astro components (thin wrappers)
+   │   ├── config-store.ts # Config bridge (integration → middleware)
+   │   ├── db/           # Drizzle schema, migrations, queries
+   │   ├── integration.ts# Astro integration entry point
+   │   ├── layouts/      # Base layouts
+   │   ├── middleware.ts  # Astro middleware (creates AppContext)
+   │   ├── routes/       # Injected API routes
+   │   ├── styles/       # Default CSS (design tokens)
+   │   ├── templates/    # Default email templates
+   │   ├── types/        # TypeScript types (context, options)
+   │   └── utils/        # Business logic (build/, client/, shared/)
+   ├── test/             # Vitest tests
+   └── index.ts          # Public API exports
+ playground/           # Ephemeral dev app (gitignored, rebuilt on demand)
+ docs/                 # Starlight documentation site
+ scripts/              # Dev tooling (reset-playground.sh, playground.env)
+ feature_plans/        # Release planning documents
+```
+
+## Integration Architecture
+
+### Route Split
+
+The framework splits routes into two categories:
+
+- **Injected API routes** (11) — Provided by the integration, handle
+  data operations, authentication, and sync
+- **Scaffolded page routes** (8) — Generated into the developer's project
+  via CLI, fully customisable
+
+### AppContext
+
+Every request has access to `AppContext` via `context.locals.app`:
+
+```ts
+interface AppContext {
+  db: BetterSQLite3Database;  // Drizzle ORM database instance
+  env: EnvironmentVariables;   // Typed environment variables
+  config: CommunityRssOptions; // Integration configuration
+  user?: User;                 // Authenticated user (if any)
+}
+```
+
+The middleware creates this context on every request, initialising the
+database connection and reading config from the config-store bridge.
+
+### Config Bridge
+
+The integration and middleware run at different times — the integration
+during Astro config setup, and the middleware at request time. They
+can't share an import because Astro virtual modules aren't available
+during config-load. Instead, `config-store.ts` bridges the gap:
+
+1. `integration.ts` calls `setGlobalConfig(config)` during `astro:config:setup`
+2. `middleware.ts` calls `getGlobalConfig()` on each request
+3. Config is passed via `globalThis.__communityRssConfig`
+
+This keeps the config bridge lightweight (zero Astro imports) and
+works reliably in both dev and production.
+
+### Component Composition
+
+Components follow a strict pattern:
+
+1. **Thin wrappers** — Components contain minimal logic; business logic
+   lives in `utils/`
+2. **Props-driven copy** — All user-facing strings come from `messages`
+   and `labels` props
+3. **CSS tokens** — All visual values use `--crss-` custom properties
+4. **Slot-based extension** — Layouts use named slots for customisation
 
 ## Execution Contexts
 
-Business logic is organised by execution context:
+Code is organised by where it runs:
 
-| Directory | Context | APIs Available |
-|-----------|---------|----------------|
-| `src/utils/build/` | Node.js / Cloudflare Worker | D1, R2, Queues, fetch, crypto |
-| `src/utils/client/` | Browser | DOM, window, document, fetch |
-| `src/utils/shared/` | Pure functions | No platform APIs |
+| Directory | Environment | May Use |
+|-----------|-------------|---------|
+| `utils/build/` | Node.js server | `fs`, `path`, database, cron, email |
+| `utils/client/` | Browser | `document`, `window`, `fetch` |
+| `utils/shared/` | Both | Pure functions only (no side effects) |
 
-## Path Aliases
-
-All cross-directory imports use path aliases:
-
-| Alias | Maps To |
-|-------|---------|
-| `@utils/*` | `src/utils/*` |
-| `@components/*` | `src/components/*` |
-| `@routes/*` | `src/routes/*` |
-| `@db/*` | `src/db/*` |
-| `@core-types/*` | `src/types/*` |
-| `@layouts/*` | `src/layouts/*` |
-| `@fixtures/*` | `test/fixtures/*` |
-| `@test/*` | `test/*` |
+<Aside type="caution">
+Never import `fs` or `path` in client utils. Never import `document` or
+`window` in build utils. Vitest and the build will catch these violations.
+</Aside>
 
 ## Database
 
-- **ORM:** Drizzle ORM with SQLite dialect (Cloudflare D1)
-- **Schema:** `packages/core/src/db/schema.ts` (single source of truth)
-- **Migrations:** Generated via `npx drizzle-kit generate` — never hand-written
-- **Queries:** `packages/core/src/db/queries/` modules
+### Schema
 
-## Integration Pattern
+Defined in Drizzle ORM TypeScript at `src/db/schema.ts`. Key tables:
 
-The framework is an Astro Integration that:
-1. Injects API routes (`/api/v1/*`, `/api/auth/*`)
-2. Provides auth pages (`/auth/signin`, `/auth/verify`)
-3. Provides base layouts and components
-4. Exports Cloudflare Worker handlers (`scheduled`, `queue`)
+| Table | Purpose |
+|-------|---------|
+| `user` | User accounts (managed by better-auth) |
+| `session` | Active sessions |
+| `feed` | RSS feed sources |
+| `article` | Synced articles |
+| `comment` | User comments on articles |
+| `heart` | Heart/like interactions |
+| `verification` | Domain verification records |
 
-## User & Role Model
+### Migrations
 
-### Roles
-
-| Role | Description | Capabilities |
-|------|-------------|--------------|
-| `user` | Default registered user | Read, interact (heart/star), comment |
-| `admin` | Platform administrator | All user capabilities + manage feeds without domain verification |
-| `system` | Internal system user | Owns community feeds imported from FreshRSS sync |
-
-Roles are stored in the `users.role` column (`TEXT`, default `'user'`).
+Generated via `drizzle-kit generate` — never hand-written. Applied
+automatically on application startup.
 
 ### System User
 
-The **System User** (`id: 'system'`) is a special internal user that
-owns all community feeds imported from FreshRSS. It is:
+The System User (`id: 'system'`) owns community feeds imported from
+FreshRSS. It is seeded during database initialisation.
 
-- Seeded automatically during database setup via `seedSystemUser()`
-- Checked defensively in `syncFeeds()` to ensure it exists before
-  creating feeds
-- Not a real user — cannot sign in or interact
+## Email Template Resolution
 
-### Feed Ownership
+Templates are resolved in priority order:
 
-| Owner | Verification | Feed Status |
-|-------|-------------|-------------|
-| System User | None (automated) | `approved` |
-| Admin | Not required (privilege-based) | `approved` |
-| Verified Author | Domain verification | `pending` → `approved` |
+1. Developer's `emailTemplateDir` directory
+2. Package default templates (`src/templates/`)
+3. Code-based fallback HTML
 
-### Guest Lifecycle
+## Background Processing
 
-1. **Anonymous** — no tracking, no cookie
-2. **Guest (consented)** — `crss_guest` cookie with UUID, shadow profile
-   in database (`isGuest: true`)
-3. **Registered** — signed in via magic link, guest interactions
-   migrated, guest profile deleted
+Feed sync runs via **node-cron** in the same process as the Astro
+server. The schedule is configurable via `syncSchedule` option or
+`SYNC_SCHEDULE` environment variable.
 
-## Authentication
+## Path Aliases (Test Code)
 
-- **Provider:** [better-auth](https://www.better-auth.com/) with
-  magic-link plugin
-- **Storage:** D1 via Drizzle adapter (`sessions`, `accounts`,
-  `verifications` tables)
-- **Route:** `/api/auth/[...all]` catch-all delegates to better-auth
-- **Per-request instances:** Each request creates a fresh `betterAuth()`
-  instance because Cloudflare Workers bindings are per-request
-- **Critical:** `baseURL` must match `env.PUBLIC_SITE_URL` for cookies
-  and magic link URLs to work correctly
+| Alias | Maps To |
+|-------|---------|
+| `@utils/` | `src/utils/` |
+| `@components/` | `src/components/` |
+| `@routes/` | `src/routes/` |
+| `@db/` | `src/db/` |
+| `@core-types/` | `src/types/` |
+| `@cli/` | `src/cli/` |
+| `@fixtures/` | `test/fixtures/` |
+| `@test/` | `test/` |
+
+<Aside type="note">
+Path aliases are for **test code only**. Source code uses relative imports
+to ensure the package works correctly when consumed as a dependency.
+</Aside>

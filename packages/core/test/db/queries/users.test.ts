@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // Must use vi.hoisted() for variables referenced in vi.mock() factories
 const {
     mockAll, mockOnConflictDoNothing, mockRun,
-    mockValues, mockInsert, mockUpdate, mockDelete, mockSet, mockDrizzle,
+    mockValues, mockInsert, mockUpdate, mockDelete, mockSet, mockSelect,
 } = vi.hoisted(() => {
     const mockRun = vi.fn().mockResolvedValue(undefined);
     const mockAll = vi.fn().mockResolvedValue([]);
@@ -17,21 +17,11 @@ const {
     const mockSelect = vi.fn(() => ({ from: mockFrom }));
     const mockUpdate = vi.fn(() => ({ set: mockSet }));
     const mockDelete = vi.fn(() => ({ where: mockWhere }));
-    const mockDrizzle = vi.fn(() => ({
-        insert: mockInsert,
-        select: mockSelect,
-        update: mockUpdate,
-        delete: mockDelete,
-    }));
     return {
         mockAll, mockOnConflictDoNothing, mockRun,
-        mockValues, mockInsert, mockUpdate, mockDelete, mockSet, mockDrizzle,
+        mockValues, mockInsert, mockUpdate, mockDelete, mockSet, mockSelect,
     };
 });
-
-vi.mock('drizzle-orm/d1', () => ({
-    drizzle: mockDrizzle,
-}));
 
 vi.mock('drizzle-orm', () => ({
     eq: vi.fn((col, val) => ({ col, val })),
@@ -52,13 +42,19 @@ import {
     isSystemUser,
 } from '@db/queries/users';
 import { mockUsers } from '@fixtures/users';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 
 describe('users queries', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
 
-    const mockDb = {} as D1Database;
+    const mockDb = {
+        insert: mockInsert,
+        select: mockSelect,
+        update: mockUpdate,
+        delete: mockDelete,
+    } as unknown as BetterSQLite3Database;
 
     describe('SYSTEM_USER_ID', () => {
         it('should be "system"', () => {

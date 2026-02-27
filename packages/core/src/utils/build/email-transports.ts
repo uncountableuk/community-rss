@@ -52,8 +52,8 @@ export function createResendTransport(apiKey: string): EmailTransport {
 /**
  * Creates an SMTP transport adapter for local development.
  *
- * Uses Mailpit's HTTP API (`/api/v1/send`) because Cloudflare Workers
- * cannot make raw TCP/SMTP connections. Falls back gracefully on
+ * Uses Mailpit's HTTP API (`/api/v1/send`) for local email capture.
+ * Falls back gracefully on
  * connection failure — logs a warning but does not throw.
  *
  * @param host - Mailpit hostname (e.g., 'mailpit' in Docker)

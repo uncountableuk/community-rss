@@ -10,12 +10,10 @@ following project guidelines and the NPM monorepo methodology.
 
 ## Context Files to Reference
 - Project Spec: `feature_plans/0_0_1/Community-RSS-Framework-Spec.md`
-- Dev Workflow: `feature_plans/0_0_1/Framework-Dev-Workflow.md`
-- Local Dev Setup: `feature_plans/0_0_1/Local-Dev-Setup.md`
+- Copilot Instructions: `.github/copilot-instructions.md`
 - Feature Plan Guidelines: `.github/instructions/feature-plan.instructions.md`
 - API Design Rules: `.github/instructions/api-design.instructions.md`
 - Implementation Rules: `.github/instructions/implementation.instructions.md`
-- Copilot Instructions: `.github/copilot-instructions.md`
 
 ## Your Task
 1. Analyse the feature request provided by the user
@@ -28,8 +26,9 @@ following project guidelines and the NPM monorepo methodology.
    - Architecture & API design decisions (Options pattern, interfaces)
    - Forward-compatibility analysis
    - Phased implementation plan with checkboxes
-   - Test strategy phase (unit + integration, fixtures, D1 testing)
+   - Test strategy phase (unit + integration, fixtures, in-memory SQLite)
    - Documentation update phase
+   - CLI scaffold additions (new pages, email templates) if applicable
 
 ## Output Format
 Create a markdown document following the Feature Plan Instructions.
@@ -44,9 +43,11 @@ where `X_Y_Z` is the target release version.
 - [ ] All new params are optional with sensible defaults
 - [ ] JSDoc with `@since` tags planned for public exports
 - [ ] API routes use `/api/v1/` namespace
-- [ ] D1 schema changes are additive (migrations, not destructive)
+- [ ] Database schema changes use Drizzle ORM (migrations via drizzle-kit)
 - [ ] Test phase included with specific file locations and strategies
 - [ ] Documentation update phase included
 - [ ] No version bump or CHANGELOG update included
 - [ ] GPL-3.0 compatibility confirmed for any new dependencies
 - [ ] Forward-compatibility analysed ("can this evolve without breaking?")
+- [ ] Components use `messages`/`labels` props (no hard-coded strings)
+- [ ] Page routes scaffolded via CLI (not injected by integration)

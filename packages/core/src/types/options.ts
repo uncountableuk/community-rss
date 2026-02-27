@@ -29,6 +29,28 @@ export interface CommunityRssOptions {
    * @since 0.3.0
    */
   email?: EmailConfig;
+
+  /**
+   * Path to SQLite database file.
+   * @default './data/community.db'
+   * @since 0.4.0
+   */
+  databasePath?: string;
+
+  /**
+   * Cron expression for feed sync schedule.
+   * Defaults to every 30 minutes (`STAR/30 * * * *` where STAR = asterisk).
+   * @since 0.4.0
+   */
+  syncSchedule?: string;
+
+  /**
+   * Directory containing email template overrides.
+   * Relative to the project root.
+   * @default './src/email-templates'
+   * @since 0.4.0
+   */
+  emailTemplateDir?: string;
 }
 
 /**
@@ -89,7 +111,29 @@ export interface EmailConfig {
    * @since 0.3.0
    */
   templates?: import('./email').EmailTemplateMap;
+
+  /**
+   * Directory containing HTML email template files.
+   * @default './src/email-templates'
+   * @since 0.4.0
+   */
+  templateDir?: string;
 }
+
+/**
+ * Fully resolved configuration with all defaults applied.
+ *
+ * @since 0.4.0
+ */
+export type ResolvedCommunityRssOptions = Required<Pick<CommunityRssOptions, 'maxFeeds' | 'commentTier' | 'databasePath' | 'syncSchedule' | 'emailTemplateDir'>> & {
+  email: {
+    from: string | undefined;
+    appName: string;
+    transport: CommunityRssOptions['email'] extends { transport?: infer T } ? T : undefined;
+    templates: import('./email').EmailTemplateMap | undefined;
+    templateDir: string;
+  };
+};
 
 /**
  * Resolves a partial options object into a fully-populated config
@@ -99,15 +143,19 @@ export interface EmailConfig {
  * @returns Fully resolved configuration with defaults
  * @since 0.1.0
  */
-export function resolveOptions(options: CommunityRssOptions = {}): Required<CommunityRssOptions> {
+export function resolveOptions(options: CommunityRssOptions = {}): ResolvedCommunityRssOptions {
   return {
     maxFeeds: options.maxFeeds ?? 5,
     commentTier: options.commentTier ?? 'registered',
+    databasePath: options.databasePath ?? './data/community.db',
+    syncSchedule: options.syncSchedule ?? '*/30 * * * *',
+    emailTemplateDir: options.emailTemplateDir ?? './src/email-templates',
     email: {
       from: options.email?.from,
       appName: options.email?.appName ?? 'Community RSS',
       transport: options.email?.transport,
       templates: options.email?.templates,
+      templateDir: options.email?.templateDir ?? './src/email-templates',
     },
   };
 }

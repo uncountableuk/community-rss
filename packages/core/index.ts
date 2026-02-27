@@ -33,8 +33,8 @@ export default function communityRss(options?: CommunityRssOptions): AstroIntegr
 }
 
 // Public type exports
-export type { CommunityRssOptions, EmailConfig } from './src/types/options';
-export type { Env } from './src/types/env';
+export type { CommunityRssOptions, EmailConfig, ResolvedCommunityRssOptions } from './src/types/options';
+export type { AppContext, EnvironmentVariables } from './src/types/context';
 export type {
   UserTier,
   UserRole,
@@ -80,6 +80,11 @@ export {
 // Email service factory
 export { createEmailService } from './src/utils/build/email-service';
 
-// Worker exports (stubs in 0.1.0)
-export { scheduled } from './src/workers/scheduled';
-export { queue } from './src/workers/queue';
+// Email template renderer
+export { renderEmailTemplate } from './src/utils/build/email-renderer';
+
+// Database exports
+export { createDatabase, closeDatabase } from './src/db/connection';
+
+// Scheduler exports
+export { startScheduler, stopScheduler, isSchedulerRunning } from './src/utils/build/scheduler';

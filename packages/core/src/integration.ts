@@ -1,13 +1,23 @@
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { AstroIntegration } from 'astro';
 import type { CommunityRssOptions } from './types/options';
 import { resolveOptions } from './types/options';
+import { startScheduler, stopScheduler } from './utils/build/scheduler';
+import { createDatabase, closeDatabase } from './db/connection';
+import { setGlobalConfig } from './config-store';
+import type { EnvironmentVariables } from './types/context';
 
 /**
  * Creates the Community RSS Astro integration.
  *
  * This is the main entry point for consumers. It accepts an optional
  * configuration object and returns an Astro integration that injects
- * routes, components, and layouts into the consumer's project.
+ * API routes, middleware, and scheduler lifecycle hooks into the
+ * consumer's project.
+ *
+ * Page routes are no longer injected — use `npx @community-rss/core init`
+ * to scaffold pages into your project.
  *
  * @param options - Framework configuration
  * @returns Astro integration instance
@@ -25,11 +35,23 @@ import { resolveOptions } from './types/options';
  */
 export function createIntegration(options: CommunityRssOptions = {}): AstroIntegration {
   const config = resolveOptions(options);
+  let projectRoot: string = process.cwd();
 
   return {
     name: 'community-rss',
     hooks: {
-      'astro:config:setup': ({ injectRoute }) => {
+      'astro:config:setup': ({ injectRoute, addMiddleware: registerMiddleware }) => {
+        // Share resolved config with middleware via globalThis bridge
+        setGlobalConfig(config);
+
+        // Register middleware that creates AppContext on every request
+        registerMiddleware({
+          entrypoint: new URL('./middleware.ts', import.meta.url).pathname,
+          order: 'pre',
+        });
+
+        // --- API Routes (injected — update automatically with package) ---
+
         // Health check route — validates integration wiring
         injectRoute({
           pattern: '/api/v1/health',
@@ -40,18 +62,6 @@ export function createIntegration(options: CommunityRssOptions = {}): AstroInteg
         injectRoute({
           pattern: '/api/v1/articles',
           entrypoint: new URL('./routes/api/v1/articles.ts', import.meta.url).pathname,
-        });
-
-        // Homepage
-        injectRoute({
-          pattern: '/',
-          entrypoint: new URL('./routes/pages/index.astro', import.meta.url).pathname,
-        });
-
-        // Article detail page (direct URL access / SEO)
-        injectRoute({
-          pattern: '/article/[id]',
-          entrypoint: new URL('./routes/pages/article/[id].astro', import.meta.url).pathname,
         });
 
         // Admin: manual sync trigger (local dev / operator use)
@@ -72,22 +82,6 @@ export function createIntegration(options: CommunityRssOptions = {}): AstroInteg
           entrypoint: new URL('./routes/api/auth/[...all].ts', import.meta.url).pathname,
         });
 
-        // Auth pages
-        injectRoute({
-          pattern: '/auth/signin',
-          entrypoint: new URL('./routes/pages/auth/signin.astro', import.meta.url).pathname,
-        });
-
-        injectRoute({
-          pattern: '/auth/signup',
-          entrypoint: new URL('./routes/pages/auth/signup.astro', import.meta.url).pathname,
-        });
-
-        injectRoute({
-          pattern: '/auth/verify',
-          entrypoint: new URL('./routes/pages/auth/verify.astro', import.meta.url).pathname,
-        });
-
         // Auth API: email pre-check for sign-in/sign-up routing
         injectRoute({
           pattern: '/api/v1/auth/check-email',
@@ -98,12 +92,6 @@ export function createIntegration(options: CommunityRssOptions = {}): AstroInteg
         injectRoute({
           pattern: '/api/v1/auth/signup',
           entrypoint: new URL('./routes/api/v1/auth/signup.ts', import.meta.url).pathname,
-        });
-
-        // User profile page
-        injectRoute({
-          pattern: '/profile',
-          entrypoint: new URL('./routes/pages/profile.astro', import.meta.url).pathname,
         });
 
         // User profile API
@@ -124,18 +112,6 @@ export function createIntegration(options: CommunityRssOptions = {}): AstroInteg
           entrypoint: new URL('./routes/api/v1/profile/confirm-email-change.ts', import.meta.url).pathname,
         });
 
-        // Email change verification page
-        injectRoute({
-          pattern: '/auth/verify-email-change',
-          entrypoint: new URL('./routes/pages/auth/verify-email-change.astro', import.meta.url).pathname,
-        });
-
-        // Terms of Service page (placeholder — consumers override)
-        injectRoute({
-          pattern: '/terms',
-          entrypoint: new URL('./routes/pages/terms.astro', import.meta.url).pathname,
-        });
-
         // Dev-only seed endpoint
         injectRoute({
           pattern: '/api/dev/seed',
@@ -143,10 +119,57 @@ export function createIntegration(options: CommunityRssOptions = {}): AstroInteg
         });
       },
 
-      'astro:config:done': ({ logger }) => {
+      'astro:config:done': ({ config: astroConfig, logger }) => {
+        // astroConfig.root may be a URL or a string depending on Astro version
+        const root = astroConfig.root;
+        projectRoot = root instanceof URL ? fileURLToPath(root) : String(root);
+        // Strip trailing slash for consistent join() behavior
+        projectRoot = projectRoot.replace(/\/$/, '');
+
         logger.info(`Community RSS integration loaded`);
         logger.info(`  maxFeeds: ${config.maxFeeds}`);
         logger.info(`  commentTier: ${config.commentTier}`);
+        logger.info(`  databasePath: ${config.databasePath}`);
+        logger.info(`  syncSchedule: ${config.syncSchedule}`);
+      },
+
+      'astro:server:start': ({ logger }) => {
+        // Load .env from project root into process.env.
+        // process.loadEnvFile does NOT override already-set vars, so explicit
+        // environment variables (e.g. from Docker/CI) take precedence.
+        const envPath = join(projectRoot, '.env');
+        try {
+          process.loadEnvFile(envPath);
+        } catch {
+          logger.warn(`No .env file found at ${envPath} — using environment variables only`);
+        }
+
+        // Build environment variables from process.env
+        const env: EnvironmentVariables = {
+          DATABASE_PATH: process.env.DATABASE_PATH ?? config.databasePath,
+          FRESHRSS_URL: process.env.FRESHRSS_URL ?? '',
+          FRESHRSS_USER: process.env.FRESHRSS_USER ?? '',
+          FRESHRSS_API_PASSWORD: process.env.FRESHRSS_API_PASSWORD ?? '',
+          PUBLIC_SITE_URL: process.env.PUBLIC_SITE_URL ?? '',
+          SMTP_HOST: process.env.SMTP_HOST ?? '',
+          SMTP_PORT: process.env.SMTP_PORT ?? '',
+          SMTP_FROM: process.env.SMTP_FROM ?? '',
+          S3_ENDPOINT: process.env.S3_ENDPOINT ?? '',
+          S3_ACCESS_KEY: process.env.S3_ACCESS_KEY ?? '',
+          S3_SECRET_KEY: process.env.S3_SECRET_KEY ?? '',
+          S3_BUCKET: process.env.S3_BUCKET ?? '',
+          MEDIA_BASE_URL: process.env.MEDIA_BASE_URL ?? '',
+          RESEND_API_KEY: process.env.RESEND_API_KEY,
+          EMAIL_TRANSPORT: process.env.EMAIL_TRANSPORT,
+        };
+
+        const db = createDatabase(env.DATABASE_PATH);
+        startScheduler({ db, config, env });
+      },
+
+      'astro:server:done': () => {
+        stopScheduler();
+        closeDatabase();
       },
     },
   };

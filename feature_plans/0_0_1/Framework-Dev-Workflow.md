@@ -1,6 +1,12 @@
 # **Local Development Workflow for the Framework**
 
-To get a "hot view" of your framework while developing it, you will use **NPM Workspaces**. This allows you to create a "Playground" Astro app right next to your framework code. NPM will automatically symlink them together, so the Playground app treats your local framework code exactly as if it were downloaded from NPM.
+> **⚠️ SUPERSEDED** — This document was written for the initial 0.0.1 design
+> when the playground was version-controlled. As of 0.4.0, the playground is
+> ephemeral (gitignored) and rebuilt via `npm run reset:playground`. See
+> `.github/copilot-instructions.md` and `docs/src/content/docs/contributing/setup.md`
+> for the current dev workflow.
+
+--- get a "hot view" of your framework while developing it, you will use **NPM Workspaces**. This allows you to create a "Playground" Astro app right next to your framework code. NPM will automatically symlink them together, so the Playground app treats your local framework code exactly as if it were downloaded from NPM.
 
 Because Astro uses Vite under the hood, any changes you make to the framework's .astro or .ts files will instantly trigger a Hot Module Replacement (HMR) update in the browser running the Playground app.
 

@@ -8,8 +8,12 @@
   ],
   "scripts": {
     "dev": "npm run dev --workspace=playground & npm run dev -w @community-rss/docs & wait",
+    "dev:playground": "npm run dev --workspace=playground",
+    "dev:docs": "npm run dev -w @community-rss/docs",
     "build": "npm run build --workspace=playground",
     "build:all": "npm run build --workspace=playground && npm run build --workspace=@community-rss/docs",
+    "reset:playground": "bash scripts/reset-playground.sh --keep-db",
+    "hardreset:playground": "bash scripts/reset-playground.sh",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",

@@ -19,7 +19,7 @@ approved feature plan.
 1. Read the approved feature plan in `feature_plans/X_Y_Z/{feature_name}/`
 2. Search existing `packages/core/src/utils/` for functions that can be reused
 3. Identify the correct utils directory:
-   - `utils/build/` for Node.js / Cloudflare Worker code (cron, sync, queues)
+   - `utils/build/` for Node.js server code (cron, sync, email, auth)
    - `utils/client/` for browser runtime code (DOM interactions)
    - `utils/shared/` for pure functions (validation, formatting, scoring)
 4. Check if similar patterns exist in the codebase
@@ -27,12 +27,16 @@ approved feature plan.
 
 ## Implementation Rules
 - Extract business logic to `packages/core/src/utils/` — components are thin wrappers
-- Use path aliases (`@utils/`, `@components/`, `@db/`, `@core-types/`) for all imports
+- Use **relative imports** in source code (`../utils/`, `../types/`)
+- Use **path aliases** only in test code (`@utils/`, `@db/`, `@core-types/`)
 - Use CSS custom properties with `--crss-` prefix for framework styling
 - Add JSDoc comments with `@param`, `@returns`, and `@since` tags
 - Export `interface` (not `type`) for public API shapes
-- Cloudflare bindings reference typed `Env` interface — never hard-code binding names
+- Access runtime context via `context.locals.app` (AppContext)
 - API routes use `/api/v1/` namespace
+- Page routes are scaffolded via CLI (never injected by integration)
+- Components accept `messages`/`labels` props (no hard-coded strings)
+- Email templates use `{{variable}}` substitution pattern
 - Database queries live in `packages/core/src/db/`
 
 ## Implementation Notes (MANDATORY)
@@ -46,18 +50,25 @@ After completing **every phase** in the feature plan, you MUST update the
 
 ## Playground Testing
 After implementing core framework code:
-1. Verify the playground picks up changes via HMR
-2. Test that the integration config works with default options
-3. Confirm injected routes respond correctly
+1. Backend changes (API routes, middleware, utils, components) are picked up
+   automatically by HMR — no reset needed
+2. If you changed CLI scaffold templates (`src/cli/templates/`), run
+   `npm run reset:playground` to rebuild the playground. This preserves the
+   database and test data while refreshing pages and templates.
+3. If you need a completely clean environment, run
+   `npm run hardreset:playground` to wipe everything including the DB
+4. Confirm injected API routes respond correctly (e.g., `GET /api/v1/health`)
+5. Verify scaffolded pages render properly
 
 ## After Implementation
 - [ ] All business logic is in `packages/core/src/utils/`
 - [ ] Components only orchestrate utils (no inline logic)
-- [ ] Path aliases used everywhere (no `../` cross-directory imports)
+- [ ] Relative imports used in source code (no path aliases in src/)
 - [ ] CSS custom properties used (no hard-coded colours)
 - [ ] Functions have JSDoc with `@since` tags
 - [ ] Public API uses Options pattern with optional params + defaults
-- [ ] Cloudflare bindings use typed Env interface
+- [ ] AppContext used for runtime context (db, env, config)
+- [ ] Components use `messages`/`labels` props (no hard-coded strings)
 - [ ] Feature plan Implementation Notes updated for every completed phase
 - [ ] All completed tasks checked off (`[x]`) in the feature plan
 - [ ] Problems & Constraints section updated with any issues encountered

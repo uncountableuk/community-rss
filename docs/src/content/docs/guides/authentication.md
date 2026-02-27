@@ -1,125 +1,96 @@
 ---
 title: Authentication
-description: Magic link sign-in, guest consent, and user migration flows
+description: How authentication works in Community RSS.
 ---
 
-Community RSS uses **magic link authentication** powered by
-[better-auth](https://www.better-auth.com/). Users sign in by
-requesting a link via email — no passwords are stored.
+import { Aside } from '@astrojs/starlight/components';
 
-## Sign-In Flow
+## Overview
 
-```
-User ──→ /auth/signin ──→ enters email
-                │
-                └──→ POST /api/auth/sign-in/magic-link
-                          │
-                          └──→ Email with magic link
-                                    │
-                                    └──→ /auth/verify?token=xxx
-                                              │
-                                              └──→ Session created → redirect /
-```
+Community RSS uses [better-auth](https://www.better-auth.com/) for
+passwordless authentication via **magic links**. Users sign in by entering
+their email address and clicking a link delivered to their inbox.
 
-### 1. Request a Magic Link
+## How It Works
 
-Navigate to `/auth/signin` and enter your email address. The framework
-sends a magic link email that expires in **5 minutes**.
+1. User enters their email on the sign-in page
+2. The server generates a magic link and sends it via email
+3. User clicks the link → a session is created
+4. The session cookie authenticates subsequent requests
 
-### 2. Check Your Email
-
-Click the link in the email. In local development, emails are delivered
-to [Mailpit](http://localhost:8025) — no real email provider is needed.
-
-### 3. Automatic Session
-
-After clicking the link, a session cookie is created. The `AuthButton`
-component in the header shows your name and a "Sign Out" button.
-
-## Guest Consent Flow
-
-Unauthenticated users can interact with content (hearts, stars) via a
-**guest consent** flow:
-
-```
-Guest clicks heart ──→ Consent Modal appears
-                           │
-                           ├──→ "Accept" → cookie set, shadow profile created
-                           └──→ "Decline" → modal closes, no tracking
-```
-
-### How It Works
-
-1. When a guest attempts an interaction, `window.__crssShowConsentModal()`
-   is called.
-2. If the guest accepts, a UUID is generated and stored in a `crss_guest`
-   cookie (1-year lifetime).
-3. A **shadow profile** is created in the database with `isGuest: true`.
-4. Interactions are recorded against the guest's UUID.
-
-### Guest → Registered Migration
-
-When a guest later signs up via magic link, their interactions are
-automatically migrated to the new registered account:
-
-```
-Guest (UUID abc-123) has 5 hearts
-         │
-         └──→ Signs up via magic link
-                   │
-                   └──→ 5 hearts transferred to new account
-                        Guest profile deleted
-                        crss_guest cookie cleared
-```
-
-The migration is handled automatically by the auth catch-all route
-handler. No user action is required beyond signing in.
-
-### Sign-Out Lifecycle
-
-When a user signs out:
-
-1. The session is destroyed via `POST /api/auth/sign-out`.
-2. The `crss_guest` cookie is cleared.
-3. No new guest UUID is auto-generated — the user returns to a fully
-   anonymous state.
+<Aside type="tip">
+There are no passwords to manage. Authentication is entirely email-based.
+</Aside>
 
 ## User Roles
 
-| Role | Description | Capabilities |
-|------|-------------|--------------|
-| `user` | Default registered user | Read, interact (heart/star), comment |
-| `admin` | Platform administrator | All user capabilities + manage feeds |
-| `system` | Internal system user | Owns community feeds from FreshRSS sync |
+| Role | Capabilities |
+|------|-------------|
+| **Guest** | Read articles, react (if enabled) |
+| **Registered** | Guest + comment, manage profile |
+| **Author** | Registered + submit feeds, verify domains |
+| **Admin** | Full access: manage users, feeds, sync, settings |
 
-Roles are stored in the `users.role` column. The `system` user is
-seeded automatically during database setup.
+The first user to sign up is automatically promoted to **Admin**.
 
-## Auth Endpoints
+## Configuration
 
-All auth endpoints are handled by better-auth via the catch-all route
-at `/api/auth/[...all]`. Key endpoints:
+Authentication is configured through environment variables:
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/auth/sign-in/magic-link` | POST | Request a magic link |
-| `/api/auth/magic-link/verify` | GET | Verify a magic link token |
-| `/api/auth/get-session` | GET | Get current session |
-| `/api/auth/sign-out` | POST | Sign out / destroy session |
+```ini
+PUBLIC_SITE_URL=http://localhost:4321
+SMTP_HOST=localhost
+SMTP_PORT=1025
+SMTP_FROM=noreply@localhost
+```
 
-## Components
+For production, use [Resend](https://resend.com/) for reliable email delivery:
 
-### AuthButton
+```ini
+RESEND_API_KEY=re_xxxxxxxxxxxx
+SMTP_FROM=noreply@example.com
+```
 
-Session-aware button that shows "Sign In" or the user's name with
-"Sign Out". Automatically included in `BaseLayout`.
+## Session Management
 
-### MagicLinkForm
+Sessions are stored in the SQLite database and managed by better-auth.
+The session cookie is HTTP-only and secure (in production).
 
-Email input form used on the `/auth/signin` page. Handles validation,
-loading state, and success/error messages.
+### Session Duration
 
-### ConsentModal
+Sessions expire after 7 days of inactivity. Active sessions are extended
+automatically.
 
-Modal dialog shown when a guest attempts an interaction. Available
-globally via `window.__crssShowConsentModal()`.
+## Middleware
+
+The framework injects authentication middleware that:
+
+1. Validates the session cookie on every request
+2. Populates `context.locals.app` with the authenticated user (if any)
+3. Protects API routes that require authentication
+
+## Protected Routes
+
+Routes that require authentication return `401 Unauthorized` for
+unauthenticated requests. Admin routes return `403 Forbidden` for
+non-admin users.
+
+| Route Pattern | Required Role |
+|---------------|--------------|
+| `GET /api/v1/articles` | Public |
+| `POST /api/v1/articles/*/comments` | Registered+ |
+| `POST /api/v1/feeds` | Author+ |
+| `POST /api/v1/sync` | Admin |
+| `GET /api/v1/admin/*` | Admin |
+
+## Customising Auth Pages
+
+The sign-in and sign-up pages are **scaffolded** into your project via
+the CLI (`npx @community-rss/core init`). You own these pages and can
+customise them freely:
+
+- `src/pages/auth/signin.astro`
+- `src/pages/auth/signup.astro`
+
+The `AuthButton` component handles the client-side form submission and
+accepts `messages` and `labels` props for full copy customisation.

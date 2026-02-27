@@ -9,8 +9,7 @@
  * @since 0.3.0
  */
 
-import type { Env } from '../../types/env';
-import type { EmailConfig } from '../../types/options';
+import type { AppContext } from '../../types/context';
 import type { EmailUserProfile } from '../../types/email';
 import { createEmailService } from './email-service';
 
@@ -20,23 +19,21 @@ import { createEmailService } from './email-service';
  * When `isWelcome` is true, uses the welcome email template for new
  * user sign-ups instead of the standard sign-in template.
  *
- * @param env - Cloudflare environment bindings
+ * @param app - Application context
  * @param email - Recipient email address
  * @param url - Magic link URL (includes token)
- * @param emailConfig - Optional email configuration from integration options
  * @param isWelcome - If true, use welcome email template for new sign-ups
  * @param profile - Optional user profile for personalisation
  * @since 0.3.0
  */
 export async function sendMagicLinkEmail(
-    env: Env,
+    app: AppContext,
     email: string,
     url: string,
-    emailConfig?: EmailConfig,
     isWelcome: boolean = false,
     profile?: EmailUserProfile,
 ): Promise<void> {
-    const service = createEmailService(env, emailConfig);
+    const service = createEmailService(app);
     const type = isWelcome ? 'welcome' : 'sign-in';
     await service.send(type, email, { url }, profile);
 }
@@ -47,20 +44,20 @@ export async function sendMagicLinkEmail(
  * The recipient must click the confirmation link to activate the new address.
  * The original address remains active until the change is confirmed.
  *
- * @param env - Cloudflare environment bindings
+ * @param app - Application context
  * @param newEmail - The new email address to verify
  * @param verificationUrl - URL the user must visit to confirm the change
- * @param emailConfig - Optional email configuration from integration options
+ * @param emailConfig - Deprecated, ignored — configuration is read from app.config.email
  * @param profile - Optional user profile for personalisation
  * @since 0.3.0
  */
 export async function sendEmailChangeEmail(
-    env: Env,
+    app: AppContext,
     newEmail: string,
     verificationUrl: string,
-    emailConfig?: EmailConfig,
+    emailConfig?: unknown,
     profile?: EmailUserProfile,
 ): Promise<void> {
-    const service = createEmailService(env, emailConfig);
+    const service = createEmailService(app);
     await service.send('email-change', newEmail, { verificationUrl }, profile);
 }

@@ -2,7 +2,7 @@ import type { APIRoute } from 'astro';
 import { createAuth } from '../../../utils/build/auth';
 import { migrateGuestToUser, updateUser } from '../../../db/queries/users';
 import { getPendingSignup, deletePendingSignup } from '../../../db/queries/pending-signups';
-import type { Env } from '../../../types/env';
+import type { AppContext } from '../../../types/context';
 
 /**
  * better-auth catch-all route handler.
@@ -21,9 +21,9 @@ import type { Env } from '../../../types/env';
  * @since 0.3.0
  */
 export const ALL: APIRoute = async ({ request, locals }) => {
-    const env = (locals as { runtime?: { env?: Env } }).runtime?.env;
+    const app = (locals as { app?: AppContext }).app;
 
-    if (!env?.DB) {
+    if (!app?.db) {
         return new Response(
             JSON.stringify({ error: 'Database not available' }),
             { status: 503, headers: { 'Content-Type': 'application/json' } },
@@ -31,7 +31,7 @@ export const ALL: APIRoute = async ({ request, locals }) => {
     }
 
     try {
-        const auth = createAuth(env);
+        const auth = createAuth(app);
 
         // Read the guest ID cookie from the request for potential migration
         const guestId = getGuestIdFromCookie(request);
@@ -84,19 +84,19 @@ export const ALL: APIRoute = async ({ request, locals }) => {
 
                     // Apply pending sign-up data (name + terms consent)
                     if (userEmail) {
-                        const pending = await getPendingSignup(env.DB, userEmail);
+                        const pending = await getPendingSignup(app.db, userEmail);
                         if (pending) {
-                            await updateUser(env.DB, userId, {
+                            await updateUser(app.db, userId, {
                                 name: pending.name,
                                 termsAcceptedAt: pending.termsAcceptedAt,
                             });
-                            await deletePendingSignup(env.DB, userEmail);
+                            await deletePendingSignup(app.db, userEmail);
                         }
                     }
 
                     // Migrate guest interactions to the new/authenticated user
                     if (guestId) {
-                        await migrateGuestToUser(env.DB, guestId, userId);
+                        await migrateGuestToUser(app.db, guestId, userId);
                     }
 
                     // Clear the guest cookie by setting it expired in the response

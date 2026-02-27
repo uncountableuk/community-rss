@@ -2,7 +2,7 @@
  * Drizzle ORM schema — single source of truth for the Community RSS database.
  *
  * SQL migrations are generated via `npx drizzle-kit generate` — never hand-written.
- * This file defines all tables, indexes, and relationships for Cloudflare D1 (SQLite).
+ * This file defines all tables, indexes, and relationships for the SQLite database.
  *
  * @since 0.1.0
  */

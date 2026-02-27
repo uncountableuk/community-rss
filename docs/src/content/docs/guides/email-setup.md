@@ -1,102 +1,142 @@
 ---
 title: Email Setup
-description: Configure email delivery for magic link authentication
+description: Configure email delivery for magic links and notifications.
 ---
 
-Community RSS sends transactional emails for magic link sign-in.
-The framework supports two transport modes:
+import { Aside, Tabs, TabItem } from '@astrojs/starlight/components';
 
-- **Mailpit** (local development) — emails are captured locally
-- **Resend** (production) — emails are delivered via the Resend API
+## Overview
 
-## Local Development (Mailpit)
+Community RSS sends transactional emails for:
 
-Mailpit is included in the Docker Compose setup and runs automatically.
-No configuration is needed — emails are routed to Mailpit's HTTP API.
+- **Magic link sign-in** — passwordless authentication
+- **Domain verification** — author feed verification
+- **Notifications** — optional comment/reply alerts
 
-**View captured emails:** [http://localhost:8025](http://localhost:8025)
+## Providers
 
-### How It Works
+<Tabs>
+<TabItem label="Development (Mailpit)">
 
-When `RESEND_API_KEY` is **not set**, the framework sends emails via
-Mailpit's REST API at `http://{SMTP_HOST}:8025/api/v1/send`.
+Docker Compose includes [Mailpit](https://github.com/axllent/mailpit) for
+local email testing. All emails are captured and viewable at
+`http://localhost:8025`.
 
-### Environment Variables
-
-```env
-# .dev.vars
-SMTP_HOST=mailpit
+```ini
+SMTP_HOST=localhost
 SMTP_PORT=1025
 SMTP_FROM=noreply@localhost
 ```
 
-These are pre-configured in the Docker Compose setup.
+No additional setup is needed.
 
-## Production (Resend)
+</TabItem>
+<TabItem label="Production (Resend)">
 
-For production deployments, use [Resend](https://resend.com/) for
-reliable email delivery.
+For production, use [Resend](https://resend.com/) for reliable delivery:
 
-### Setup
-
-1. Create a Resend account at [resend.com](https://resend.com/)
-2. Add and verify your domain
-3. Create an API key
-4. Set the environment variable:
-
-```env
-RESEND_API_KEY=re_xxxxxxxxxxxxx
+```ini
+RESEND_API_KEY=re_xxxxxxxxxxxx
+SMTP_FROM=noreply@example.com
 ```
 
-When `RESEND_API_KEY` is set, the framework automatically uses the
-Resend API instead of SMTP.
+When `RESEND_API_KEY` is set, emails are sent via the Resend API instead
+of raw SMTP. Remove `SMTP_HOST` and `SMTP_PORT` when using Resend.
 
-## EmailConfig Options
+</TabItem>
+<TabItem label="Custom SMTP">
 
-Configure email settings via the integration options:
+Any SMTP server can be used:
+
+```ini
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_FROM=noreply@example.com
+```
+
+</TabItem>
+</Tabs>
+
+## Email Templates
+
+Community RSS uses a **file-based template system** with `{{variable}}`
+substitution. Templates are resolved in priority order:
+
+1. **Developer directory** — Custom templates in `emailTemplateDir` (default: `./src/email-templates/`)
+2. **Package defaults** — Built-in templates shipped with `@community-rss/core`
+3. **Code-based fallbacks** — Minimal inline HTML as a last resort
+
+### Available Templates
+
+| Template | Variables | Purpose |
+|----------|-----------|---------|
+| `magic-link.html` | `{{url}}`, `{{appName}}` | Sign-in magic link |
+| `verify-domain.html` | `{{domain}}`, `{{code}}`, `{{appName}}` | Domain verification |
+| `welcome.html` | `{{name}}`, `{{appName}}` | Welcome email |
+
+### Customising Templates
+
+Create your own templates in the `emailTemplateDir` directory:
+
+```
+src/
+  email-templates/
+    magic-link.html
+    verify-domain.html
+    welcome.html
+```
+
+Use `{{variable}}` placeholders that match the variables listed above:
+
+```html
+<!DOCTYPE html>
+<html>
+<body>
+  <h1>Sign in to {{appName}}</h1>
+  <p>Click the link below to sign in:</p>
+  <a href="{{url}}">Sign In</a>
+</body>
+</html>
+```
+
+<Aside type="tip">
+Templates are plain HTML files. You can use any HTML email tooling
+(MJML, Maizzle, etc.) to generate them — just place the final HTML
+in the template directory.
+</Aside>
+
+### Template Directory Configuration
+
+Set the template directory in your Astro config:
 
 ```js
-// astro.config.mjs
-import communityRss from '@community-rss/core';
-
-export default defineConfig({
-  integrations: [
-    communityRss({
-      email: {
-        from: 'Community RSS <noreply@yourdomain.com>',
-        appName: 'My Community',
-      },
-    }),
-  ],
+communityRss({
+  emailTemplateDir: './src/email-templates',
 });
 ```
 
-### Options Reference
+The CLI scaffolds example templates when you run `npx @community-rss/core init`.
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `from` | `string` | `'Community RSS <noreply@localhost>'` | Sender address for magic link emails |
-| `appName` | `string` | `'Community RSS'` | Application name shown in email templates |
+## Email Configuration
 
-## Email Template
+### Sender Address
 
-Magic link emails include:
+Configure the sender address and app name:
 
-- A branded "Sign in to {appName}" subject line
-- HTML body with a styled sign-in button
-- The magic link URL (valid for 5 minutes)
-- A fallback plain-text URL for email clients that block HTML
+```js
+communityRss({
+  email: {
+    from: 'My Community <noreply@example.com>',
+    appName: 'My Community',
+  },
+});
+```
 
-## Troubleshooting
+The `appName` value is available as `{{appName}}` in all email templates.
 
-### Emails Not Arriving (Local Dev)
+## Testing Emails
 
-1. Check Docker Compose is running: `docker compose ps`
-2. Verify Mailpit is accessible: [http://localhost:8025](http://localhost:8025)
-3. Check the `SMTP_HOST` variable matches your Docker service name
-
-### Emails Not Arriving (Production)
-
-1. Verify `RESEND_API_KEY` is set in your Cloudflare Worker secrets
-2. Check the Resend dashboard for delivery logs
-3. Ensure your sending domain is verified in Resend
+1. Start Mailpit via Docker Compose: `docker compose up -d`
+2. Trigger a sign-in from your dev site
+3. Open `http://localhost:8025` to view the captured email
+4. Click the magic link to complete sign-in
