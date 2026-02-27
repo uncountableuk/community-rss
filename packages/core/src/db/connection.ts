@@ -2,8 +2,8 @@
  * SQLite database connection factory for Community RSS.
  *
  * Creates a `better-sqlite3` connection wrapped by Drizzle ORM.
- * Uses WAL mode for concurrent
- * read performance and a singleton pattern for connection reuse.
+ * Uses WAL mode for concurrent read performance, a singleton pattern
+ * for connection reuse, and auto-applies Drizzle migrations on first connect.
  *
  * @since 0.4.0
  */
@@ -11,12 +11,21 @@
 import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { mkdirSync, existsSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 /** Module-level singleton for the database connection. */
 let _db: BetterSQLite3Database | null = null;
 let _raw: InstanceType<typeof Database> | null = null;
+
+/**
+ * Path to the bundled Drizzle migration files.
+ * Resolved relative to this source file so it works whether the package
+ * is consumed via workspace symlink or from node_modules.
+ */
+const MIGRATIONS_DIR = join(dirname(fileURLToPath(import.meta.url)), 'migrations');
 
 /**
  * Creates (or returns the existing) Drizzle ORM database instance
@@ -24,6 +33,7 @@ let _raw: InstanceType<typeof Database> | null = null;
  *
  * - Creates parent directories if they don't exist.
  * - Enables WAL mode for better concurrent read performance.
+ * - Runs Drizzle migrations automatically on first connection.
  * - Uses a singleton pattern — subsequent calls with the same path
  *   return the same instance.
  *
@@ -49,6 +59,10 @@ export function createDatabase(dbPath: string): BetterSQLite3Database {
 
   _raw = sqlite;
   _db = drizzle(sqlite);
+
+  // Apply any pending migrations (idempotent — skips already-applied ones)
+  migrate(_db, { migrationsFolder: MIGRATIONS_DIR });
+
   return _db;
 }
 

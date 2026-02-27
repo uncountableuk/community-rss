@@ -5,6 +5,7 @@ import type { CommunityRssOptions } from './types/options';
 import { resolveOptions } from './types/options';
 import { startScheduler, stopScheduler } from './utils/build/scheduler';
 import { createDatabase, closeDatabase } from './db/connection';
+import { setGlobalConfig } from './config-store';
 import type { EnvironmentVariables } from './types/context';
 
 /**
@@ -40,6 +41,9 @@ export function createIntegration(options: CommunityRssOptions = {}): AstroInteg
     name: 'community-rss',
     hooks: {
       'astro:config:setup': ({ injectRoute, addMiddleware: registerMiddleware }) => {
+        // Share resolved config with middleware via globalThis bridge
+        setGlobalConfig(config);
+
         // Register middleware that creates AppContext on every request
         registerMiddleware({
           entrypoint: new URL('./middleware.ts', import.meta.url).pathname,

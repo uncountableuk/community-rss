@@ -96,12 +96,14 @@ describe('Integration Factory', () => {
       const logs: string[] = [];
       const mockLogger = {
         info: (msg: string) => logs.push(msg),
+        warn: vi.fn(),
       };
 
       const doneHook = integration.hooks['astro:config:done'] as unknown as (params: {
+        config: { root: URL };
         logger: typeof mockLogger;
       }) => void;
-      doneHook({ logger: mockLogger });
+      doneHook({ config: { root: new URL('file:///app/playground/') }, logger: mockLogger });
 
       expect(logs).toContainEqual(expect.stringContaining('Community RSS'));
       expect(logs).toContainEqual(expect.stringContaining('15'));
@@ -126,8 +128,16 @@ describe('Integration Factory', () => {
 
       const integration = createIntegration();
 
-      const startHook = integration.hooks['astro:server:start'] as () => void;
-      startHook();
+      // astro:config:done must run first to set projectRoot
+      const configDoneHook = integration.hooks['astro:config:done'] as unknown as (params: {
+        config: { root: URL };
+        logger: { info: (...args: unknown[]) => void; warn: (...args: unknown[]) => void };
+      }) => void;
+      configDoneHook({ config: { root: new URL('file:///app/playground/') }, logger: { info: vi.fn(), warn: vi.fn() } });
+
+      const mockLogger = { info: vi.fn(), warn: vi.fn() };
+      const startHook = integration.hooks['astro:server:start'] as (params: { logger: typeof mockLogger }) => void;
+      startHook({ logger: mockLogger });
       expect(startScheduler).toHaveBeenCalledOnce();
 
       const doneHook = integration.hooks['astro:server:done'] as () => void;

@@ -2,38 +2,45 @@
  * Astro middleware that creates the AppContext and sets it on
  * `context.locals.app` for all route handlers.
  *
+ * The resolved config is shared from the integration via
+ * `globalThis.__communityRssConfig` (set in `astro:config:setup`).
+ * Both the integration and middleware run in the same Node.js process,
+ * so `globalThis` safely bridges the Vite module-graph boundary.
+ *
  * @since 0.4.0
  */
 
 import { defineMiddleware } from 'astro:middleware';
+import { getGlobalConfig } from './config-store';
 import { createDatabase } from './db/connection';
 import type { AppContext, EnvironmentVariables } from './types/context';
-import type { ResolvedCommunityRssOptions } from './types/options';
+
+/* ------------------------------------------------------------------ */
+/*  Middleware                                                         */
+/* ------------------------------------------------------------------ */
 
 /**
- * Creates an Astro middleware that injects the AppContext into locals.
+ * Astro middleware — exported as `onRequest` so that Astro's
+ * `addMiddleware` picks it up automatically.
  *
- * @param config - Resolved framework configuration
- * @returns Astro middleware function
  * @since 0.4.0
  */
-export function createMiddleware(config: ResolvedCommunityRssOptions) {
-  return defineMiddleware((context, next) => {
-    const env = buildEnvironmentVariables();
-    const dbPath = env.DATABASE_PATH || config.databasePath;
-    const db = createDatabase(dbPath);
+export const onRequest = defineMiddleware((context, next) => {
+  const config = getGlobalConfig();
+  const env = buildEnvironmentVariables();
+  const dbPath = env.DATABASE_PATH || config.databasePath;
+  const db = createDatabase(dbPath);
 
-    const appContext: AppContext = {
-      db,
-      config,
-      env,
-    };
+  const appContext: AppContext = {
+    db,
+    config,
+    env,
+  };
 
-    (context.locals as Record<string, unknown>).app = appContext;
+  (context.locals as Record<string, unknown>).app = appContext;
 
-    return next();
-  });
-}
+  return next();
+});
 
 /**
  * Reads environment variables from `process.env` and returns a
