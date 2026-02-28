@@ -907,6 +907,27 @@ problems.*
   switching to `--ui-host=0.0.0.0 --ui-port=8077` which serves the Playwright
   UI as a web app accessible from the host browser. Added port 8077 to
   `.devcontainer/devcontainer.json` `forwardPorts`.
+- **Phase 10 (TS clean-up):** VS Code reported 22 TypeScript errors across
+  four files, fixed as follows:
+  - `src/cli/templates/actions/index.ts`: Template imports `astro:actions`
+    and `astro:schema`, which are Astro virtual modules only available inside
+    a consumer Astro project's build context. Fixed by adding
+    `src/cli/templates/**` to the `exclude` list in `packages/core/tsconfig.json`
+    — scaffolded templates are consumer-project code, not framework source.
+  - `test/actions/*.test.ts` (`@actions/articles`, `@actions/auth`,
+    `@actions/profile` not found): The `@actions` alias existed in
+    `vitest.config.ts` but was missing from `tsconfig.json` `paths`. Added
+    `"@actions/*": ["./src/actions/*"]` to `tsconfig.json`.
+  - `FeedCard.astro`: `originalLink` destructured from props but never used
+    in the card template (it's rendered only in the modal). Removed from
+    destructuring; kept in the `Props` interface as part of the public API.
+  - `MagicLinkForm.astro`, `SignUpForm.astro`: `response.json()` returns
+    `Promise<unknown>` in strict TypeScript. Cast results to typed objects
+    (`{ exists: boolean }` and `{ message?: string }`) to resolve TS 18046.
+  - `devcontainer.json` `vitest.explorer` warning: JSON schema false positive
+    — the devcontainer schema only validates built-in VS Code extensions;
+    marketplace extension IDs like `vitest.explorer` are flagged but work
+    correctly at runtime.
 
 ### Problems Log
 
