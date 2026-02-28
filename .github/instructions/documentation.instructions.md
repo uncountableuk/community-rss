@@ -70,6 +70,31 @@ Feature plans placed in `feature_plans/X_Y_Z/{feature_name}/` must include:
 5. Test requirements phase
 6. Documentation update phase
 
+## Architecture Documentation
+When documenting architectural patterns, include:
+- **Design Token System**: Explain the three-tier token hierarchy
+  (Reference → System → Component), naming conventions, and how
+  consumers override tokens via `theme.css`
+- **CSS Cascade Layers**: Document the layer order and explain why
+  consumer styles always win (un-layered beats layered)
+- **Astro Actions**: Document the handler signature pattern
+  `(input, app) => Promise<Result>`, consumer registration via
+  `defineAction`, and the constraint that core cannot import `astro:actions`
+- **Server Islands**: Document `server:defer` usage, fallback slots,
+  and why auth-dependent UI uses this pattern
+- **Container API Email Pipeline**: Document the 5-step resolution chain,
+  Astro email component props, and the `renderAstroEmail()` function
+- **Proxy Component Pattern**: Document how scaffolded wrappers import
+  core components and own the `<style>` block
+
+## Action Handler Documentation
+When documenting Astro Action handlers:
+- Show the pure function signature with typed input and `AppContext`
+- Show the Zod schema used for validation in the consumer's `defineAction`
+- Document both success and error return shapes
+- Include a "Consumer Usage" example showing `actions.handlerName(input)`
+- Note that handlers are exported from `@community-rss/core/actions`
+
 ## Links
 - Internal repo links use relative paths
 - NPM package references: `@community-rss/core`

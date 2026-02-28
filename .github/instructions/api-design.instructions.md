@@ -14,6 +14,23 @@ The public API is everything exported from `packages/core/index.ts`:
 - Configuration interfaces: `CommunityRssOptions`, `ThemeConfig`, etc.
 - Type exports: `AppContext`, `EnvironmentVariables`, `CommunityRssError`
 - Utility functions explicitly re-exported for consumer use
+- **Action handlers** (pure functions): `fetchArticlesHandler`,
+  `checkEmailHandler`, `submitSignupHandler`, `updateProfileHandler`,
+  `changeEmailHandler`, `confirmEmailChangeHandler`
+- Action handler types: `FetchArticlesInput`, `FetchArticlesOutput`, etc.
+- Sub-path export: `@community-rss/core/actions`
+
+### Astro Actions as Public API
+Action handlers are exported as pure functions with this signature:
+```typescript
+(input: ValidatedInput, app: AppContext) => Promise<Result>
+```
+- Consumers register them in their scaffolded `src/actions/index.ts`
+  using Astro's `defineAction` with Zod validation
+- The core package CANNOT import `astro:actions` — only consumer projects can
+- Input/output types are exported alongside handlers for type safety
+- Action handlers must follow the same forward-compatibility rules as
+  all other public APIs — new inputs are optional with defaults
 
 ## CLI Surface
 The `npx @community-rss/core init` command scaffolds developer-owned files:

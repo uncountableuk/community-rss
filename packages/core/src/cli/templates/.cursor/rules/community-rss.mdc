@@ -1,0 +1,39 @@
+---
+description: Community RSS Framework guidelines for consumer projects
+globs: src/**/*.astro, src/**/*.ts, src/**/*.css
+---
+
+# Community RSS Framework Rules
+
+## Design Tokens
+- Use `--crss-ref-*` (reference), `--crss-sys-*` (system), `--crss-comp-*` (component) tokens
+- Override tokens in `src/styles/theme.css` — un-layered styles win over framework layers
+- Never use hardcoded hex/rgb colour values — always reference `--crss-*` tokens
+
+## Astro Actions
+- Use `actions.handlerName(input)` from `astro:actions` — never manual `fetch()` to `/api/v1/`
+- Register handlers in `src/actions/index.ts` via `defineAction` with Zod validation
+- Handlers are imported from `@community-rss/core/actions`
+
+## Components
+- Accept `messages`/`labels` props for user-facing text customisation
+- Proxy wrappers in `src/components/` import from `@community-rss/core/components/*`
+- Wrappers own `<style>`, core owns logic — pass all props via `{...Astro.props}`
+- No business logic, API calls, or data transformation in wrappers
+
+## Email Templates
+- Edit HTML files in `src/email-templates/` with `{{variable}}` placeholders
+- Framework resolves your files first, then falls back to defaults
+
+## Protected Areas — DO NOT MODIFY
+- `node_modules/@community-rss/core/` — never fork or patch
+- Injected API routes (`/api/v1/*`, `/api/auth/*`) — never hand-edit
+- Framework middleware — never override
+
+## Developer-Owned Files (safe to edit)
+- `src/pages/*.astro` — Page routes
+- `src/styles/theme.css` — Token overrides
+- `src/email-templates/*.html` — Email templates
+- `src/components/*.astro` — Proxy wrapper components
+- `src/actions/index.ts` — Action registration
+- `astro.config.mjs` — Integration configuration

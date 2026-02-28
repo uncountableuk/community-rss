@@ -33,7 +33,12 @@ const {
 } = Astro.props;
 ---
 
-<form class="crss-magic-link-form" id="crss-magic-link-form" data-error-text={errorText} data-network-error-text={networkErrorText}>
+<form
+  class="crss-magic-link-form"
+  id="crss-magic-link-form"
+  data-error-text={errorText}
+  data-network-error-text={networkErrorText}
+>
   <div class="crss-form-group">
     <label for="crss-email-input" class="crss-form-label">{emailLabel}</label>
     <input
@@ -47,15 +52,28 @@ const {
     />
   </div>
 
-  <button type="submit" class="crss-btn crss-btn--primary" id="crss-submit-btn" data-default-text={submitLabel}>
+  <button
+    type="submit"
+    class="crss-btn crss-btn--primary"
+    id="crss-submit-btn"
+    data-default-text={submitLabel}
+  >
     {submitLabel}
   </button>
 
-  <div class="crss-form-message crss-form-message--success" id="crss-success-msg" style="display: none;">
+  <div
+    class="crss-form-message crss-form-message--success"
+    id="crss-success-msg"
+    style="display: none;"
+  >
     {successText}
   </div>
 
-  <div class="crss-form-message crss-form-message--error" id="crss-error-msg" style="display: none;">
+  <div
+    class="crss-form-message crss-form-message--error"
+    id="crss-error-msg"
+    style="display: none;"
+  >
   </div>
 </form>
 

@@ -586,7 +586,7 @@ must never suggest modifying:
 - Instead, guide the AI to use scaffolded overrides, `theme.css`, and
   `messages` props for customisation
 
-- [ ] Update `.github/copilot-instructions.md`
+- [x] Update `.github/copilot-instructions.md`
   - Add "Three-Tier Token System" to Architecture section
   - Add "CSS Cascade Layers" pattern
   - Add "Astro Actions" pattern (export handlers, scaffold registration)
@@ -597,34 +597,34 @@ must never suggest modifying:
   - Update Anti-Patterns: add token/layer violations
   - Add "Protected Areas" section: never modify `node_modules/`, never
     fork core package, never hand-edit injected API routes
-- [ ] Update `.github/instructions/implementation.instructions.md`
+- [x] Update `.github/instructions/implementation.instructions.md`
   - Add token naming conventions (`--crss-ref-*`, `--crss-sys-*`,
     `--crss-comp-*`)
   - Add `@layer` usage rules
   - Add Action handler patterns
   - Add Server Island patterns
   - Add email component authoring rules
-- [ ] Update `.github/instructions/api-design.instructions.md`
+- [x] Update `.github/instructions/api-design.instructions.md`
   - Add Astro Actions as part of the public API surface
   - Document action handler forward-compatibility rules
-- [ ] Update `.github/instructions/testing.instructions.md`
+- [x] Update `.github/instructions/testing.instructions.md`
   - Add E2E test patterns (Playwright)
   - Add E2E fixture conventions
   - Add E2E vs unit test decision framework
-- [ ] Update `.github/instructions/test-performance.instructions.md`
+- [x] Update `.github/instructions/test-performance.instructions.md`
   - Add E2E performance considerations
   - Add Playwright parallelisation guidance
-- [ ] Update `.github/instructions/documentation.instructions.md`
+- [x] Update `.github/instructions/documentation.instructions.md`
   - Add architecture documentation requirements
   - Add Action documentation patterns
-- [ ] Update `.github/instructions/feature-plan.instructions.md`
+- [x] Update `.github/instructions/feature-plan.instructions.md`
   - Add "Phase N: E2E Tests" requirement in implementation phases
   - Add Actions and Server Islands to architecture section template
-- [ ] Update `.github/skills/feature-implementation/SKILL.md`
+- [x] Update `.github/skills/feature-implementation/SKILL.md`
   - Add Action handler creation step
   - Add E2E test creation step
   - Add token audit step
-- [ ] Create `packages/core/src/cli/templates/.github/copilot-instructions.md`
+- [x] Create `packages/core/src/cli/templates/.github/copilot-instructions.md`
   - Framework-user guidance:
     - Use design tokens (`--crss-ref-*`, `--crss-sys-*`, `--crss-comp-*`) —
       never hardcode colours
@@ -636,7 +636,7 @@ must never suggest modifying:
     - **Protected Areas:** Never modify files in `node_modules/`, never fork
       or patch `@community-rss/core`, never hand-edit injected API routes —
       use scaffolded overrides and configuration instead
-- [ ] Create `packages/core/src/cli/templates/.cursor/rules/community-rss.mdc`
+- [x] Create `packages/core/src/cli/templates/.cursor/rules/community-rss.mdc`
   - Same guidance as the Copilot file but in Cursor's `.mdc` format
   - Add file-pattern scoping via `globs:` frontmatter (e.g.,
     `globs: src/**/*.astro, src/**/*.ts`) so rules only load for relevant
@@ -737,7 +737,7 @@ problems.*
 | 5. Container API Email Pipeline | ✅ Completed | Astro email templates, juice, renderAstroEmail() |
 | 6. Proxy Component Refinement | ✅ Completed | Audit, token migration, proxy wrappers, TabBar props |
 | 7. E2E Testing (Playwright) | ✅ Completed | Config, fixtures, 7 page specs, 3 flow specs, CI scripts |
-| 8. AI Guidance Updates | Not Started | |
+| 8. AI Guidance Updates | ✅ Completed | All instruction files + consumer scaffolds + dual-target AI guidance |
 | 9. Documentation Updates | Not Started | |
 | 10. Test Migration & Verification | Not Started | |
 
@@ -836,6 +836,18 @@ problems.*
 - **Phase 7:** Profile page tests conditionally skip when no auth cookie is
   available (`E2E_AUTH_COOKIE` env var) since they require an authenticated
   session. Full auth flow test handles this end-to-end via Mailpit.
+- **Phase 8:** All 8 `.github/` instruction files updated with new 0.5.0
+  patterns (tokens, layers, Actions, Server Islands, Container API email,
+  Proxy Pattern, E2E testing). Feature-plan template now includes a
+  "Phase 7: E2E Tests" section and Actions/Server Islands in architecture.
+- **Phase 8:** Created dual-target consumer AI scaffolds: `.github/copilot-
+  instructions.md` (Markdown) and `.cursor/rules/community-rss.mdc`
+  (MDC with `globs:` frontmatter for file-pattern scoping). Both include
+  Protected Areas, token usage, Action patterns, and developer-owned file
+  boundaries.
+- **Phase 8:** FILE_MAP in `init.mjs` increased from 19 to 21 entries with
+  the two new AI guidance files. Init test updated to verify count and
+  content (Protected Areas, `--crss-` tokens, `globs:` frontmatter).
 
 ### Problems Log
 

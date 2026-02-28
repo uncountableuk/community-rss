@@ -63,6 +63,10 @@ const FILE_MAP = [
     { template: 'env.example', target: '.env.example' },
     { template: 'docker-compose.yml', target: 'docker-compose.yml' },
     { template: 'theme.css', target: 'src/styles/theme.css' },
+
+    // AI guidance (GitHub Copilot + Cursor IDE)
+    { template: '.github/copilot-instructions.md', target: '.github/copilot-instructions.md' },
+    { template: '.cursor/rules/community-rss.mdc', target: '.cursor/rules/community-rss.mdc' },
 ];
 
 /**

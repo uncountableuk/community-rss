@@ -24,14 +24,22 @@ const {
   messages: {
     title: modalTitle = 'Before you interact\u2026',
     body: bodyText = 'To save your hearts, stars, and comments, we\u2019ll create an anonymous profile using a randomly generated ID stored in a cookie. No personal information is collected.',
-    detail: detailText = 'You can register later to keep your interactions across devices. By continuing, you agree to our use of cookies for this purpose.',
+    detail:
+      detailText = 'You can register later to keep your interactions across devices. By continuing, you agree to our use of cookies for this purpose.',
     acceptLabel = 'Accept & Continue',
     declineLabel = 'No Thanks',
   } = {},
 } = Astro.props;
 ---
 
-<div class="crss-consent-overlay" id="crss-consent-overlay" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="crss-consent-title">
+<div
+  class="crss-consent-overlay"
+  id="crss-consent-overlay"
+  style="display: none;"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="crss-consent-title"
+>
   <div class="crss-consent-modal">
     <h2 class="crss-consent-title" id="crss-consent-title">{modalTitle}</h2>
     <p class="crss-consent-text">

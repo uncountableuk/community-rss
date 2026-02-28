@@ -5,15 +5,15 @@
  */
 
 export {
-  TEST_USER,
-  TEST_ARTICLES,
-  seedTestData,
-  type TestUser,
-  type TestArticle,
+    TEST_USER,
+    TEST_ARTICLES,
+    seedTestData,
+    type TestUser,
+    type TestArticle,
 } from './seed';
 
 export {
-  getMagicLinkFromMailpit,
-  clearMailpit,
-  signInWithMagicLink,
+    getMagicLinkFromMailpit,
+    clearMailpit,
+    signInWithMagicLink,
 } from './auth';

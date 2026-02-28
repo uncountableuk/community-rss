@@ -9,29 +9,29 @@ import { test, expect } from '@playwright/test';
  * @since 0.5.0
  */
 test.describe('Terms Page', () => {
-  test('terms page renders with content', async ({ page }) => {
-    await page.goto('/terms');
-    await expect(page.locator('body')).toBeVisible();
+    test('terms page renders with content', async ({ page }) => {
+        await page.goto('/terms');
+        await expect(page.locator('body')).toBeVisible();
 
-    // Should have some text content
-    const bodyText = await page.locator('main, [role="main"], body').textContent();
-    expect(bodyText?.length).toBeGreaterThan(0);
-  });
+        // Should have some text content
+        const bodyText = await page.locator('main, [role="main"], body').textContent();
+        expect(bodyText?.length).toBeGreaterThan(0);
+    });
 
-  test('accessible from sign-up form link', async ({ page }) => {
-    await page.goto('/auth/signup');
+    test('accessible from sign-up form link', async ({ page }) => {
+        await page.goto('/auth/signup');
 
-    const termsLink = page.locator('a[href="/terms"]');
-    await expect(termsLink).toBeVisible();
+        const termsLink = page.locator('a[href="/terms"]');
+        await expect(termsLink).toBeVisible();
 
-    // Click should open in new tab (target="_blank")
-    const [newPage] = await Promise.all([
-      page.context().waitForEvent('page'),
-      termsLink.click(),
-    ]);
+        // Click should open in new tab (target="_blank")
+        const [newPage] = await Promise.all([
+            page.context().waitForEvent('page'),
+            termsLink.click(),
+        ]);
 
-    await newPage.waitForLoadState();
-    expect(newPage.url()).toContain('/terms');
-    await newPage.close();
-  });
+        await newPage.waitForLoadState();
+        expect(newPage.url()).toContain('/terms');
+        await newPage.close();
+    });
 });

@@ -50,7 +50,12 @@ const {
 } = Astro.props;
 ---
 
-<form class="crss-signup-form" id="crss-signup-form" data-error-create={createFailed} data-error-network={networkError}>
+<form
+  class="crss-signup-form"
+  id="crss-signup-form"
+  data-error-create={createFailed}
+  data-error-network={networkError}
+>
   <div class="crss-form-group">
     <label for="crss-signup-email" class="crss-form-label">{emailLabel}</label>
     <input
@@ -87,27 +92,51 @@ const {
         class="crss-form-checkbox"
         required
       />
-      <span>{termsPrefix} <a href="/terms" target="_blank" class="crss-form-link">{termsLinkText}</a></span>
+      <span
+        >{termsPrefix}
+        <a href="/terms" target="_blank" class="crss-form-link">{termsLinkText}</a></span
+      >
     </label>
   </div>
 
-  <button type="submit" class="crss-btn crss-btn--primary" id="crss-signup-btn" data-default-text={submitLabel}>
+  <button
+    type="submit"
+    class="crss-btn crss-btn--primary"
+    id="crss-signup-btn"
+    data-default-text={submitLabel}
+  >
     {submitLabel}
   </button>
 
-  <div class="crss-form-message crss-form-message--error" id="crss-signup-error" style="display: none;"></div>
+  <div
+    class="crss-form-message crss-form-message--error"
+    id="crss-signup-error"
+    style="display: none;"
+  >
+  </div>
 
   <p class="crss-form-footer">
-    {footerText} <a href="/auth/signin" class="crss-form-link">{footerLinkText}</a>
+    {footerText}
+    <a href="/auth/signin" class="crss-form-link">{footerLinkText}</a>
   </p>
 </form>
 
 <!-- Confirmation panel — replaces the form after successful submission -->
 <div class="crss-signup-confirm" id="crss-signup-confirm" style="display: none;" role="status">
   <div class="crss-signup-confirm__icon" aria-hidden="true">
-    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="2" y="4" width="20" height="16" rx="2"/>
-      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="40"
+      height="40"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
     </svg>
   </div>
   <h2 class="crss-signup-confirm__heading" id="crss-confirm-heading">{confirmHeading}</h2>
@@ -115,8 +144,8 @@ const {
     Welcome, <strong id="crss-confirm-name"></strong>.
   </p>
   <p class="crss-signup-confirm__detail" id="crss-confirm-action">
-    We've sent a verification link to <strong id="crss-confirm-email"></strong>.
-    Click it to complete creating your account.
+    We've sent a verification link to <strong id="crss-confirm-email"></strong>. Click it to
+    complete creating your account.
   </p>
   <p class="crss-signup-confirm__hint">
     {confirmHint}
@@ -325,7 +354,7 @@ const {
       });
 
       if (response.ok) {
-        const respData = await response.json().catch(() => ({})) as { exists?: boolean };
+        const respData = (await response.json().catch(() => ({}))) as { exists?: boolean };
 
         form.style.display = 'none';
         const confirm = document.getElementById('crss-signup-confirm');
@@ -339,8 +368,7 @@ const {
           if (confirmHeading) confirmHeading.textContent = 'Check your email';
           if (confirmNamePara) confirmNamePara.style.display = 'none';
           if (confirmAction) {
-            confirmAction.innerHTML =
-              `You already have an account. We've sent a sign-in link to <strong>${email}</strong>.`;
+            confirmAction.innerHTML = `You already have an account. We've sent a sign-in link to <strong>${email}</strong>.`;
           }
         } else {
           // New account — fill in the name and email
@@ -352,7 +380,9 @@ const {
         if (confirm) confirm.style.display = 'flex';
       } else {
         const data = await response.json().catch(() => ({}));
-        errorMsg.textContent = data.message || (form.dataset.errorCreate ?? 'Failed to create account. Please try again.');
+        errorMsg.textContent =
+          data.message ||
+          (form.dataset.errorCreate ?? 'Failed to create account. Please try again.');
         errorMsg.style.display = 'block';
       }
     } catch {

@@ -45,11 +45,9 @@
         --crss-sys-color-error-border: var(--crss-ref-red-200);
 
         /* Focus ring for interactive elements */
-        --crss-sys-color-focus-ring: color-mix(
-            in srgb,
-            var(--crss-sys-color-primary) 15%,
-            transparent
-        );
+        --crss-sys-color-focus-ring: color-mix(in srgb,
+                var(--crss-sys-color-primary) 15%,
+                transparent);
 
         --crss-sys-color-overlay: rgba(0, 0, 0, 0.5);
 

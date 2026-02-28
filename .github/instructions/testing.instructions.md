@@ -126,3 +126,45 @@ npm run test:coverage
 - ❌ No fixtures for unit tests
 - ❌ Missing timeouts on integration tests
 - ❌ Declaring mock variables outside `vi.hoisted()` when used in `vi.mock()` factories
+
+## E2E Testing (Playwright)
+
+E2E tests live in `e2e/` at the repo root and run against the playground.
+
+### File Structure
+```
+e2e/
+  fixtures/    # Seed data, auth helpers, combined exports
+  pages/       # Per-page test specs
+  flows/       # Multi-page user flow specs
+```
+
+### Running E2E Tests
+```bash
+# Prerequisites: scaffold playground + start Docker services
+npm run reset:playground
+cd playground && docker compose up -d
+
+# Run E2E tests (starts dev server automatically)
+npm run test:e2e
+
+# Interactive UI mode
+npm run test:e2e:ui
+```
+
+### E2E Test Conventions
+- Import from `@playwright/test` — not from Vitest
+- Tests should skip gracefully when Docker services (Mailpit, etc.)
+  are unavailable — use `test.skip()` inside the test body
+- Use generous timeouts for Server Islands (`server:defer`) content
+  that streams after initial page load
+- Page tests go in `e2e/pages/{page}.spec.ts`
+- Multi-page flow tests go in `e2e/flows/{flow}.spec.ts`
+- Auth-dependent tests use `E2E_AUTH_COOKIE` env var or the Mailpit
+  magic link interception helper from `e2e/fixtures/auth.ts`
+
+### E2E vs Unit Test Decision
+- **Unit test** if: testing a pure function, database query, or
+  individual API route handler in isolation
+- **E2E test** if: testing user-visible behaviour across page navigation,
+  form submission, or auth flows that span multiple HTTP requests

@@ -50,7 +50,14 @@ const formattedDate = publishedAt
   : '';
 ---
 
-<div class="crss-modal-overlay" id="article-modal" data-article-id={id} role="dialog" aria-modal="true" aria-labelledby="modal-title">
+<div
+  class="crss-modal-overlay"
+  id="article-modal"
+  data-article-id={id}
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="modal-title"
+>
   <div class="crss-modal">
     <header class="crss-modal__header">
       <div class="crss-modal__meta">
@@ -59,7 +66,19 @@ const formattedDate = publishedAt
         <span class="crss-modal__author">by {authorName}</span>
       </div>
       <button class="crss-modal__close" aria-label={closeLabel} data-modal-close>
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"
+          ></line></svg
+        >
       </button>
     </header>
 
@@ -68,14 +87,25 @@ const formattedDate = publishedAt
     <div class="crss-modal__content" set:html={content} />
 
     <footer class="crss-modal__footer">
-      {originalLink && (
-        <a href={originalLink} class="crss-modal__original-link" target="_blank" rel="noopener noreferrer">
-          {readOriginalLabel}
-        </a>
-      )}
+      {
+        originalLink && (
+          <a
+            href={originalLink}
+            class="crss-modal__original-link"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {readOriginalLabel}
+          </a>
+        )
+      }
       <nav class="crss-modal__nav" aria-label="Article navigation">
-        <button class="crss-modal__nav-btn" data-modal-prev aria-label={previousLabel}>{previousLabel}</button>
-        <button class="crss-modal__nav-btn" data-modal-next aria-label={nextLabel}>{nextLabel}</button>
+        <button class="crss-modal__nav-btn" data-modal-prev aria-label={previousLabel}
+          >{previousLabel}</button
+        >
+        <button class="crss-modal__nav-btn" data-modal-next aria-label={nextLabel}
+          >{nextLabel}</button
+        >
       </nav>
     </footer>
   </div>
@@ -132,7 +162,9 @@ const formattedDate = publishedAt
     color: var(--crss-text-muted);
     padding: var(--crss-space-xs);
     border-radius: var(--crss-radius-sm);
-    transition: color 0.15s ease, background 0.15s ease;
+    transition:
+      color 0.15s ease,
+      background 0.15s ease;
     flex-shrink: 0;
   }
 
@@ -220,7 +252,9 @@ const formattedDate = publishedAt
     font-size: var(--crss-font-size-sm);
     color: var(--crss-text-secondary);
     cursor: pointer;
-    transition: background 0.15s ease, color 0.15s ease;
+    transition:
+      background 0.15s ease,
+      color 0.15s ease;
   }
 
   .crss-modal__nav-btn:hover {

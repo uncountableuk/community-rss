@@ -39,10 +39,10 @@ describe('CLI scaffold', () => {
       expect(existsSync(join(tempDir, 'src/styles/theme.css'))).toBe(true);
     });
 
-    it('should create all 19 expected files', () => {
+    it('should create all 21 expected files', () => {
       const { created } = scaffold({ cwd: tempDir });
 
-      expect(created).toHaveLength(19);
+      expect(created).toHaveLength(21);
     });
 
     it('should create actions scaffold with handler imports', () => {
@@ -68,6 +68,25 @@ describe('CLI scaffold', () => {
 
       expect(existsSync(join(tempDir, 'src/components/FeedGrid.astro'))).toBe(true);
       expect(existsSync(join(tempDir, 'src/components/TabBar.astro'))).toBe(true);
+    });
+
+    it('should create AI guidance files for both Copilot and Cursor', () => {
+      scaffold({ cwd: tempDir });
+
+      const copilotFile = readFileSync(
+        join(tempDir, '.github/copilot-instructions.md'),
+        'utf-8',
+      );
+      expect(copilotFile).toContain('Community RSS');
+      expect(copilotFile).toContain('Protected Areas');
+      expect(copilotFile).toContain('--crss-');
+
+      const cursorFile = readFileSync(
+        join(tempDir, '.cursor/rules/community-rss.mdc'),
+        'utf-8',
+      );
+      expect(cursorFile).toContain('globs:');
+      expect(cursorFile).toContain('Protected Areas');
     });
 
     it('should create page files with correct imports', () => {
