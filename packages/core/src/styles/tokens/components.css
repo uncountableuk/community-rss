@@ -87,9 +87,6 @@
 
         /* ─── Auth Button Tokens ──────────────────────────── */
         --crss-comp-auth-gap: var(--crss-sys-space-sm);
-        --crss-comp-auth-btn-padding-x: var(--crss-sys-space-md);
-        --crss-comp-auth-btn-padding-y: var(--crss-sys-space-xs);
-        --crss-comp-auth-btn-radius: var(--crss-sys-radius-md);
         --crss-comp-auth-btn-font-size: var(--crss-sys-font-size-sm);
         --crss-comp-auth-signin-bg: var(--crss-sys-color-primary);
         --crss-comp-auth-signin-color: var(--crss-sys-color-text-inverse);

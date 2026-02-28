@@ -885,7 +885,37 @@ confirmed Zod singleton deduplication works across the workspace.
   and `prefers-color-scheme: dark` are present in scaffolded theme.css.
 - All 466 tests pass.
 
-### Phase 9: Testing — Not Started
+### Phase 9: Testing — Completed
+
+- Created `test/styles/css-architecture.test.ts` with 7 tests covering:
+  - All 10 `.astro` files (9 components + 1 layout) use `@layer crss-components`
+  - All use `<style is:global>` (no scoped styles)
+  - No `:global()` wrappers remain (redundant with `is:global`)
+  - No hardcoded hex colour values in component styles
+  - All class selectors use `crss-` prefix (namespace enforcement)
+- Created token wiring audit tests:
+  - Parses `components.css` to extract all `--crss-comp-*` declarations
+  - Parses all `.astro` files to extract all `var(--crss-comp-*)` references
+  - Asserts every defined token is consumed (no dead tokens)
+  - Asserts every consumed token is defined (no undefined references)
+- Created `test/integration/conditional-injection.test.ts` with 6 tests:
+  - Injects all 8 page routes when no developer files
+  - Skips all page routes when developer files exist
+  - Logs skip message for each developer override
+  - Selectively injects only missing pages
+  - Always injects API routes regardless of `existsSync`
+  - Page entrypoints point to package `src/pages/`
+- Fixed dead tokens discovered by audit:
+  - Wired `--crss-comp-btn-*` (bg, color, radius, padding, font-size) into
+    AuthButton `.crss-btn` base class
+  - Wired `--crss-comp-modal-shadow` into ArticleModal `.crss-modal`
+  - Wired `--crss-comp-form-bg`, `--crss-comp-form-border`,
+    `--crss-comp-form-radius`, `--crss-comp-form-padding` into form containers
+  - Wired `--crss-comp-form-label-size`, `--crss-comp-form-label-color`
+    into `.crss-form-label`
+  - Removed 3 dead auth-button-specific tokens (replaced by generic btn tokens)
+- Coverage: 87.81% statements, 88.46% branches, 89.16% functions — all above 80%
+- All 480 tests pass (466 existing + 14 new).
 
 ### Phase 10: Documentation — Not Started
 
