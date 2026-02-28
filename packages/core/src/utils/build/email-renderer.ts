@@ -19,6 +19,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import type { EmailContent } from '../../types/email';
+import type { ResolvedEmailTheme } from '../../types/email-theme';
 
 /**
  * Default template directory inside the package.
@@ -202,12 +203,14 @@ const ASTRO_EMAIL_COMPONENTS: Record<string, string> = {
  *
  * @param name - Email type name (e.g., 'sign-in')
  * @param props - Props to pass to the Astro component
+ * @param theme - Optional resolved email theme (colours, typography, spacing, branding)
  * @returns Rendered email content, or null if the template is unavailable
  * @since 0.5.0
  */
 export async function renderAstroEmail(
   name: string,
   props: Record<string, string>,
+  theme?: ResolvedEmailTheme,
 ): Promise<EmailContent | null> {
   const componentFile = ASTRO_EMAIL_COMPONENTS[name];
   if (!componentFile) {
@@ -228,7 +231,9 @@ export async function renderAstroEmail(
     }
 
     const container = await AstroContainer.create();
-    const rawHtml = await container.renderToString(Component, { props });
+    const rawHtml = await container.renderToString(Component, {
+      props: { ...props, ...(theme ? { theme } : {}) },
+    });
 
     // Inline CSS for email client compatibility
     const html = juice(rawHtml);

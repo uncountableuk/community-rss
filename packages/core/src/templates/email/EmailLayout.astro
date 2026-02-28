@@ -2,8 +2,9 @@
 /**
  * Email layout — table-based wrapper for email client compatibility.
  *
- * All styles are inline (concrete values, no CSS custom properties)
- * since most email clients do not support them.
+ * Accepts a `theme` prop with resolved colour, typography, spacing,
+ * and branding values. All styles use concrete values interpolated
+ * from the theme — no CSS custom properties.
  *
  * Uses a single default `<slot />` to avoid the Container API's
  * nested slot stripping behaviour.
@@ -14,9 +15,33 @@
 interface Props {
   /** Application/community name */
   appName?: string;
+  /** Resolved email theme (colours, typography, spacing, branding) */
+  theme?: Record<string, any>;
 }
 
-const { appName = 'Community RSS' } = Astro.props;
+const { appName = 'Community RSS', theme = {} } = Astro.props;
+
+// Destructure with defaults matching DEFAULT_EMAIL_THEME
+const colors = theme.colors ?? {};
+const typography = theme.typography ?? {};
+const spacing = theme.spacing ?? {};
+const branding = theme.branding ?? {};
+
+const bgColor = colors.background ?? '#f9fafb';
+const surfaceColor = colors.surface ?? '#ffffff';
+const borderColor = colors.border ?? '#e5e7eb';
+const primaryColor = colors.primary ?? '#4f46e5';
+const textColor = colors.text ?? '#374151';
+const mutedColor = colors.mutedText ?? '#9ca3af';
+const fontFamily = typography.fontFamily ?? "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+const fontSize = typography.fontSize ?? '16px';
+const headingSize = typography.headingSize ?? '20px';
+const contentPadding = spacing.contentPadding ?? '32px';
+const borderRadius = spacing.borderRadius ?? '8px';
+
+const logoUrl = branding.logoUrl;
+const logoAlt = branding.logoAlt ?? appName;
+const logoWidth = branding.logoWidth ?? '120px';
 ---
 
 <!doctype html>
@@ -27,14 +52,14 @@ const { appName = 'Community RSS' } = Astro.props;
     <title>{appName}</title>
   </head>
   <body
-    style="margin: 0; padding: 0; background-color: #f9fafb; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; -webkit-font-smoothing: antialiased;"
+    style={`margin: 0; padding: 0; background-color: ${bgColor}; font-family: ${fontFamily}; -webkit-font-smoothing: antialiased;`}
   >
     <table
       role="presentation"
       width="100%"
       cellpadding="0"
       cellspacing="0"
-      style="background-color: #f9fafb;"
+      style={`background-color: ${bgColor};`}
     >
       <tr>
         <td align="center" style="padding: 40px 20px;">
@@ -43,12 +68,20 @@ const { appName = 'Community RSS' } = Astro.props;
             width="600"
             cellpadding="0"
             cellspacing="0"
-            style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 8px; border: 1px solid #e5e7eb;"
+            style={`max-width: 600px; width: 100%; background-color: ${surfaceColor}; border-radius: ${borderRadius}; border: 1px solid ${borderColor};`}
           >
             <!-- Header -->
             <tr>
-              <td style="padding: 32px 32px 0 32px;">
-                <h1 style="margin: 0 0 24px 0; font-size: 20px; font-weight: 700; color: #4f46e5;">
+              <td style={`padding: ${contentPadding} ${contentPadding} 0 ${contentPadding};`}>
+                {logoUrl && (
+                  <img
+                    src={logoUrl}
+                    alt={logoAlt}
+                    width={logoWidth}
+                    style={`display: block; margin: 0 0 16px 0; max-width: ${logoWidth};`}
+                  />
+                )}
+                <h1 style={`margin: 0 0 24px 0; font-size: ${headingSize}; font-weight: 700; color: ${primaryColor};`}>
                   {appName}
                 </h1>
               </td>
@@ -56,7 +89,7 @@ const { appName = 'Community RSS' } = Astro.props;
             <!-- Content -->
             <tr>
               <td
-                style="padding: 0 32px 32px 32px; font-size: 16px; line-height: 1.6; color: #374151;"
+                style={`padding: 0 ${contentPadding} ${contentPadding} ${contentPadding}; font-size: ${fontSize}; line-height: 1.6; color: ${textColor};`}
               >
                 <slot />
               </td>
@@ -64,7 +97,7 @@ const { appName = 'Community RSS' } = Astro.props;
             <!-- Footer -->
             <tr>
               <td
-                style="padding: 24px 32px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #9ca3af; text-align: center;"
+                style={`padding: 24px ${contentPadding}; border-top: 1px solid ${borderColor}; font-size: 12px; color: ${mutedColor}; text-align: center;`}
               >
                 <p style="margin: 0;">Sent by {appName}</p>
               </td>

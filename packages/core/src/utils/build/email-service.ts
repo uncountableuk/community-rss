@@ -171,7 +171,8 @@ export function createEmailService(
 
             // 3. Try Astro Container API template (package defaults)
             try {
-                const astroContent = await renderAstroEmail(type, templateVars);
+                const theme = emailConfig?.theme;
+                const astroContent = await renderAstroEmail(type, templateVars, theme);
                 if (astroContent) {
                     await transport.send({ from, to, subject: astroContent.subject, text: astroContent.text, html: astroContent.html });
                     return;

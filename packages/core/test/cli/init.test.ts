@@ -99,18 +99,21 @@ describe('CLI scaffold', () => {
       expect(indexPage).toContain('@community-rss/core');
     });
 
-    it('should create email templates with variable placeholders', () => {
+    it('should create Astro email templates with core layout import', () => {
       scaffold({ cwd: tempDir });
 
       const signIn = readFileSync(
-        join(tempDir, 'src/email-templates/sign-in.html'),
+        join(tempDir, 'src/email-templates/SignInEmail.astro'),
         'utf-8',
       );
-      expect(signIn).toContain('{{');
-      expect(signIn).toContain('<!-- subject:');
+      expect(signIn).toContain('@community-rss/core/templates/email/EmailLayout.astro');
+      expect(signIn).toContain('theme');
+
+      expect(existsSync(join(tempDir, 'src/email-templates/WelcomeEmail.astro'))).toBe(true);
+      expect(existsSync(join(tempDir, 'src/email-templates/EmailChangeEmail.astro'))).toBe(true);
     });
 
-    it('should create astro.config.mjs with node adapter', () => {
+    it('should create astro.config.mjs with node adapter and email theme comments', () => {
       scaffold({ cwd: tempDir });
 
       const config = readFileSync(
@@ -119,6 +122,7 @@ describe('CLI scaffold', () => {
       );
       expect(config).toContain("@astrojs/node");
       expect(config).toContain('communityRss');
+      expect(config).toContain('// theme:');
     });
 
     it('should create .env.example with all required vars', () => {
@@ -195,7 +199,7 @@ describe('CLI scaffold', () => {
         true,
       );
       expect(
-        existsSync(join(tempDir, 'src/email-templates/welcome.html')),
+        existsSync(join(tempDir, 'src/email-templates/WelcomeEmail.astro')),
       ).toBe(true);
     });
 

@@ -242,5 +242,25 @@ describe('Email Renderer', () => {
         expect(result.text).toBeTruthy();
       }
     });
+
+    it('should accept an optional theme parameter without throwing', async () => {
+      const theme = {
+        colors: { primary: '#e11d48', background: '#f9fafb', surface: '#ffffff', text: '#374151', mutedText: '#6b7280', border: '#e5e7eb', buttonText: '#ffffff' },
+        typography: { fontFamily: 'Arial, sans-serif', fontSize: '16px', headingSize: '20px' },
+        spacing: { contentPadding: '32px', borderRadius: '8px', buttonRadius: '8px', buttonPadding: '12px 24px' },
+        branding: { logoAlt: 'Test', logoWidth: '120px' },
+      };
+      // Should not throw regardless of Container API availability
+      const result = await renderAstroEmail('sign-in', {
+        url: 'https://example.com',
+        appName: 'Themed App',
+      }, theme as any);
+      expect(result === null || typeof result?.html === 'string').toBe(true);
+    });
+
+    it('should return null for unknown type even when theme is provided', async () => {
+      const result = await renderAstroEmail('nonexistent', { appName: 'Test' }, {} as any);
+      expect(result).toBeNull();
+    });
   });
 });

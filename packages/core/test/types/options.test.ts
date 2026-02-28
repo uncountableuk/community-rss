@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { CommunityRssOptions } from '@core-types/options';
 import { resolveOptions } from '@core-types/options';
+import { DEFAULT_EMAIL_THEME } from '@core-types/email-theme';
 
 describe('CommunityRssOptions', () => {
   describe('resolveOptions', () => {
@@ -56,6 +57,30 @@ describe('CommunityRssOptions', () => {
       resolveOptions(options);
 
       expect(options).toEqual(optionsCopy);
+    });
+
+    it('should resolve email.theme with defaults when no theme provided', () => {
+      const resolved = resolveOptions();
+      expect(resolved.email.theme).toEqual(DEFAULT_EMAIL_THEME);
+    });
+
+    it('should merge partial email.theme overrides with defaults', () => {
+      const resolved = resolveOptions({
+        email: {
+          theme: {
+            colors: { primary: '#e11d48' },
+          },
+        },
+      });
+      expect(resolved.email.theme.colors.primary).toBe('#e11d48');
+      expect(resolved.email.theme.colors.background).toBe('#f9fafb');
+    });
+
+    it('should use appName as default logoAlt in email theme', () => {
+      const resolved = resolveOptions({
+        email: { appName: 'My Feeds' },
+      });
+      expect(resolved.email.theme.branding.logoAlt).toBe('My Feeds');
     });
   });
 });

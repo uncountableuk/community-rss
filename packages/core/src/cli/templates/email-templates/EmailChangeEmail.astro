@@ -1,19 +1,24 @@
 ---
 /**
- * Email change verification email template.
+ * Email change verification email template (developer-owned).
  *
- * @since 0.5.0
+ * This file was scaffolded by `@community-rss/core init`.
+ * You can customise the layout, copy, and styles freely —
+ * it will not be overwritten by future scaffolds.
+ *
+ * Theme values (colours, typography, spacing, branding) are
+ * configured in `astro.config.mjs` under `email.theme` and
+ * passed as the `theme` prop. Edit the config to rebrand;
+ * edit this file to change structure/copy.
+ *
+ * @see https://community-rss.dev/docs/email-templates
  */
-import EmailLayout from './EmailLayout.astro';
+import EmailLayout from '@community-rss/core/templates/email/EmailLayout.astro';
 
 interface Props {
-  /** Verification URL */
   verificationUrl: string;
-  /** Application/community name */
   appName?: string;
-  /** Personalised greeting */
   greeting?: string;
-  /** Resolved email theme */
   theme?: Record<string, any>;
 }
 

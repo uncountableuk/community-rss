@@ -42,12 +42,12 @@ const FILE_MAP = [
     { template: 'pages/profile.astro', target: 'src/pages/profile.astro' },
     { template: 'pages/terms.astro', target: 'src/pages/terms.astro' },
 
-    // Email templates
-    { template: 'email-templates/sign-in.html', target: 'src/email-templates/sign-in.html' },
-    { template: 'email-templates/welcome.html', target: 'src/email-templates/welcome.html' },
+    // Email templates (Astro — developer-owned, imports core EmailLayout)
+    { template: 'email-templates/SignInEmail.astro', target: 'src/email-templates/SignInEmail.astro' },
+    { template: 'email-templates/WelcomeEmail.astro', target: 'src/email-templates/WelcomeEmail.astro' },
     {
-        template: 'email-templates/email-change.html',
-        target: 'src/email-templates/email-change.html',
+        template: 'email-templates/EmailChangeEmail.astro',
+        target: 'src/email-templates/EmailChangeEmail.astro',
     },
 
     // Actions

@@ -36,6 +36,15 @@ export default function communityRss(options?: CommunityRssOptions): AstroIntegr
 export type { CommunityRssOptions, EmailConfig, ResolvedCommunityRssOptions } from './src/types/options';
 export type { AppContext, EnvironmentVariables } from './src/types/context';
 export type {
+  EmailThemeConfig,
+  EmailThemeColors,
+  EmailThemeTypography,
+  EmailThemeSpacing,
+  EmailThemeBranding,
+  ResolvedEmailTheme,
+} from './src/types/email-theme';
+export { DEFAULT_EMAIL_THEME, mergeEmailTheme } from './src/types/email-theme';
+export type {
   UserTier,
   UserRole,
   FeedStatus,

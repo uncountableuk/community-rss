@@ -1,26 +1,24 @@
 ---
 /**
- * Sign-in magic link email template.
+ * Sign-in magic link email template (developer-owned).
  *
- * Rendered via the Astro Container API and post-processed with
- * `juice` to inline CSS. Uses `EmailLayout.astro` for the outer
- * table structure.
+ * This file was scaffolded by `@community-rss/core init`.
+ * You can customise the layout, copy, and styles freely —
+ * it will not be overwritten by future scaffolds.
  *
- * Theme values are passed through as props and used directly in
- * inline styles — no CSS custom properties.
+ * Theme values (colours, typography, spacing, branding) are
+ * configured in `astro.config.mjs` under `email.theme` and
+ * passed as the `theme` prop. Edit the config to rebrand;
+ * edit this file to change structure/copy.
  *
- * @since 0.5.0
+ * @see https://community-rss.dev/docs/email-templates
  */
-import EmailLayout from './EmailLayout.astro';
+import EmailLayout from '@community-rss/core/templates/email/EmailLayout.astro';
 
 interface Props {
-  /** Magic link URL */
   url: string;
-  /** Application/community name */
   appName?: string;
-  /** Personalised greeting (e.g., "Hi Alice,") */
   greeting?: string;
-  /** Resolved email theme */
   theme?: Record<string, any>;
 }
 
