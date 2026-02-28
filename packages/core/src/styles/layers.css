@@ -1,0 +1,97 @@
+/**
+ * Community RSS — CSS Cascade Layers
+ *
+ * Declares the layer order for deterministic cascade resolution.
+ * This file MUST be loaded before any other framework CSS.
+ *
+ * Layer order (lowest → highest specificity):
+ *   1. crss-reset    — CSS reset (box-sizing, margin)
+ *   2. crss-tokens   — Design token declarations
+ *   3. crss-base     — Base element styles (body, headings, links)
+ *   4. crss-components — Component-scoped styles
+ *   5. crss-utilities — Utility classes
+ *
+ * Consumer styles loaded after the framework (e.g., theme.css) are
+ * NOT inside any layer, so they automatically win over all framework
+ * layers without needing !important.
+ *
+ * @since 0.5.0
+ */
+
+/* ─── Layer Order Declaration ───────────────────────── */
+@layer crss-reset, crss-tokens, crss-base, crss-components, crss-utilities;
+
+/* ─── Reset Layer ───────────────────────────────────── */
+@layer crss-reset {
+
+    *,
+    *::before,
+    *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+}
+
+/* ─── Base Layer ────────────────────────────────────── */
+@layer crss-base {
+    body {
+        font-family: var(--crss-font-family);
+        font-size: var(--crss-font-size-base);
+        color: var(--crss-text-primary);
+        background-color: var(--crss-surface-0);
+        line-height: 1.6;
+    }
+
+    a {
+        color: var(--crss-brand-primary);
+        text-decoration: none;
+    }
+
+    a:hover {
+        text-decoration: underline;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        color: var(--crss-text-primary);
+        line-height: 1.3;
+    }
+
+    img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+    }
+}
+
+/* ─── Utility Layer ─────────────────────────────────── */
+@layer crss-utilities {
+    .crss-sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border-width: 0;
+    }
+
+    .crss-visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border-width: 0;
+    }
+}

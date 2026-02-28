@@ -52,7 +52,9 @@ export function createIntegration(options: CommunityRssOptions = {}): AstroInteg
 
         // Inject design token CSS into every page via SSR script.
         // Developers no longer need to manually import token files.
+        // layers.css declares @layer order and must be injected first.
         const tokenImport = [
+          `import '${new URL('./styles/layers.css', import.meta.url).pathname}';`,
           `import '${new URL('./styles/tokens/reference.css', import.meta.url).pathname}';`,
           `import '${new URL('./styles/tokens/system.css', import.meta.url).pathname}';`,
           `import '${new URL('./styles/tokens/components.css', import.meta.url).pathname}';`,

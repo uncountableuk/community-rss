@@ -9,82 +9,82 @@
  *
  * @since 0.5.0
  */
+@layer crss-tokens {:root {
+    /* ─── Colour Palette: Greys ───────────────────────── */
+    --crss-ref-gray-50: #f9fafb;
+    --crss-ref-gray-100: #f3f4f6;
+    --crss-ref-gray-200: #e5e7eb;
+    --crss-ref-gray-300: #d1d5db;
+    --crss-ref-gray-400: #9ca3af;
+    --crss-ref-gray-500: #6b7280;
+    --crss-ref-gray-600: #4b5563;
+    --crss-ref-gray-700: #374151;
+    --crss-ref-gray-800: #1f2937;
+    --crss-ref-gray-900: #1a1a2e;
 
-:root {
-  /* ─── Colour Palette: Greys ───────────────────────── */
-  --crss-ref-gray-50: #f9fafb;
-  --crss-ref-gray-100: #f3f4f6;
-  --crss-ref-gray-200: #e5e7eb;
-  --crss-ref-gray-300: #d1d5db;
-  --crss-ref-gray-400: #9ca3af;
-  --crss-ref-gray-500: #6b7280;
-  --crss-ref-gray-600: #4b5563;
-  --crss-ref-gray-700: #374151;
-  --crss-ref-gray-800: #1f2937;
-  --crss-ref-gray-900: #1a1a2e;
+    /* ─── Colour Palette: Indigo ──────────────────────── */
+    --crss-ref-indigo-400: #818cf8;
+    --crss-ref-indigo-500: #6366f1;
+    --crss-ref-indigo-600: #4f46e5;
+    --crss-ref-indigo-700: #4338ca;
 
-  /* ─── Colour Palette: Indigo ──────────────────────── */
-  --crss-ref-indigo-400: #818cf8;
-  --crss-ref-indigo-500: #6366f1;
-  --crss-ref-indigo-600: #4f46e5;
-  --crss-ref-indigo-700: #4338ca;
+    /* ─── Colour Palette: Violet ──────────────────────── */
+    --crss-ref-violet-500: #8b5cf6;
+    --crss-ref-violet-600: #7c3aed;
 
-  /* ─── Colour Palette: Violet ──────────────────────── */
-  --crss-ref-violet-500: #8b5cf6;
-  --crss-ref-violet-600: #7c3aed;
+    /* ─── Colour Palette: Red ─────────────────────────── */
+    --crss-ref-red-500: #ef4444;
 
-  /* ─── Colour Palette: Red ─────────────────────────── */
-  --crss-ref-red-500: #ef4444;
+    /* ─── Colour Palette: Amber ───────────────────────── */
+    --crss-ref-amber-500: #f59e0b;
 
-  /* ─── Colour Palette: Amber ───────────────────────── */
-  --crss-ref-amber-500: #f59e0b;
+    /* ─── Colour Palette: Blue ────────────────────────── */
+    --crss-ref-blue-500: #3b82f6;
 
-  /* ─── Colour Palette: Blue ────────────────────────── */
-  --crss-ref-blue-500: #3b82f6;
+    /* ─── Colour Palette: Green ───────────────────────── */
+    --crss-ref-green-500: #22c55e;
 
-  /* ─── Colour Palette: Green ───────────────────────── */
-  --crss-ref-green-500: #22c55e;
+    /* ─── Colour Palette: White/Black ─────────────────── */
+    --crss-ref-white: #ffffff;
+    --crss-ref-black: #000000;
 
-  /* ─── Colour Palette: White/Black ─────────────────── */
-  --crss-ref-white: #ffffff;
-  --crss-ref-black: #000000;
+    /* ─── Typography ──────────────────────────────────── */
+    --crss-ref-font-sans: system-ui, -apple-system, 'Segoe UI', Roboto,
+        'Helvetica Neue', Arial, sans-serif;
+    --crss-ref-font-mono: ui-monospace, 'Cascadia Code', 'Source Code Pro',
+        Menlo, Consolas, monospace;
 
-  /* ─── Typography ──────────────────────────────────── */
-  --crss-ref-font-sans: system-ui, -apple-system, 'Segoe UI', Roboto,
-    'Helvetica Neue', Arial, sans-serif;
-  --crss-ref-font-mono: ui-monospace, 'Cascadia Code', 'Source Code Pro',
-    Menlo, Consolas, monospace;
+    --crss-ref-font-size-xs: 0.75rem;
+    --crss-ref-font-size-sm: 0.875rem;
+    --crss-ref-font-size-base: 1rem;
+    --crss-ref-font-size-lg: 1.125rem;
+    --crss-ref-font-size-xl: 1.25rem;
+    --crss-ref-font-size-2xl: 1.5rem;
+    --crss-ref-font-size-3xl: 1.875rem;
 
-  --crss-ref-font-size-xs: 0.75rem;
-  --crss-ref-font-size-sm: 0.875rem;
-  --crss-ref-font-size-base: 1rem;
-  --crss-ref-font-size-lg: 1.125rem;
-  --crss-ref-font-size-xl: 1.25rem;
-  --crss-ref-font-size-2xl: 1.5rem;
-  --crss-ref-font-size-3xl: 1.875rem;
+    /* ─── Spacing Scale ───────────────────────────────── */
+    --crss-ref-space-xs: 0.25rem;
+    --crss-ref-space-sm: 0.5rem;
+    --crss-ref-space-md: 1rem;
+    --crss-ref-space-lg: 1.5rem;
+    --crss-ref-space-xl: 2rem;
+    --crss-ref-space-2xl: 3rem;
+    --crss-ref-space-3xl: 4rem;
 
-  /* ─── Spacing Scale ───────────────────────────────── */
-  --crss-ref-space-xs: 0.25rem;
-  --crss-ref-space-sm: 0.5rem;
-  --crss-ref-space-md: 1rem;
-  --crss-ref-space-lg: 1.5rem;
-  --crss-ref-space-xl: 2rem;
-  --crss-ref-space-2xl: 3rem;
-  --crss-ref-space-3xl: 4rem;
+    /* ─── Border Radius ───────────────────────────────── */
+    --crss-ref-radius-sm: 4px;
+    --crss-ref-radius-md: 8px;
+    --crss-ref-radius-lg: 12px;
+    --crss-ref-radius-full: 9999px;
 
-  /* ─── Border Radius ───────────────────────────────── */
-  --crss-ref-radius-sm: 4px;
-  --crss-ref-radius-md: 8px;
-  --crss-ref-radius-lg: 12px;
-  --crss-ref-radius-full: 9999px;
+    /* ─── Shadows ─────────────────────────────────────── */
+    --crss-ref-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --crss-ref-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --crss-ref-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 
-  /* ─── Shadows ─────────────────────────────────────── */
-  --crss-ref-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --crss-ref-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  --crss-ref-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-
-  /* ─── Transitions ─────────────────────────────────── */
-  --crss-ref-transition-fast: 150ms ease;
-  --crss-ref-transition-base: 250ms ease;
-  --crss-ref-transition-slow: 350ms ease;
+    /* ─── Transitions ─────────────────────────────────── */
+    --crss-ref-transition-fast: 150ms ease;
+    --crss-ref-transition-base: 250ms ease;
+    --crss-ref-transition-slow: 350ms ease;
 }
+} /* end @layer crss-tokens */

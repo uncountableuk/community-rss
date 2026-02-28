@@ -36,69 +36,62 @@ const hasFooterSlot = Astro.slots.has('footer');
     <slot name="head" />
   </head>
   <body>
-    {hasHeaderSlot ? (
-      <slot name="header" />
-    ) : (
-      <header class="crss-header">
-        <nav class="crss-nav">
-          <a href="/" class="crss-nav-brand">Community RSS</a>
-          <AuthButton />
-        </nav>
-      </header>
-    )}
+    {
+      hasHeaderSlot ? (
+        <slot name="header" />
+      ) : (
+        <header class="crss-header">
+          <nav class="crss-nav">
+            <a href="/" class="crss-nav-brand">
+              Community RSS
+            </a>
+            <AuthButton />
+          </nav>
+        </header>
+      )
+    }
     <slot />
-    {hasFooterSlot && (
-      <footer class="crss-footer">
-        <slot name="footer" />
-      </footer>
-    )}
+    {
+      hasFooterSlot && (
+        <footer class="crss-footer">
+          <slot name="footer" />
+        </footer>
+      )
+    }
     <ConsentModal />
   </body>
 </html>
 
 <style is:global>
+  @import '../styles/layers.css';
   @import '../styles/tokens/reference.css';
   @import '../styles/tokens/system.css';
   @import '../styles/tokens/components.css';
 
-  *,
-  *::before,
-  *::after {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-  }
+  @layer crss-components {
+    .crss-header {
+      border-bottom: 1px solid var(--crss-border);
+      background: var(--crss-surface-0);
+    }
 
-  body {
-    font-family: var(--crss-font-family);
-    font-size: var(--crss-font-size-base);
-    color: var(--crss-text-primary);
-    background-color: var(--crss-surface-0);
-    line-height: 1.6;
-  }
+    .crss-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: var(--crss-space-sm) var(--crss-space-lg);
+    }
 
-  .crss-header {
-    border-bottom: 1px solid var(--crss-border);
-    background: var(--crss-surface-0);
-  }
+    .crss-nav-brand {
+      font-weight: 700;
+      font-size: var(--crss-font-size-lg);
+      color: var(--crss-text-primary);
+      text-decoration: none;
+    }
 
-  .crss-nav {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: var(--crss-space-sm) var(--crss-space-lg);
-  }
-
-  .crss-nav-brand {
-    font-weight: 700;
-    font-size: var(--crss-font-size-lg);
-    color: var(--crss-text-primary);
-    text-decoration: none;
-  }
-
-  .crss-nav-brand:hover {
-    color: var(--crss-primary);
+    .crss-nav-brand:hover {
+      color: var(--crss-primary);
+    }
   }
 </style>
