@@ -911,9 +911,22 @@ problems.*
   four files, fixed as follows:
   - `src/cli/templates/actions/index.ts`: Template imports `astro:actions`
     and `astro:schema`, which are Astro virtual modules only available inside
-    a consumer Astro project's build context. Fixed by adding
-    `src/cli/templates/**` to the `exclude` list in `packages/core/tsconfig.json`
-    — scaffolded templates are consumer-project code, not framework source.
+    a consumer Astro project's build context. Similarly, Astro template files
+    import `@community-rss/core/*` sub-path exports which require `bundler`
+    module resolution not available in the package's TS environment.
+    First attempt: added `src/cli/templates/**` to `exclude` in
+    `packages/core/tsconfig.json`. This removes templates from the
+    compilation but VS Code still checks opened files using the parent
+    tsconfig (excluded files are still type-checked if directly opened).
+    Final fix: created `src/cli/templates/tsconfig.json` with `"noCheck":
+    true` (TypeScript ≥ 5.5) and `"include": ["**/*"]`. VS Code's TS
+    service and the Astro language server both resolve the nearest
+    `tsconfig.json` per file; with the parent tsconfig explicitly
+    excluding that directory and a local tsconfig overriding with
+    `noCheck`, all diagnostics are suppressed for template files.
+    `// @ts-nocheck` was also considered but rejected — it would be
+    copied verbatim into consumer projects via `init.mjs`, disabling
+    type checking in their scaffolded pages/actions.
   - `test/actions/*.test.ts` (`@actions/articles`, `@actions/auth`,
     `@actions/profile` not found): The `@actions` alias existed in
     `vitest.config.ts` but was missing from `tsconfig.json` `paths`. Added
