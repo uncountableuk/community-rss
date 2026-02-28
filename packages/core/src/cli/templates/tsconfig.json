@@ -1,5 +1,5 @@
 {
-  /**
+    /**
    * TypeScript config for CLI scaffold templates.
    *
    * These files are NOT part of the framework source — they are templates
@@ -12,8 +12,10 @@
    * (requires TypeScript ≥ 5.5). The files are validated in practice by
    * running them in a real consumer Astro project after scaffolding.
    */
-  "compilerOptions": {
-    "noCheck": true
-  },
-  "include": ["**/*"]
+    "compilerOptions": {
+        "noCheck": true
+    },
+    "include": [
+        "**/*"
+    ]
 }

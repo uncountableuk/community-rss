@@ -191,7 +191,7 @@ const {
       );
 
       if (checkResponse.ok) {
-        const checkData = await checkResponse.json() as { exists: boolean };
+        const checkData = (await checkResponse.json()) as { exists: boolean };
 
         if (!checkData.exists) {
           // New user — redirect to sign-up page with email pre-filled
@@ -217,7 +217,7 @@ const {
         successMsg.style.display = 'block';
         emailInput.value = '';
       } else {
-        const data = await response.json().catch(() => ({})) as { message?: string };
+        const data = (await response.json().catch(() => ({}))) as { message?: string };
         errorMsg.textContent = data.message || errorFallback;
         errorMsg.style.display = 'block';
       }
