@@ -21,19 +21,19 @@ const args = process.argv.slice(2);
 const subcommand = args[0];
 
 if (subcommand === 'eject') {
-  const { runEject } = await import('./eject.mjs');
-  runEject(args.slice(1));
+    const { runEject } = await import('./eject.mjs');
+    runEject(args.slice(1));
 } else if (subcommand === 'init' || !subcommand || subcommand.startsWith('-')) {
-  // Default to init (backward compatible)
-  // Dynamically import and run the init main function
-  const initArgs = subcommand === 'init' ? args.slice(1) : args;
+    // Default to init (backward compatible)
+    // Dynamically import and run the init main function
+    const initArgs = subcommand === 'init' ? args.slice(1) : args;
 
-  // Import scaffold and run
-  const { scaffold } = await import('./init.mjs');
+    // Import scaffold and run
+    const { scaffold } = await import('./init.mjs');
 
-  // Handle --help
-  if (initArgs.includes('--help') || initArgs.includes('-h')) {
-    console.log(`
+    // Handle --help
+    if (initArgs.includes('--help') || initArgs.includes('-h')) {
+        console.log(`
   @community-rss/core init
 
   Scaffolds a Community RSS project with email templates,
@@ -46,42 +46,42 @@ if (subcommand === 'eject') {
     --force    Overwrite existing files
     --help     Show this help message
 `);
-    process.exit(0);
-  }
-
-  const force = initArgs.includes('--force');
-  console.log('\n  @community-rss/core — Scaffolding project...\n');
-
-  try {
-    const { created, skipped } = scaffold({ force });
-
-    for (const file of created) {
-      console.log(`  CREATE  ${file}`);
+        process.exit(0);
     }
 
-    for (const file of skipped) {
-      console.log(`  SKIP    ${file} (already exists)`);
-    }
+    const force = initArgs.includes('--force');
+    console.log('\n  @community-rss/core — Scaffolding project...\n');
 
-    console.log(`\n  Done! ${created.length} file(s) created.`);
+    try {
+        const { created, skipped } = scaffold({ force });
 
-    if (skipped.length > 0) {
-      console.log(`  ${skipped.length} file(s) skipped (use --force to overwrite).`);
-    }
+        for (const file of created) {
+            console.log(`  CREATE  ${file}`);
+        }
 
-    console.log(`
+        for (const file of skipped) {
+            console.log(`  SKIP    ${file} (already exists)`);
+        }
+
+        console.log(`\n  Done! ${created.length} file(s) created.`);
+
+        if (skipped.length > 0) {
+            console.log(`  ${skipped.length} file(s) skipped (use --force to overwrite).`);
+        }
+
+        console.log(`
   Next steps:
     1. Copy .env.example to .env and fill in your values
     2. Run: docker-compose up -d
     3. Run: npm run dev
     4. Visit: http://localhost:4321
 `);
-  } catch (err) {
-    console.error(`\n  ERROR  ${err.message}\n`);
-    process.exit(1);
-  }
+    } catch (err) {
+        console.error(`\n  ERROR  ${err.message}\n`);
+        process.exit(1);
+    }
 } else {
-  console.error(`\n  Unknown command: ${subcommand}`);
-  console.error(`  Available commands: init, eject\n`);
-  process.exit(1);
+    console.error(`\n  Unknown command: ${subcommand}`);
+    console.error(`  Available commands: init, eject\n`);
+    process.exit(1);
 }

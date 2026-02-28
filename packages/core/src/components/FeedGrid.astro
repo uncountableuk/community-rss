@@ -30,19 +30,21 @@ import FeedCard from './FeedCard.astro';
 ---
 
 <div class="crss-feed-grid" id="feed-grid">
-  {articles.map((article) => (
-    <FeedCard
-      id={article.id}
-      title={article.title}
-      summary={article.summary}
-      authorName={article.authorName}
-      publishedAt={article.publishedAt}
-      originalLink={article.originalLink}
-      feedTitle={article.feedTitle}
-      heartCount={article.heartCount}
-      starCount={article.starCount}
-    />
-  ))}
+  {
+    articles.map((article) => (
+      <FeedCard
+        id={article.id}
+        title={article.title}
+        summary={article.summary}
+        authorName={article.authorName}
+        publishedAt={article.publishedAt}
+        originalLink={article.originalLink}
+        feedTitle={article.feedTitle}
+        heartCount={article.heartCount}
+        starCount={article.starCount}
+      />
+    ))
+  }
 </div>
 
 <style is:global>

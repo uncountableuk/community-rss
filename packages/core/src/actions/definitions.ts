@@ -20,9 +20,9 @@ import { z } from 'zod';
 import { fetchArticlesHandler } from './articles';
 import { checkEmailHandler, submitSignupHandler } from './auth';
 import {
-  updateProfileHandler,
-  changeEmailHandler,
-  confirmEmailChangeHandler,
+    updateProfileHandler,
+    changeEmailHandler,
+    confirmEmailChangeHandler,
 } from './profile';
 
 /**
@@ -36,75 +36,75 @@ import {
  * @since 0.6.0
  */
 export const coreActions = {
-  fetchArticles: {
-    input: z.object({
-      page: z.number().optional(),
-      limit: z.number().optional(),
-      feedId: z.string().optional(),
-      sort: z.string().optional(),
-    }),
-    handler: async (input: any, context: any) => {
-      const app = context.locals.app;
-      return fetchArticlesHandler(input, app);
+    fetchArticles: {
+        input: z.object({
+            page: z.number().optional(),
+            limit: z.number().optional(),
+            feedId: z.string().optional(),
+            sort: z.string().optional(),
+        }),
+        handler: async (input: any, context: any) => {
+            const app = context.locals.app;
+            return fetchArticlesHandler(input, app);
+        },
     },
-  },
 
-  checkEmail: {
-    input: z.object({
-      email: z.string().email(),
-    }),
-    handler: async (input: any, context: any) => {
-      const app = context.locals.app;
-      return checkEmailHandler(input, app);
+    checkEmail: {
+        input: z.object({
+            email: z.string().email(),
+        }),
+        handler: async (input: any, context: any) => {
+            const app = context.locals.app;
+            return checkEmailHandler(input, app);
+        },
     },
-  },
 
-  submitSignup: {
-    input: z.object({
-      email: z.string().email(),
-      name: z.string().min(1).max(100),
-      termsAccepted: z.boolean(),
-    }),
-    handler: async (input: any, context: any) => {
-      const app = context.locals.app;
-      return submitSignupHandler(input, app);
+    submitSignup: {
+        input: z.object({
+            email: z.string().email(),
+            name: z.string().min(1).max(100),
+            termsAccepted: z.boolean(),
+        }),
+        handler: async (input: any, context: any) => {
+            const app = context.locals.app;
+            return submitSignupHandler(input, app);
+        },
     },
-  },
 
-  updateProfile: {
-    input: z.object({
-      userId: z.string(),
-      name: z.string().optional(),
-      bio: z.string().optional(),
-    }),
-    handler: async (input: any, context: any) => {
-      const app = context.locals.app;
-      return updateProfileHandler(input, app);
+    updateProfile: {
+        input: z.object({
+            userId: z.string(),
+            name: z.string().optional(),
+            bio: z.string().optional(),
+        }),
+        handler: async (input: any, context: any) => {
+            const app = context.locals.app;
+            return updateProfileHandler(input, app);
+        },
     },
-  },
 
-  changeEmail: {
-    input: z.object({
-      userId: z.string(),
-      currentEmail: z.string().email(),
-      currentName: z.string().optional(),
-      newEmail: z.string().email(),
-    }),
-    handler: async (input: any, context: any) => {
-      const app = context.locals.app;
-      return changeEmailHandler(input, app);
+    changeEmail: {
+        input: z.object({
+            userId: z.string(),
+            currentEmail: z.string().email(),
+            currentName: z.string().optional(),
+            newEmail: z.string().email(),
+        }),
+        handler: async (input: any, context: any) => {
+            const app = context.locals.app;
+            return changeEmailHandler(input, app);
+        },
     },
-  },
 
-  confirmEmailChange: {
-    input: z.object({
-      token: z.string().min(1),
-    }),
-    handler: async (input: any, context: any) => {
-      const app = context.locals.app;
-      return confirmEmailChangeHandler(input, app);
+    confirmEmailChange: {
+        input: z.object({
+            token: z.string().min(1),
+        }),
+        handler: async (input: any, context: any) => {
+            const app = context.locals.app;
+            return confirmEmailChangeHandler(input, app);
+        },
     },
-  },
 } as const;
 
 /**
@@ -112,6 +112,6 @@ export const coreActions = {
  * @since 0.6.0
  */
 export interface ActionDefinition {
-  input: z.ZodType;
-  handler: (input: any, context: any) => Promise<any>;
+    input: z.ZodType;
+    handler: (input: any, context: any) => Promise<any>;
 }

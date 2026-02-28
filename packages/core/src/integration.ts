@@ -110,7 +110,7 @@ export function createIntegration(options: CommunityRssOptions = {}): AstroInteg
     hooks: {
       'astro:config:setup': ({ injectRoute, addMiddleware: registerMiddleware, injectScript, updateConfig, config: astroConfig, logger: setupLogger }) => {
         // Logger may not be available in test environments
-        const logger = setupLogger ?? { info: () => {}, warn: () => {} };
+        const logger = setupLogger ?? { info: () => { }, warn: () => { } };
         // Share resolved config with middleware via globalThis bridge
         setGlobalConfig(config);
 
