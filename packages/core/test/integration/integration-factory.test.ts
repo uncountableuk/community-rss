@@ -79,9 +79,12 @@ describe('Integration Factory', () => {
         config: mockAstroConfig,
       });
 
-      expect(injectedRoutes).toHaveLength(11);
+      // 11 API routes + 8 conditionally-injected page routes = 19
+      expect(injectedRoutes).toHaveLength(19);
 
       const patterns = injectedRoutes.map((r) => r.pattern);
+
+      // API routes (always injected)
       expect(patterns).toContain('/api/v1/health');
       expect(patterns).toContain('/api/v1/articles');
       expect(patterns).toContain('/api/v1/admin/sync');
@@ -93,6 +96,16 @@ describe('Integration Factory', () => {
       expect(patterns).toContain('/api/v1/profile/change-email');
       expect(patterns).toContain('/api/v1/profile/confirm-email-change');
       expect(patterns).toContain('/api/dev/seed');
+
+      // Page routes (injected when no local file exists)
+      expect(patterns).toContain('/');
+      expect(patterns).toContain('/profile');
+      expect(patterns).toContain('/terms');
+      expect(patterns).toContain('/article/[id]');
+      expect(patterns).toContain('/auth/signin');
+      expect(patterns).toContain('/auth/signup');
+      expect(patterns).toContain('/auth/verify');
+      expect(patterns).toContain('/auth/verify-email-change');
 
       // Verify middleware was registered
       expect(mockAddMiddleware).toHaveBeenCalledWith(

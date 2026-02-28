@@ -969,7 +969,23 @@ confirmed Zod singleton deduplication works across the workspace.
   - Protected Areas: added page routes
 - All 480 tests pass.
 
-### Phase 12: Playground Reset & Smoke Test — Not Started
+### Phase 12: Playground Reset & Smoke Test — Completed
+
+- Ran `npm run reset:playground` — 14 files scaffolded (no pages, no
+  component proxies). Database preserved via `--keep-db`.
+- Verified playground `src/pages/` contains only `README.md` signpost.
+- Verified `npx crss eject pages/profile` creates `src/pages/profile.astro`
+  and auto-ejects `src/layouts/BaseLayout.astro` proxy with correct imports.
+- Verified profile page imports from local `../layouts/BaseLayout.astro`
+  (not from core), and BaseLayout proxy re-exports from
+  `@community-rss/core/layouts/BaseLayout.astro`.
+- Fixed `integration-factory.test.ts` — test expected 11 routes (API only)
+  but conditional page injection now adds 8 page routes (total 19).
+  Updated assertion and added page route pattern verification.
+- All 480 tests pass (40 files). Coverage: 87.81% stmts, 88.44% branches,
+  88.33% functions — all above 80% threshold.
+- `reset-playground.sh` required no changes — already calls `init.mjs`
+  which scaffolds the minimal set.
 
 ---
 
