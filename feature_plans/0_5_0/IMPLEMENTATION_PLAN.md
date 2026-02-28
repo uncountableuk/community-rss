@@ -901,6 +901,12 @@ problems.*
     Can be re-enabled with `npx playwright install firefox webkit`.
   - Added `playwright-report/`, `test-results/`, `blob-report/` to `.gitignore`.
   - Final result: 31 passed, 6 skipped, 0 failed (5.8s).
+- **Phase 10 (UI mode fix):** `npm run test:e2e:ui` (`playwright test --ui`)
+  crashed with `ProtocolError: session closed` because it tried to launch a
+  Chromium window in the headless dev container (no display server). Fixed by
+  switching to `--ui-host=0.0.0.0 --ui-port=8077` which serves the Playwright
+  UI as a web app accessible from the host browser. Added port 8077 to
+  `.devcontainer/devcontainer.json` `forwardPorts`.
 
 ### Problems Log
 

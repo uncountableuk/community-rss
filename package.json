@@ -23,7 +23,7 @@
     "test:run": "cd packages/core && npx vitest run",
     "test:coverage": "cd packages/core && npx vitest run --coverage",
     "test:e2e": "npx playwright test",
-    "test:e2e:ui": "npx playwright test --ui",
+    "test:e2e:ui": "npx playwright test --ui-host=0.0.0.0 --ui-port=8077",
     "clean": "rm -rf packages/core/.astro playground/.astro docs/.astro playground/dist docs/dist packages/core/coverage"
   },
   "devDependencies": {
