@@ -2,43 +2,136 @@
  * Community RSS — Theme Overrides
  *
  * Override the framework's default design tokens here.
- * The framework uses a three-tier token hierarchy:
+ * This file is UN-LAYERED so your styles always beat the framework's
+ * @layer-ed defaults — no !important needed.
  *
- *   Tier 1 (Reference): --crss-ref-*   → Raw colour/size values
- *   Tier 2 (System):    --crss-sys-*   → Semantic role mappings
- *   Tier 3 (Component): --crss-comp-*  → Component-specific tokens
+ * The framework uses a four-level customisation hierarchy:
+ *
+ *   Level 1 — Token Overrides (custom properties in :root)
+ *     Tier 1 (Reference):  --crss-ref-*   → Raw colour/size values
+ *     Tier 2 (System):     --crss-sys-*   → Semantic role mappings
+ *     Tier 3 (Component):  --crss-comp-*  → Component-specific tokens
+ *
+ *   Level 2 — Class-Level Overrides (target .crss-* classes directly)
+ *     Write un-layered selectors that override entire rulesets.
+ *
+ *   Level 3 — Eject & Edit (npx crss eject pages/profile)
+ *     Copy a page/component/layout into your project for full control.
+ *
+ *   Level 4 — Custom Actions (add below coreActions in actions/index.ts)
+ *     Extend or replace server-side behaviour.
  *
  * Override at the level that makes sense:
- *   - Change a colour everywhere → override the reference token
- *   - Change the primary brand colour → override the system token
- *   - Change just button styling → override the component token
- *
- * Backward-compatible flat names (--crss-brand-primary, etc.) still work.
+ *   - Change a colour everywhere      → override the reference token
+ *   - Change the primary brand colour  → override the system token
+ *   - Change just button styling       → override the component token
+ *   - Change a component's layout      → use a class-level override
+ *   - Fully customise a page           → eject and edit it
  *
  * See the full token list at:
  *   node_modules/@community-rss/core/src/styles/tokens/
  */
 
+/* ================================================================
+ *  LEVEL 1 — TOKEN OVERRIDES
+ * ================================================================ */
+
 :root {
     /* ─── Reference Overrides (Tier 1: raw values) ──── */
+    /* Uncomment to change the raw palette colours used across all tiers. */
     /* --crss-ref-indigo-600: #4f46e5; */
     /* --crss-ref-violet-600: #7c3aed; */
 
     /* ─── System Overrides (Tier 2: semantic roles) ─── */
-    /* --crss-sys-color-primary: var(--crss-ref-indigo-600); */
-    /* --crss-sys-color-accent: var(--crss-ref-violet-600); */
-    /* --crss-sys-color-surface-0: #ffffff; */
-    /* --crss-sys-font-family: system-ui, -apple-system, sans-serif; */
+    /* Map semantic roles to your brand palette.                        */
+    /* --crss-sys-color-primary: var(--crss-ref-indigo-600);           */
+    /* --crss-sys-color-accent: var(--crss-ref-violet-600);            */
+    /* --crss-sys-color-surface-0: #ffffff;                            */
+    /* --crss-sys-font-family: system-ui, -apple-system, sans-serif;   */
 
     /* ─── Component Overrides (Tier 3: per-component) ─ */
-    /* --crss-comp-btn-bg: var(--crss-sys-color-primary); */
-    /* --crss-comp-card-radius: var(--crss-sys-radius-lg); */
-    /* --crss-comp-tab-active-color: var(--crss-sys-color-accent); */
+    /* Fine-grained control over individual components.                 */
+    /* --crss-comp-btn-bg: var(--crss-sys-color-primary);              */
+    /* --crss-comp-btn-radius: 9999px;                                 */
+    /* --crss-comp-card-radius: var(--crss-sys-radius-lg);             */
+    /* --crss-comp-card-hover-shadow: 0 8px 24px rgba(0, 0, 0, 0.15); */
+    /* --crss-comp-tab-active-color: var(--crss-sys-color-accent);     */
+    /* --crss-comp-modal-max-width: 640px;                             */
+    /* --crss-comp-form-max-width: 480px;                              */
+    /* --crss-comp-header-bg: transparent;                             */
 
     /* ─── Backward-Compatible Aliases ────────────────── */
-    /* --crss-brand-primary: #4f46e5; */
-    /* --crss-brand-accent: #7c3aed; */
-    /* --crss-surface-0: #ffffff; */
-    /* --crss-surface-1: #f3f4f6; */
-    /* --crss-font-family: system-ui, -apple-system, sans-serif; */
+    /* These flat names still work if you prefer them:                  */
+    /* --crss-brand-primary: #4f46e5;                                  */
+    /* --crss-brand-accent: #7c3aed;                                   */
+    /* --crss-surface-0: #ffffff;                                      */
+    /* --crss-surface-1: #f3f4f6;                                      */
+    /* --crss-font-family: system-ui, -apple-system, sans-serif;       */
 }
+
+/* ─── Example: Brand Colour Change ────────────────────────────── */
+/* Uncomment to switch the brand from indigo to teal:               */
+/*
+:root {
+    --crss-sys-color-primary: #0d9488;
+    --crss-sys-color-accent: #14b8a6;
+}
+*/
+
+/* ─── Example: Dark Mode ──────────────────────────────────────── */
+/* Remap system tokens for dark backgrounds. Because this file is   */
+/* un-layered, these overrides beat all framework defaults.          */
+/*
+@media (prefers-color-scheme: dark) {
+    :root {
+        --crss-sys-color-surface-0: #1a1a2e;
+        --crss-sys-color-surface-1: #16213e;
+        --crss-sys-color-surface-2: #0f3460;
+        --crss-sys-color-text-primary: #e2e8f0;
+        --crss-sys-color-text-secondary: #a0aec0;
+        --crss-sys-color-border: #2d3748;
+        --crss-comp-card-hover-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+}
+*/
+
+/* ================================================================
+ *  LEVEL 2 — CLASS-LEVEL OVERRIDES
+ * ================================================================
+ *  Target framework classes directly. Because this file is un-layered,
+ *  these beat the framework's @layer crss-components rules automatically.
+ *  No !important needed.
+ *
+ *  Available classes: .crss-feed-card, .crss-feed-grid, .crss-tab-bar,
+ *  .crss-article-modal, .crss-auth-button, .crss-magic-link-form,
+ *  .crss-signup-form, .crss-consent-modal, .crss-homepage-cta,
+ *  .crss-header, .crss-btn, .crss-btn--primary, .crss-btn--secondary
+ */
+
+/* ─── Example: Sticky Header ────────────────────────────────────── */
+/*
+.crss-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    backdrop-filter: blur(8px);
+}
+*/
+
+/* ─── Example: Card Style Adjustments ───────────────────────────── */
+/*
+.crss-feed-card {
+    border-radius: 0;
+    box-shadow: none;
+    border-bottom: 1px solid var(--crss-sys-color-border);
+}
+*/
+
+/* ─── Example: Pill-Shaped Buttons ──────────────────────────────── */
+/*
+.crss-btn--primary {
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-radius: 9999px;
+}
+*/

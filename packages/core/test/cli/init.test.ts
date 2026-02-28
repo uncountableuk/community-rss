@@ -256,6 +256,10 @@ describe('CLI scaffold', () => {
         'utf-8',
       );
       expect(theme).toContain('--crss-');
+      expect(theme).toContain('LEVEL 1');
+      expect(theme).toContain('LEVEL 2');
+      expect(theme).toContain('.crss-feed-card');
+      expect(theme).toContain('prefers-color-scheme: dark');
     });
   });
 });

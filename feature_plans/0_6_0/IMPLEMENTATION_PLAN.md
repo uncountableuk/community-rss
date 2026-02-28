@@ -868,7 +868,22 @@ confirmed Zod singleton deduplication works across the workspace.
 - Phase 7b (improved copy fallback) was not needed.
 - All 466 tests pass (457 existing + 9 new).
 
-### Phase 8: Theme.css Improvements — Not Started
+### Phase 8: Theme.css Improvements — Completed
+
+- Expanded `src/cli/templates/theme.css` from 47 lines to ~130 lines with
+  comprehensive documentation of the four-level customisation hierarchy:
+  Level 1 (Token Overrides), Level 2 (Class-Level Overrides), Level 3
+  (Eject & Edit), Level 4 (Custom Actions).
+- Added practical "Brand Colour Change" example (indigo → teal).
+- Added "Dark Mode" example using `@media (prefers-color-scheme: dark)`
+  with system + component token remaps.
+- Added Level 2 class-level override section with examples: sticky header,
+  flat card style, pill-shaped buttons — all targeting `.crss-*` classes.
+- Listed all available framework classes in the Level 2 section header.
+- Added more Tier 3 component token examples (modal, form, header).
+- Updated init test to verify `LEVEL 1`, `LEVEL 2`, `.crss-feed-card`,
+  and `prefers-color-scheme: dark` are present in scaffolded theme.css.
+- All 466 tests pass.
 
 ### Phase 9: Testing — Not Started
 
