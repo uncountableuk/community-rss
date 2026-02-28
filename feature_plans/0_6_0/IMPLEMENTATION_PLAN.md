@@ -939,7 +939,35 @@ confirmed Zod singleton deduplication works across the workspace.
 - Updated all 3 signpost README templates to use `npx crss` shorthand.
 - All 480 tests pass.
 
-### Phase 11: `.github` Instruction Updates — Not Started
+### Phase 11: `.github` Instruction Updates — Completed
+
+- Updated `.github/copilot-instructions.md`:
+  - Architecture line now mentions 4-level progressive customisation
+  - Route split updated: page routes conditionally injected, not scaffolded
+  - Added `npx crss eject` to Protected Areas section
+  - Astro Actions section documents `coreActions` spread pattern
+  - CSS section documents `<style is:global>`, `crss-` prefix, no `:global()`
+  - Anti-patterns updated: replaced "inject page routes" with "scaffold page
+    files from init"; added `astro:actions` import and `node_modules` patch 
+- Updated `.github/instructions/implementation.instructions.md`:
+  - Route Architecture: pages conditionally injected, eject command reference
+  - Astro Actions: `coreActions` spread pattern documented
+  - Component Standards: `<style is:global>`, `@layer crss-components`,
+    `crss-` prefix, no `:global()`, token references required
+- Updated `src/cli/templates/.github/copilot-instructions.md`:
+  - Added 4-level progressive customisation overview
+  - Pages section: auto-served, eject for customisation
+  - Actions: `coreActions` spread pattern
+  - Ejected Components section replaces Proxy Wrappers
+  - Protected Areas: added injected page routes
+  - Developer-Owned Files: reflects ejection model
+- Updated `src/cli/templates/.cursor/rules/community-rss.mdc`:
+  - Added Progressive Customisation section
+  - Pages: auto-served, eject for customisation
+  - Actions: `coreActions` spread
+  - Components: eject-based model
+  - Protected Areas: added page routes
+- All 480 tests pass.
 
 ### Phase 12: Playground Reset & Smoke Test — Not Started
 

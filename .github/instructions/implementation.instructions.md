@@ -33,6 +33,10 @@ Before creating a new utility:
 - No hard-coded copy; framework strings default via optional props
 - Use CSS custom properties for all themeable values (no hard-coded colours)
 - Provide sensible visual defaults that consumers can override
+- Use `<style is:global>` with `@layer crss-components { ... }` for styles
+- All CSS class names must use the `crss-` prefix (e.g., `.crss-feed-card`)
+- No `:global()` wrappers — `is:global` makes them redundant
+- All visual values must reference `--crss-comp-*` or `--crss-sys-*` tokens
 
 ## Import Standards
 - **Source code** (`src/`): Use **relative imports** for all cross-directory
@@ -107,8 +111,10 @@ Before creating a new utility:
 ## Route Architecture
 - **API routes** (11) are injected by the integration into `/api/v1/...`
   and `/api/auth/[...all]`
-- **Page routes** (8) are developer-owned, scaffolded via
-  `npx @community-rss/core init` — never injected by the integration
+- **Page routes** (8) are injected conditionally by the integration. If a
+  developer has a local file at the corresponding path, the framework
+  skips injection for that route. Pages are not scaffolded by `init`.
+- To take ownership of a page: `npx crss eject pages/<name>`
 - Pages fetch data client-side from API routes
 - Components accept configurable `messages`/`labels` props for all
   user-facing strings
@@ -116,8 +122,10 @@ Before creating a new utility:
 ## Astro Actions
 - Action handlers are pure functions in `src/actions/` with signature:
   `(input: T, app: AppContext) => Promise<Result>`
-- Consumers register them via `defineAction` + Zod in their scaffolded
-  `src/actions/index.ts`
+- `src/actions/definitions.ts` exports `coreActions` — a map of all
+  framework actions with Zod schemas and handlers
+- Consumers use `coreActions` spread in their `src/actions/index.ts`:
+  `...wrapCoreActions(coreActions)` + `defineAction()` wrapper
 - The core package CANNOT import `astro:actions` — only consumer projects can
 - Action handlers are exported from `@community-rss/core/actions`
 - Client-side code calls `actions.fetchArticles(input)` through Astro's

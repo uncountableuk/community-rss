@@ -16,7 +16,8 @@ architecture, code reuse, and adherence to established patterns.
 - **Licence**: GPL-3.0 — all contributions must be compatible
 - **Local dev**: Docker Compose (FreshRSS, MinIO, Mailpit) + Dev Container
 - **Architecture**: "Integration with overrides" — the package injects API
-  routes and middleware; developers own page routes (scaffolded via CLI)
+  routes, middleware, and page routes; developers customise via 4-level
+  progressive customisation (tokens → classes → eject → actions)
 
 ### Playground Architecture
 - The playground is **ephemeral** — gitignored and rebuilt on demand via
@@ -68,9 +69,10 @@ architecture, code reuse, and adherence to established patterns.
   `env`, and `config` — accessed via `context.locals.app` in route handlers
 - Environment variables are typed in `EnvironmentVariables` interface
   (`src/types/context.ts`) and read from `process.env`
-- **Route split**: API routes (11) are injected by the integration; page
-  routes (8) are scaffolded into the developer's project via
-  `npx @community-rss/core init` and are developer-owned
+- **Route split**: API routes (11) are always injected by the integration;
+  page routes (8) are conditionally injected — if a developer has a local
+  file at the same path, the framework's version is skipped. Use
+  `npx crss eject pages/<name>` to take local ownership of a page.
 - Email templates: Astro Container API (`.astro`) is the primary rendering
   path, loaded via `virtual:crss-email-templates` Vite virtual module.
   Developer `.html` files with `{{variable}}` placeholders supported as a
@@ -99,14 +101,16 @@ architecture, code reuse, and adherence to established patterns.
 - Layer order: `crss-reset, crss-tokens, crss-base, crss-components, crss-utilities`
 - Defined in `src/styles/layers.css`
 - Consumer `theme.css` is un-layered so it always wins
-- Components use `@layer crss-components { ... }` only when declaring styles
-  outside scoped `<style>` blocks
+- Components use `<style is:global>` with `@layer crss-components { ... }`
+- All CSS class names use the `crss-` prefix — no unprefixed selectors
+- No `:global()` wrappers — `is:global` makes them redundant
 
 ### Astro Actions
 - Action handlers are exported from `packages/core/src/actions/` as pure
   functions with signature `(input, app: AppContext) => Promise<Result>`
-- Consumers register them in their scaffolded `src/actions/index.ts` via
-  Astro's `defineAction` with Zod validation
+- `src/actions/definitions.ts` exports `coreActions` — a map of all
+  framework actions with Zod schemas and handler wrappers
+- Consumers use `coreActions` spread pattern in `src/actions/index.ts`
 - The core package CANNOT import `astro:actions` — only consumer projects can
 - Action handlers are also exported from `@community-rss/core/actions`
 
@@ -127,6 +131,7 @@ architecture, code reuse, and adherence to established patterns.
 - Never modify files in `node_modules/@community-rss/core/`
 - Never fork or patch the core package — use scaffolded overrides
 - Never hand-edit injected API routes (`/api/v1/*`, `/api/auth/*`)
+- Never hand-edit injected page routes — use `npx crss eject` to customise
 - Use `theme.css`, `messages` props, and Action handlers for customisation
 
 ### API Design (Post-1.0.0 Critical)
@@ -214,10 +219,12 @@ architecture, code reuse, and adherence to established patterns.
 - ❌ Hand-write SQL migration files — always generate via `drizzle-kit generate`
 - ❌ Implement custom session/auth logic — use better-auth patterns
 - ❌ Write misleading Implementation Notes — describe actual code, not intent
-- ❌ Inject page routes from the package — pages are developer-owned (scaffolded)
+- ❌ Scaffold page files from `init` — pages are served via conditional injection
 - ❌ Hard-code user-facing strings in components — use `messages`/`labels` props
 - ❌ Declare mock variables outside `vi.hoisted()` when used in `vi.mock()` factories
 - ❌ Use hardcoded hex/rgb colour values in components — use `--crss-*` tokens
 - ❌ Put styles outside `@layer` in framework CSS — consumer styles must win
+- ❌ Import `astro:actions` from the core package — only consumer projects can
+- ❌ Modify files in `node_modules/` or patch the core package
 - ❌ Import `astro:actions` from the core package — only consumer projects can
 - ❌ Modify files in `node_modules/` or patch the core package

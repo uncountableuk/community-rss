@@ -5,19 +5,31 @@ globs: src/**/*.astro, src/**/*.ts, src/**/*.css
 
 # Community RSS Framework Rules
 
+## Progressive Customisation (4 Levels)
+1. **Token overrides** in `theme.css` — change colours, spacing, typography
+2. **Class-level CSS** in `theme.css` — target `.crss-*` classes directly
+3. **Eject & Edit** — `npx crss eject pages/profile` for full control
+4. **Custom Actions** — extend server-side behaviour in `src/actions/index.ts`
+
 ## Design Tokens
 - Use `--crss-ref-*` (reference), `--crss-sys-*` (system), `--crss-comp-*` (component) tokens
 - Override tokens in `src/styles/theme.css` — un-layered styles win over framework layers
 - Never use hardcoded hex/rgb colour values — always reference `--crss-*` tokens
+- Class-level overrides (`.crss-feed-card { ... }`) also work in `theme.css`
+
+## Pages
+- Pages are served automatically by the framework — no files needed
+- To customise a page: `npx crss eject pages/profile`
+- Ejected pages auto-eject dependent layouts and components
 
 ## Astro Actions
 - Use `actions.handlerName(input)` from `astro:actions` — never manual `fetch()` to `/api/v1/`
-- Register handlers in `src/actions/index.ts` via `defineAction` with Zod validation
-- Handlers are imported from `@community-rss/core/actions`
+- `src/actions/index.ts` uses `coreActions` spread from `@community-rss/core/actions`
+- Add custom actions below the core actions spread
 
-## Components
-- Accept `messages`/`labels` props for user-facing text customisation
-- Proxy wrappers in `src/components/` import from `@community-rss/core/components/*`
+## Ejected Components
+- Use `npx crss eject components/FeedCard` to create a proxy wrapper
+- Proxy wrappers import from `@community-rss/core/components/*`
 - Wrappers own `<style>`, core owns logic — pass all props via `{...Astro.props}`
 - No business logic, API calls, or data transformation in wrappers
 
@@ -25,21 +37,18 @@ globs: src/**/*.astro, src/**/*.ts, src/**/*.css
 - Edit `.astro` files in `src/email-templates/` — full Astro components
 - `EmailLayout.astro` — shared table-based layout (header, content slot, footer)
 - `SignInEmail.astro`, `WelcomeEmail.astro`, `EmailChangeEmail.astro` are developer-owned
-- All templates import `EmailLayout` from the same directory (`./EmailLayout.astro`)
 - Theme values available via the `theme` prop (colours, typography, spacing, branding)
-- Alternatively, drop in a `.html` file (e.g., `sign-in.html`) with `{{variable}}` placeholders
-- Subject lines override via `email.subjects` config or auto-generated defaults
+- Alternatively, drop in a `.html` file with `{{variable}}` placeholders
 
 ## Protected Areas — DO NOT MODIFY
 - `node_modules/@community-rss/core/` — never fork or patch
 - Injected API routes (`/api/v1/*`, `/api/auth/*`) — never hand-edit
+- Injected page routes — use `npx crss eject` to customise
 - Framework middleware — never override
 
 ## Developer-Owned Files (safe to edit)
-- `src/pages/*.astro` — Page routes
-- `src/styles/theme.css` — Token overrides
-- `src/email-templates/EmailLayout.astro` — Shared email layout
-- `src/email-templates/*Email.astro` — Per-type email templates
-- `src/components/*.astro` — Proxy wrapper components
-- `src/actions/index.ts` — Action registration
+- `src/styles/theme.css` — Token and class-level overrides
+- `src/email-templates/*.astro` — Email templates
+- `src/actions/index.ts` — Action registration + custom actions
 - `astro.config.mjs` — Integration configuration
+- Ejected files in `src/pages/`, `src/components/`, `src/layouts/`
