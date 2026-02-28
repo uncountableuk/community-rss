@@ -1,6 +1,6 @@
 # Community RSS Framework — Full Project Plan
 
-*Revised Roadmap: 0.1.0 → 0.8.0*
+*Revised Roadmap: 0.1.0 → 0.9.0*
 
 > **Master Requirements Document:**
 > [`feature_plans/0_0_1/Community-RSS-Framework-Spec.md`](../0_0_1/Community-RSS-Framework-Spec.md)
@@ -18,6 +18,12 @@
 >   CSS cascade layers, Astro Actions, Server Islands, Container API email
 >   pipeline, Proxy Component pattern, E2E testing with Playwright.
 >   Feature releases pushed back: 0.5.0→0.6.0, 0.6.0→0.7.0, 0.7.0→0.8.0.
+> - **v4 (0.6.0):** Developer Experience & Progressive Customization —
+>   completes CSS overridability, introduces injected pages with
+>   shadow/eject model, wires proxy pattern end-to-end, adds `eject` CLI
+>   command. Feature releases pushed back: 0.6.0→0.7.0, 0.7.0→0.8.0,
+>   0.8.0→0.9.0. See
+>   [`feature_plans/0_6_0/IMPLEMENTATION_PLAN.md`](0_6_0/IMPLEMENTATION_PLAN.md).
 
 ## Tooling Decisions
 
@@ -490,9 +496,95 @@ See [0.5.0 Implementation Plan](0_5_0/IMPLEMENTATION_PLAN.md).
 
 ---
 
-### Release 0.6.0 — Interactions & Engagement
+### Release 0.6.0 — Developer Experience & Progressive Customization (NEW)
 
-> **Previously 0.5.0** — pushed back due to architecture refinement.
+**Goal:** Complete the framework's customization architecture by fixing
+CSS overridability, implementing progressive customization (injected
+pages with shadow/eject), wiring the proxy component pattern end-to-end,
+redesigning the actions scaffold, and shipping an `eject` CLI command.
+
+**Key Milestone:** A freshly-initialized project consists of
+`astro.config.mjs`, `.env`, `theme.css`, signpost READMEs, and
+`src/actions/index.ts`. The framework injects all pages by default.
+CSS class-level overrides work without `!important`. All Tier 3
+component tokens are functional. All existing tests pass. ≥80% coverage.
+
+**Consolidates:**
+[`css-overridability/IMPACT_ASSESSMENT.md`](0_6_0/css-overridability/IMPACT_ASSESSMENT.md),
+[`progressive-customisation/Progressive Customization Strategy.md`](0_6_0/progressive-customisation/Progressive%20Customization%20Strategy.md),
+[`scaffold-shadow-proxies/IMPACT_ASSESSMENT.md`](0_6_0/scaffold-shadow-proxies/IMPACT_ASSESSMENT.md).
+
+See [0.6.0 Implementation Plan](0_6_0/IMPLEMENTATION_PLAN.md).
+
+#### Phase 0: Technical Spikes
+- [ ] Actions spike: test `coreActions` spread with standard `zod` vs `astro:schema`
+- [ ] Document decision for Phase 7
+
+#### Phase 1: CSS Overridability — Global Layered Styles
+- [ ] Migrate all 8 component `<style>` blocks to `<style is:global>` + `@layer crss-components`
+- [ ] Remove FeedCard `:global()` duplicate block
+- [ ] Visual regression: pages render identically
+
+#### Phase 2: Wire Tier 3 Component Tokens
+- [ ] Replace hardcoded/flat-token values with `--crss-comp-*` tokens in all components
+- [ ] Add missing tokens to `components.css` (CTA, header, nav, form max-width)
+- [ ] Token audit: every defined token consumed, no dead tokens
+
+#### Phase 3: Remove Hardcoded Values
+- [ ] Replace all hardcoded colours, opacities, widths, transitions with token references
+
+#### Phase 4: Conditional Page Injection
+- [ ] Move page templates into core `src/pages/` (injectable route entrypoints)
+- [ ] Implement conditional `injectRoute()` with `fs.existsSync()` check
+- [ ] Add `./pages/*` to `package.json` exports
+
+#### Phase 5: CLI Scaffold Redesign (`init`)
+- [ ] Remove page and component entries from `FILE_MAP`
+- [ ] Add signpost README templates for `src/pages/`, `src/components/`, `src/layouts/`
+- [ ] Minimal scaffold: config, theme.css, actions, email templates, READMEs, AI guidance
+
+#### Phase 6: `eject` CLI Command
+- [ ] Create `eject` command: `pages/<name>`, `components/<name>`, `layouts/<name>`, `actions`
+- [ ] Import rewriting for ejected files
+- [ ] Register CLI entry point (`npx crss eject`)
+
+#### Phase 7: Actions Redesign
+- [ ] Spike result → `coreActions` spread (7a) or improved copy (7b)
+- [ ] Update scaffold template with extension point for custom actions
+
+#### Phase 8: Theme.css Improvements
+- [ ] Add Level 4 (class-level) override examples
+- [ ] Improve token override examples
+
+#### Phase 9: Testing for 0.6.0
+- [ ] CSS specificity tests (consumer CSS beats layered framework CSS)
+- [ ] Token wiring tests (automated `components.css` audit)
+- [ ] Conditional injection tests (mock filesystem)
+- [ ] CLI `init` tests (minimal scaffold verification)
+- [ ] CLI `eject` tests (all targets, import rewriting, force flag)
+- [ ] E2E regression: all pages via injection, ejected page works
+- [ ] Verify ≥80% coverage maintained
+
+#### Phase 10: Documentation for 0.6.0
+- [ ] Progressive Customization guide (4-level hierarchy)
+- [ ] Updated CSS Overrides / Styling guide
+- [ ] Updated CLI reference (eject command)
+- [ ] Component tokens reference (complete Tier 3 inventory)
+
+#### Phase 11: `.github` Instruction & AI Guidance Updates
+- [ ] Update `copilot-instructions.md` with progressive customization patterns
+- [ ] Update `instructions/*.instructions.md` files
+- [ ] Update scaffolded AI guidance (Copilot + Cursor) for framework consumers
+
+#### Phase 12: Playground Reset & Smoke Test
+- [ ] Update reset script for new minimal scaffold
+- [ ] Full regression: all pages, eject workflow, CSS overrides, E2E suite
+
+---
+
+### Release 0.7.0 — Interactions & Engagement
+
+> **Previously 0.6.0** — pushed back due to DX & progressive customization release.
 
 **Goal:** Hearts, Stars, Comments with moderation. Tabbed homepage
 with My Feed, Trending, and Starred views.
@@ -545,22 +637,22 @@ with My Feed, Trending, and Starred views.
 - [ ] Enforce `commentTier` in comment submission route
 - [ ] Test: admin config integration tests
 
-#### Phase 6: Documentation for 0.6.0
+#### Phase 6: Documentation for 0.7.0
 - [ ] API reference: interactions, comments, trending endpoints
 - [ ] Guide: Configuring comment permissions
 - [ ] Guide: Customising trending algorithm weights
 - [ ] Guide: Moderation workflow (author email flow)
 
-#### Phase 7: Tests & Coverage for 0.6.0
+#### Phase 7: Tests & Coverage for 0.7.0
 - [ ] Integration tests: heart → trending, comment → email → moderate
 - [ ] E2E tests: interaction flows, comment submission, tab navigation
 - [ ] Verify ≥80% coverage maintained
 
 ---
 
-### Release 0.7.0 — Feed Submission & Author Profiles
+### Release 0.8.0 — Feed Submission & Author Profiles
 
-> **Previously 0.6.0** — pushed back due to architecture refinement.
+> **Previously 0.7.0** — pushed back due to DX & progressive customization release.
 
 **Goal:** Verified authors can submit and manage RSS feeds.
 Author profile pages with follow functionality.
@@ -600,20 +692,20 @@ Author profile pages with follow functionality.
 - [ ] Create `LegalConsent.astro` component
 - [ ] Test: consent tests
 
-#### Phase 6: Documentation for 0.7.0
+#### Phase 6: Documentation for 0.8.0
 - [ ] Guide: Feed submission and verification flow
 - [ ] API reference: feeds, verification, authors, follow endpoints
 
-#### Phase 7: Tests & Coverage for 0.7.0
+#### Phase 7: Tests & Coverage for 0.8.0
 - [ ] Integration tests: submit → verify → publish, delete → cascade
 - [ ] E2E tests: feed submission flow, author profile, follow
 - [ ] Verify ≥80% coverage maintained
 
 ---
 
-### Release 0.8.0 — Media Caching & Production Polish
+### Release 0.9.0 — Media Caching & Production Polish
 
-> **Previously 0.7.0** — pushed back due to architecture refinement.
+> **Previously 0.8.0** — pushed back due to DX & progressive customization release.
 
 **Goal:** Image caching pipeline, theme system, and production
 deployment polish.
@@ -644,13 +736,13 @@ deployment polish.
 - [ ] Meta tags and Open Graph for shared article links
 - [ ] Accessibility audit (WCAG 2.1 AA)
 
-#### Phase 4: Documentation for 0.8.0
+#### Phase 4: Documentation for 0.9.0
 - [ ] Guide: Image caching pipeline
 - [ ] Guide: Advanced theming
 - [ ] Guide: Production hardening (rate limiting, caching, monitoring)
 - [ ] Guide: Backup and restore (SQLite + MinIO data)
 
-#### Phase 5: Tests & Coverage for 0.8.0
+#### Phase 5: Tests & Coverage for 0.9.0
 - [ ] Integration tests: sync → image cache → S3 → rewritten HTML
 - [ ] Performance test: image caching with 50+ images
 - [ ] E2E tests: image rendering, theme switching
@@ -688,20 +780,20 @@ packages/core/test/
    │   ├── email-transports.test.ts
    │   ├── guest.test.ts
    │   ├── admin-feeds.test.ts
-   │   ├── comments.test.ts           # 0.6.0
-   │   ├── feed-submission.test.ts    # 0.7.0
-   │   ├── verification.test.ts       # 0.7.0
-   │   ├── feed-management.test.ts    # 0.7.0
-   │   ├── image-cache.test.ts        # 0.8.0
-   │   └── theme.test.ts             # 0.8.0
+   │   ├── comments.test.ts           # 0.7.0
+   │   ├── feed-submission.test.ts    # 0.8.0
+   │   ├── verification.test.ts       # 0.8.0
+   │   ├── feed-management.test.ts    # 0.8.0
+   │   ├── image-cache.test.ts        # 0.9.0
+   │   └── theme.test.ts             # 0.9.0
    ├── client/
    │   ├── modal.test.ts
    │   ├── infinite-scroll.test.ts
    │   ├── guest.test.ts
-   │   └── interactions.test.ts       # 0.6.0
+   │   └── interactions.test.ts       # 0.7.0
    └── shared/
-       ├── scoring.test.ts            # 0.6.0
-       └── interactions.test.ts       # 0.6.0
+       ├── scoring.test.ts            # 0.7.0
+       └── interactions.test.ts       # 0.7.0
  actions/                           # 0.5.0
    └── index.test.ts
  db/
@@ -712,12 +804,12 @@ packages/core/test/
        ├── feeds.test.ts
        ├── users.test.ts
        ├── pending-signups.test.ts
-       ├── interactions.test.ts       # 0.6.0
-       ├── comments.test.ts           # 0.6.0
-       ├── followers.test.ts          # 0.7.0
-       ├── verified-domains.test.ts   # 0.7.0
-       ├── trending.test.ts           # 0.6.0
-       └── media.test.ts             # 0.8.0
+       ├── interactions.test.ts       # 0.7.0
+       ├── comments.test.ts           # 0.7.0
+       ├── followers.test.ts          # 0.8.0
+       ├── verified-domains.test.ts   # 0.8.0
+       ├── trending.test.ts           # 0.7.0
+       └── media.test.ts             # 0.9.0
  routes/
    └── api/
        ├── auth/catch-all.test.ts
@@ -730,15 +822,15 @@ packages/core/test/
            ├── profile/
            │   ├── change-email.test.ts
            │   └── confirm-email-change.test.ts
-           ├── interactions.test.ts       # 0.6.0
-           ├── comments.test.ts           # 0.6.0
-           ├── feeds.test.ts              # 0.7.0
-           ├── verification.test.ts       # 0.7.0
-           ├── authors.test.ts            # 0.7.0
-           ├── follow.test.ts             # 0.7.0
+           ├── interactions.test.ts       # 0.7.0
+           ├── comments.test.ts           # 0.7.0
+           ├── feeds.test.ts              # 0.8.0
+           ├── verification.test.ts       # 0.8.0
+           ├── authors.test.ts            # 0.8.0
+           ├── follow.test.ts             # 0.8.0
            └── admin/
                ├── feeds.test.ts
-               └── config.test.ts         # 0.6.0
+               └── config.test.ts         # 0.7.0
  cli/
    └── init.test.ts
  middleware.test.ts
@@ -747,11 +839,11 @@ packages/core/test/
     ├── sync-pipeline.integration.test.ts
     ├── auth-flow.integration.test.ts
     ├── guest-migration.integration.test.ts
-    ├── interaction-flow.integration.test.ts       # 0.6.0
-    ├── comment-moderation.integration.test.ts     # 0.6.0
-    ├── feed-lifecycle.integration.test.ts         # 0.7.0
-    ├── image-caching.integration.test.ts          # 0.8.0
-    └── trending-scoring.integration.test.ts       # 0.6.0
+    ├── interaction-flow.integration.test.ts       # 0.7.0
+    ├── comment-moderation.integration.test.ts     # 0.7.0
+    ├── feed-lifecycle.integration.test.ts         # 0.8.0
+    ├── image-caching.integration.test.ts          # 0.9.0
+    └── trending-scoring.integration.test.ts       # 0.7.0
 
 e2e/                                               # 0.5.0
  fixtures/
@@ -863,16 +955,17 @@ docs/src/content/docs/
    └── css-tokens.md                 # Three-tier design token reference
  guides/
    ├── customisation.md              # Pages, components, emails, themes
+   ├── progressive-customisation.md  # 4-level hierarchy, eject workflow (0.6.0)
    ├── feed-sync.md                  # node-cron sync architecture
    ├── authentication.md             # Magic link + guest flow
    ├── email-setup.md               # Templates + Mailpit/Resend
    ├── architecture.md               # Adopted/deferred principles (0.5.0)
    ├── styling.md                    # Token tiers, @layer, overrides (0.5.0)
-   ├── interactions.md               # Hearts, Stars, Comments (0.6.0)
-   ├── moderation.md                 # Comment moderation (0.6.0)
-   ├── feed-submission.md            # Submit + verify feeds (0.7.0)
-   ├── trending.md                   # Trending algorithm config (0.6.0)
-   ├── image-caching.md              # Media pipeline (0.8.0)
+   ├── interactions.md               # Hearts, Stars, Comments (0.7.0)
+   ├── moderation.md                 # Comment moderation (0.7.0)
+   ├── feed-submission.md            # Submit + verify feeds (0.8.0)
+   ├── trending.md                   # Trending algorithm config (0.7.0)
+   ├── image-caching.md              # Media pipeline (0.9.0)
    └── theming.md                    # CSS token override guide
  contributing/
    ├── setup.md                      # Dev environment (Docker)
@@ -895,9 +988,10 @@ docs/src/content/docs/
 | **0.3.0** ✅ | Auth, Users & Admin Feeds | Magic link, guest consent, profiles, admin feeds |
 | **0.4.0** ✅ | Architecture Migration | Docker/VPS, integration-with-overrides, CLI scaffold |
 | **0.5.0** 🔄 | **Architecture Refinement** | Three-tier tokens, @layer, Actions, Server Islands, Container API emails, Playwright E2E |
-| **0.6.0** | Interactions & Engagement | Hearts, Stars, Comments, Trending, Following |
-| **0.7.0** | Feed Submission & Author Profiles | Domain verification, author pages, follow |
-| **0.8.0** | Media Caching & Production Polish | Image pipeline, themes, accessibility, hardening |
+| **0.6.0** | **DX & Progressive Customization** | CSS overridability, injected pages, eject CLI, proxy wiring, actions redesign |
+| **0.7.0** | Interactions & Engagement | Hearts, Stars, Comments, Trending, Following |
+| **0.8.0** | Feed Submission & Author Profiles | Domain verification, author pages, follow |
+| **0.9.0** | Media Caching & Production Polish | Image pipeline, themes, accessibility, hardening |
 
 Each release follows the branching model:
 1. Create `release-X_Y_Z` branch from `main`
@@ -988,15 +1082,32 @@ ensure that authentication state and `Astro.locals.app` (providing `db`,
 code executes. This guarantees that consumer pages can always rely on
 `context.locals.app` being available.
 
-### CLI Scaffold Upgrade Strategy (Future)
+### Progressive Customization Model (0.6.0+)
+
+**Principle:** The framework injects all pages by default via Astro's
+`injectRoute()`. A `fs.existsSync()` check in `astro:config:setup`
+skips injection when a developer has a local file at the expected path.
+Developers "eject" specific files via `npx crss eject <target>` to take
+ownership — the CLI copies the source from the package, rewrites imports
+to point to local proxies, and places it in the developer's `src/`.
+
+**Customization hierarchy:** CSS tokens/classes (Level 1) → Page shadows
+(Level 2) → Component proxies (Level 3) → Custom API/Actions (Level 4).
+Levels 1–3 are safe and documented. Level 4 is the "bespoke" threshold.
+
+**Minimal scaffold:** `npx @community-rss/core init` produces only:
+config files, `theme.css`, `src/actions/index.ts`, email templates,
+signpost READMEs, and AI guidance. No page files — pages are injected.
+
+### CLI Scaffold Upgrade Strategy
 
 **Principle:** As the framework evolves, scaffolded files may need updates.
-Pre-1.0.0, scaffold changes are documented in release notes and developers
-manually apply them. Post-1.0.0, a `diff` / `update` CLI command will be
-implemented (similar to shadcn/ui's approach) to let developers compare
-their local modifications against the latest scaffold version before
-selectively applying changes. This is deferred until breaking changes make
-it necessary.
+The `npx crss eject <target>` command (0.6.0+) gives developers a safe
+mechanism to refresh ejected files while preserving customizations.
+Post-1.0.0, a `diff` / `update` CLI command will be implemented (similar
+to shadcn/ui's approach) to let developers compare their local
+modifications against the latest version before selectively applying
+changes.
 
 ### AppContext Pattern (replacing Cloudflare Env)
 
@@ -1070,7 +1181,12 @@ loses Set-Cookie headers from intermediate responses.
 | Three-tier token migration complexity | Component styles break during refactor | Phase incrementally; visual regression testing via Playwright *(Added 0.5.0)* |
 | Container API nested slot stripping | Email HTML structure corrupted | Use Wrapper component with single default slot; test rendered output *(Added 0.5.0)* |
 | CSS custom properties in email clients | `var()` not supported by most email clients | Resolve tokens to concrete values before `juice` inlining *(Added 0.5.0)* |
-| Scaffold file drift after updates | Developer's scaffolded files diverge from latest templates | Document changes in release notes; plan CLI `diff`/`update` command pre-1.0.0 *(Added 0.5.0)* |
+| Scaffold file drift after updates | Developer's scaffolded files diverge from latest templates | `eject` CLI (0.6.0+) lets developers refresh ejected files; plan CLI `diff`/`update` command pre-1.0.0 *(Updated 0.6.0)* |
+| Injected page route collisions | Astro warns when local file shadows injected route | `fs.existsSync()` check prevents injection when local file exists *(Added 0.6.0)* |
+| `eject` import rewriting edge cases | Ejected file has broken imports if regex misses a pattern | Comprehensive regex tests; manual fixup documented for edge cases *(Added 0.6.0)* |
+| Pre-0.6.0 projects confused by new model | Developer uncertainty on upgrade path | Clear migration guide; existing scaffolded files shadow injected routes automatically (no breakage) *(Added 0.6.0)* |
+| `coreActions` spread `astro:schema` compat | Actions redesign may be blocked | Early spike; improved-copy fallback ready *(Added 0.6.0)* |
+| Global component styles class name collision | Style bleed between components | BEM naming with `crss-` prefix; same as Bootstrap/Tailwind *(Added 0.6.0)* |
 
 ---
 
