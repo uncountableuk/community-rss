@@ -989,9 +989,175 @@ confirmed Zod singleton deduplication works across the workspace.
 
 ---
 
+### Post-Phase 12: Acceptance Testing Bug Fixes
+
+Five bugs discovered during hands-on acceptance testing of the playground.
+All fixed and committed on the `0_6_0` branch. Test count rose from 480
+to 481 (new integration-factory test for the Vite plugin).
+
+#### Bug Fix 1 — Page Style Scoping Blocks Theme Overrides (ea6a887)
+
+**Problem:** All 8 page files (`src/pages/*.astro`) used Astro's scoped
+`<style>` blocks. Scoped styles inject `data-astro-cid-*` attributes
+that create higher specificity than un-layered consumer class selectors
+in `theme.css`. A consumer rule like `.crss-signin-title { background:
+red; }` was silently defeated by the scoped equivalent.
+
+**Root Cause:** Phases 1–3 converted component styles to
+`<style is:global>` + `@layer crss-components` but missed page files.
+Pages also contain component-level styles (e.g., `.crss-homepage`,
+`.crss-signin-title`) that must participate in the cascade layer system.
+
+**Fix:** Converted all 8 source page files and all 8 CLI template page
+files (16 files total) from `<style>` to `<style is:global>` with
+`@layer crss-components { ... }` wrapping all rulesets.
+
+**Files Modified:**
+- `src/pages/index.astro`, `src/pages/profile.astro`,
+  `src/pages/terms.astro`, `src/pages/article/[id].astro`
+- `src/pages/auth/signin.astro`, `src/pages/auth/signup.astro`,
+  `src/pages/auth/verify.astro`, `src/pages/auth/verify-email-change.astro`
+- `src/cli/templates/pages/` — same 8 files (CLI eject copies)
+
+#### Bug Fix 2 — Consumer `theme.css` Never Loaded (c4f9d6e)
+
+**Problem:** The integration injected framework CSS (layers, tokens) via
+`injectScript('page-ssr', ...)` but never loaded the consumer's
+`src/styles/theme.css`. Consumer token overrides and class-level
+overrides had no effect.
+
+**Root Cause:** The integration's `astro:config:setup` hook was missing
+a step to detect and inject the consumer's theme file.
+
+**Fix:** Added `existsSync()` check for `<astroRoot>/src/styles/theme.css`
+in `integration.ts`. When present, appends an `injectScript('page-ssr',
+'import "…/src/styles/theme.css";')` call **after** all framework CSS
+injections. This ensures theme.css loads last (un-layered) and wins the
+cascade.
+
+**Files Modified:** `src/integration.ts`
+
+#### Bug Fix 3 — Injected Pages Bypass Consumer Proxy Files (aa1fc1d)
+
+**Problem:** Ejecting `layouts/BaseLayout` created a proxy file in the
+consumer's `src/layouts/BaseLayout.astro`, but the framework's injected
+pages (living inside `packages/core/src/pages/`) import
+`../layouts/BaseLayout.astro` using package-internal relative paths.
+Vite resolved these to the core package's own layout — the consumer's
+proxy was never used.
+
+**Root Cause:** AD-3 (page templates use local proxy imports) assumed
+that Astro/Vite would resolve relative paths through the consumer's
+file tree. In practice, injected pages execute from within
+`node_modules/@community-rss/core/src/pages/`, so relative `../layouts/`
+resolves back into the core package.
+
+**Fix:** Added a `crss-consumer-overrides` Vite plugin to `integration.ts`
+with a `resolveId` hook. When an import:
+1. Originates from core's `src/pages/` directory
+2. Targets a `.astro` file in `layouts/` or `components/`
+3. And the consumer has a local file at the same name
+
+…the plugin redirects to the consumer's local file. The consumer proxy
+imports from `@community-rss/core/layouts/*` (bare package specifier),
+so no circular resolution occurs.
+
+**Files Modified:** `src/integration.ts`
+**Tests Added:** `test/integration/integration-factory.test.ts` — new test
+verifying plugin registration, `resolveId` behaviour for matching and
+non-matching imports.
+
+#### Bug Fix 4 — Vite Plugin Needs `enforce: 'pre'` (5eb4b74)
+
+**Problem:** Even with the `crss-consumer-overrides` plugin registered,
+the consumer's ejected `BaseLayout` proxy was still not being used.
+
+**Root Cause:** Vite's built-in filesystem resolver handles relative
+`.astro` imports **before** normal plugin `resolveId` hooks are called.
+The plugin's `resolveId` was never invoked because Vite resolved the
+import internally first.
+
+**Debugging Approach:** `console.log` output was swallowed by the dev
+server process. Switched to `appendFileSync('/tmp/crss-resolve.log', ...)`
+for file-based debug logging. This confirmed `resolveId` was being called
+(and working) once `enforce: 'pre'` was added.
+
+**Fix:** Added `enforce: 'pre' as const` to the plugin object. This
+ensures the plugin runs before Vite's default resolution phase, matching
+the pattern used by Astro's own `astro:build` plugin.
+
+**Files Modified:** `src/integration.ts`
+**Tests Updated:** `test/integration/integration-factory.test.ts` — added
+`expect(plugin.enforce).toBe('pre')` assertion.
+
+#### Bug Fix 5 — Layout Proxy Slot Forwarding Hides Default Header (eba1861)
+
+**Problem:** After ejecting `layouts/BaseLayout`, the default header
+(`<header class="crss-header">` with nav and AuthButton) disappeared.
+The rendered HTML jumped straight from `<body>` to `<main>`.
+
+**Root Cause:** The generated proxy template forwarded all named slots:
+```astro
+<slot name="header" slot="header" />
+<slot name="footer" slot="footer" />
+```
+Astro's `Astro.slots.has('header')` detects a forwarded named slot as
+"provided" — even when no page fills it with content. The core layout's
+conditional check `hasHeaderSlot ? <slot name="header" /> : <DefaultHeader />`
+evaluated to `true`, rendering an empty slot instead of the default nav.
+
+**Fix:** Removed header and footer slot forwarding from the proxy
+template. The proxy now only forwards the default slot and the `head`
+slot. The core layout's default header and footer render by default.
+Developers who want a custom header add explicit `slot="header"` content
+in their proxy.
+
+**Files Modified:** `src/cli/eject.mjs` (`generateLayoutProxy` function)
+**Tests Updated:** `test/cli/eject.test.ts` — changed assertions from
+`toContain('slot name="header"')` to `not.toContain(...)`.
+
+---
+
+### Test Summary (Post-Bug-Fixes)
+
+- **481 tests** passing across 40 test files
+- Coverage: ~87.8% statements, ~88.4% branches, ~88.3% functions
+- All thresholds (≥80%) met
+
+### Acceptance Testing Status
+
+**In Progress.** Manual testing against the playground revealed all five
+bugs above. Further acceptance testing is planned to verify:
+
+- [ ] Token overrides via `theme.css` (Tier 1, 2, 3) render correctly
+- [ ] Class-level overrides in `theme.css` beat framework styles
+- [ ] Ejected pages use consumer proxy layouts/components
+- [ ] Ejected components render correctly as thin wrappers
+- [ ] E2E test suite passes against running playground
+- [ ] All pages render without console errors in browser
+
+### Known Issues
+
+- Consumer's `playground/src/styles/theme.css` contains a typo:
+  `bbackground: red;` instead of `background: red;`. This is in the
+  ephemeral playground only (not in framework code).
+
+---
+
 ### Problems & Constraints
 
-*None yet. Will be populated during implementation.*
+- **Astro slot detection is declaration-based, not content-based:**
+  Forwarding a named slot via `<slot name="x" slot="x" />` in a proxy
+  causes `Astro.slots.has('x')` to return `true` in the wrapped
+  component, even when no page provides content for that slot. This is
+  a fundamental Astro behaviour that required changing the proxy pattern
+  to avoid forwarding header/footer slots by default (Bug Fix 5).
+
+- **Vite plugin ordering requires `enforce: 'pre'` for import redirection:**
+  Vite's built-in filesystem resolver runs before normal plugin
+  `resolveId` hooks. Any plugin that needs to intercept relative `.astro`
+  imports must use `enforce: 'pre'` to run in the pre-resolution phase.
+  This matches the pattern used by Astro's own internal plugins.
 
 ---
 
