@@ -1,0 +1,55 @@
+---
+/**
+ * Sign-up page for new user registration.
+ *
+ * Collects display name and Terms of Service consent, then sends
+ * a welcome magic link for email verification.
+ *
+ * Customise this page to fit your community's design.
+ *
+ * @route /auth/signup
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SignUpForm from '../../components/SignUpForm.astro';
+---
+
+<BaseLayout title="Sign Up" description="Create your Community RSS account">
+  <main class="crss-signup-page">
+    <div class="crss-signup-container">
+      <h1 class="crss-signup-title">Create Account</h1>
+      <p class="crss-signup-subtitle">
+        Join the community — set up your profile and start engaging.
+      </p>
+      <SignUpForm />
+    </div>
+  </main>
+</BaseLayout>
+
+<style>
+  .crss-signup-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: var(--crss-space-xl);
+  }
+
+  .crss-signup-container {
+    max-width: 440px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .crss-signup-title {
+    font-size: var(--crss-font-size-3xl);
+    font-weight: 700;
+    color: var(--crss-text-primary);
+    margin-bottom: var(--crss-space-sm);
+  }
+
+  .crss-signup-subtitle {
+    font-size: var(--crss-font-size-base);
+    color: var(--crss-text-secondary);
+    margin-bottom: var(--crss-space-xl);
+  }
+</style>

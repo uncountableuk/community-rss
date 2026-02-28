@@ -1,7 +1,7 @@
 import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { AstroIntegration } from 'astro';
+import type { AstroIntegration, AstroConfig } from 'astro';
 import type { CommunityRssOptions } from './types/options';
 import { resolveOptions } from './types/options';
 import { startScheduler, stopScheduler } from './utils/build/scheduler';
@@ -80,11 +80,12 @@ function generateEmailTemplateModule(devDir: string, pkgDir: string): string {
  *
  * This is the main entry point for consumers. It accepts an optional
  * configuration object and returns an Astro integration that injects
- * API routes, middleware, and scheduler lifecycle hooks into the
- * consumer's project.
+ * API routes, page routes, middleware, and scheduler lifecycle hooks
+ * into the consumer's project.
  *
- * Page routes are no longer injected — use `npx @community-rss/core init`
- * to scaffold pages into your project.
+ * Page routes are conditionally injected — if a developer has a local
+ * file at the same path (e.g., `src/pages/profile.astro`), the
+ * injected route is skipped so the developer's version takes priority.
  *
  * @param options - Framework configuration
  * @returns Astro integration instance
@@ -107,7 +108,9 @@ export function createIntegration(options: CommunityRssOptions = {}): AstroInteg
   return {
     name: 'community-rss',
     hooks: {
-      'astro:config:setup': ({ injectRoute, addMiddleware: registerMiddleware, injectScript, updateConfig, config: astroConfig }) => {
+      'astro:config:setup': ({ injectRoute, addMiddleware: registerMiddleware, injectScript, updateConfig, config: astroConfig, logger: setupLogger }) => {
+        // Logger may not be available in test environments
+        const logger = setupLogger ?? { info: () => {}, warn: () => {} };
         // Share resolved config with middleware via globalThis bridge
         setGlobalConfig(config);
 
@@ -224,6 +227,33 @@ export function createIntegration(options: CommunityRssOptions = {}): AstroInteg
           pattern: '/api/dev/seed',
           entrypoint: new URL('./routes/api/dev/seed.ts', import.meta.url).pathname,
         });
+
+        // --- Page Routes (conditionally injected) ---
+        // Pages are injected by default. If a developer has a local file
+        // at the corresponding path, the injection is skipped so the
+        // developer's version takes priority.
+        const pageRoutes = [
+          { pattern: '/', entrypoint: 'pages/index.astro', localPath: 'src/pages/index.astro' },
+          { pattern: '/profile', entrypoint: 'pages/profile.astro', localPath: 'src/pages/profile.astro' },
+          { pattern: '/terms', entrypoint: 'pages/terms.astro', localPath: 'src/pages/terms.astro' },
+          { pattern: '/article/[id]', entrypoint: 'pages/article/[id].astro', localPath: 'src/pages/article/[id].astro' },
+          { pattern: '/auth/signin', entrypoint: 'pages/auth/signin.astro', localPath: 'src/pages/auth/signin.astro' },
+          { pattern: '/auth/signup', entrypoint: 'pages/auth/signup.astro', localPath: 'src/pages/auth/signup.astro' },
+          { pattern: '/auth/verify', entrypoint: 'pages/auth/verify.astro', localPath: 'src/pages/auth/verify.astro' },
+          { pattern: '/auth/verify-email-change', entrypoint: 'pages/auth/verify-email-change.astro', localPath: 'src/pages/auth/verify-email-change.astro' },
+        ];
+
+        for (const route of pageRoutes) {
+          const userFile = new URL(`./${route.localPath}`, astroConfig.root);
+          if (!existsSync(userFile)) {
+            injectRoute({
+              pattern: route.pattern,
+              entrypoint: new URL(`./${route.entrypoint}`, import.meta.url).pathname,
+            });
+          } else {
+            logger.info(`  Skipping injected page ${route.pattern} — developer override detected`);
+          }
+        }
       },
 
       'astro:config:done': ({ config: astroConfig, logger }) => {

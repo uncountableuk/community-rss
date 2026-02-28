@@ -13,6 +13,7 @@
     "./actions": "./src/actions/index.ts",
     "./layouts/*": "./src/layouts/*",
     "./components/*": "./src/components/*",
+    "./pages/*": "./src/pages/*",
     "./styles/*": "./src/styles/*",
     "./templates/email/*": "./src/templates/email/*"
   },

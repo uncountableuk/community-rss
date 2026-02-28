@@ -1,0 +1,235 @@
+---
+/**
+ * Article detail page — renders a single article.
+ *
+ * Loads article data client-side from the API for display.
+ * The URL parameter [id] identifies the article.
+ *
+ * Customise this page to fit your community's design.
+ *
+ * @route /article/[id]
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const { id } = Astro.params;
+---
+
+<BaseLayout title="Article" description="Article detail">
+  <main class="crss-article-page">
+    <div id="article-loading" class="crss-article-page__loading">
+      <p>Loading article...</p>
+    </div>
+
+    <div id="article-error" class="crss-article-page__error" style="display: none;">
+      <p id="article-error-message">Article not found.</p>
+      <a href="/">← Back to feed</a>
+    </div>
+
+    <article id="article-content" class="crss-article" style="display: none;">
+      <header class="crss-article__header">
+        <a href="/" class="crss-article__back">← Back to feed</a>
+        <div class="crss-article__meta">
+          <time id="article-date"></time>
+          <span id="article-author"></span>
+        </div>
+        <h1 id="article-title" class="crss-article__title"></h1>
+      </header>
+
+      <div id="article-body" class="crss-article__content"></div>
+
+      <footer class="crss-article__footer">
+        <a
+          id="article-original-link"
+          class="crss-article__original-link"
+          target="_blank"
+          rel="noopener noreferrer"
+          style="display: none;"
+        >
+          Read original article →
+        </a>
+      </footer>
+    </article>
+  </main>
+</BaseLayout>
+
+<style>
+  .crss-article-page {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: var(--crss-space-xl) var(--crss-space-md);
+  }
+
+  .crss-article-page__loading {
+    text-align: center;
+    padding: var(--crss-space-3xl);
+    color: var(--crss-text-muted);
+  }
+
+  .crss-article-page__error {
+    text-align: center;
+    padding: var(--crss-space-3xl);
+    color: var(--crss-text-muted);
+  }
+
+  .crss-article-page__error a {
+    color: var(--crss-brand-primary);
+    text-decoration: none;
+    margin-top: var(--crss-space-md);
+    display: inline-block;
+  }
+
+  .crss-article__back {
+    color: var(--crss-brand-primary);
+    text-decoration: none;
+    font-size: var(--crss-font-size-sm);
+    display: inline-block;
+    margin-bottom: var(--crss-space-lg);
+  }
+
+  .crss-article__back:hover {
+    text-decoration: underline;
+  }
+
+  .crss-article__meta {
+    display: flex;
+    gap: var(--crss-space-sm);
+    font-size: var(--crss-font-size-sm);
+    color: var(--crss-text-muted);
+    margin-bottom: var(--crss-space-md);
+  }
+
+  .crss-article__title {
+    font-size: var(--crss-font-size-3xl);
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: var(--crss-space-xl);
+    color: var(--crss-text-primary);
+  }
+
+  .crss-article__content {
+    line-height: 1.7;
+    font-size: var(--crss-font-size-base);
+    color: var(--crss-text-secondary);
+  }
+
+  .crss-article__content :global(img) {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--crss-radius-sm);
+    margin: var(--crss-space-md) 0;
+  }
+
+  .crss-article__content :global(a) {
+    color: var(--crss-brand-primary);
+  }
+
+  .crss-article__content :global(pre) {
+    background: var(--crss-surface-1);
+    padding: var(--crss-space-md);
+    border-radius: var(--crss-radius-sm);
+    overflow-x: auto;
+    font-family: var(--crss-font-family-mono);
+    font-size: var(--crss-font-size-sm);
+  }
+
+  .crss-article__content :global(blockquote) {
+    border-left: 3px solid var(--crss-brand-primary);
+    padding-left: var(--crss-space-md);
+    margin: var(--crss-space-md) 0;
+    color: var(--crss-text-muted);
+    font-style: italic;
+  }
+
+  .crss-article__footer {
+    margin-top: var(--crss-space-xl);
+    padding-top: var(--crss-space-md);
+    border-top: 1px solid var(--crss-surface-2);
+  }
+
+  .crss-article__original-link {
+    color: var(--crss-brand-primary);
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .crss-article__original-link:hover {
+    text-decoration: underline;
+  }
+</style>
+
+<script define:vars={{ id }}>
+  async function loadArticle() {
+    const loadingEl = document.getElementById('article-loading');
+    const errorEl = document.getElementById('article-error');
+    const contentEl = document.getElementById('article-content');
+
+    if (!id) {
+      if (loadingEl) loadingEl.style.display = 'none';
+      if (errorEl) errorEl.style.display = 'block';
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/v1/articles?id=${encodeURIComponent(id)}`);
+
+      if (!response.ok) {
+        if (loadingEl) loadingEl.style.display = 'none';
+        if (errorEl) errorEl.style.display = 'block';
+        return;
+      }
+
+      const article = await response.json();
+
+      if (!article || !article.data) {
+        if (loadingEl) loadingEl.style.display = 'none';
+        if (errorEl) errorEl.style.display = 'block';
+        return;
+      }
+
+      const data = Array.isArray(article.data) ? article.data[0] : article.data;
+      if (!data) {
+        if (loadingEl) loadingEl.style.display = 'none';
+        if (errorEl) errorEl.style.display = 'block';
+        return;
+      }
+
+      // Populate article content
+      const titleEl = document.getElementById('article-title');
+      const dateEl = document.getElementById('article-date');
+      const authorEl = document.getElementById('article-author');
+      const bodyEl = document.getElementById('article-body');
+      const linkEl = document.getElementById('article-original-link');
+
+      if (titleEl) titleEl.textContent = data.title;
+      if (dateEl && data.publishedAt) {
+        dateEl.textContent = new Date(data.publishedAt).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        });
+      }
+      if (authorEl) authorEl.textContent = `by ${data.authorName || 'Unknown'}`;
+      if (bodyEl) bodyEl.innerHTML = data.content || '';
+      if (linkEl && data.originalLink) {
+        linkEl.href = data.originalLink;
+        linkEl.style.display = 'inline';
+      }
+
+      // Update page title
+      document.title = `${data.title} — Community RSS`;
+
+      if (loadingEl) loadingEl.style.display = 'none';
+      if (contentEl) contentEl.style.display = 'block';
+    } catch (e) {
+      console.error('[community-rss] Failed to load article:', e);
+      if (loadingEl) loadingEl.style.display = 'none';
+      if (errorEl) {
+        document.getElementById('article-error-message').textContent =
+          'Failed to load article. Please try again later.';
+        errorEl.style.display = 'block';
+      }
+    }
+  }
+
+  loadArticle();
+</script>

@@ -779,7 +779,27 @@ implementation as phases are completed.*
   component `<style>` block.
 - All 442 tests pass.
 
-### Phase 4: Conditional Page Injection — Not Started
+### Phase 4: Conditional Page Injection — Completed
+
+- Copied all 8 page templates from `src/cli/templates/pages/` to
+  `src/pages/` in the core package (index, profile, terms,
+  article/[id], auth/signin, auth/signup, auth/verify,
+  auth/verify-email-change).
+- Rewrote all imports from `@community-rss/core/layouts/...` and
+  `@community-rss/core/components/...` to relative imports
+  (`../layouts/...`, `../../layouts/...` etc.) so pages work as
+  package-internal entrypoints.
+- Added `"./pages/*": "./src/pages/*"` to `package.json` exports map.
+- Added conditional `injectRoute()` to `integration.ts`: for each of
+  8 page routes, checks `existsSync(new URL('./' + localPath, astroConfig.root))`
+  — if no local file exists, injects the framework page; if a developer
+  file exists, skips injection and logs a message.
+- Used `new URL()` exclusively for path resolution (no `path.join()` or
+  string concatenation) to ensure Windows compatibility.
+- Added `AstroConfig` to the import from `'astro'`.
+- Logger fallback: `setupLogger ?? { info: () => {}, warn: () => {} }`
+  for test environments where logger isn't provided.
+- All 442 tests pass.
 
 ### Phase 5: CLI Scaffold Redesign — Not Started
 
