@@ -30,12 +30,14 @@ behaviour is unchanged.
 |-----------|-----------------|--------------|
 | Three-Tier Design Token System | Split flat `--crss-*` tokens into Reference → System → Component hierarchy | §5.8 |
 | CSS Cascade Layers | Add `@layer` declarations for deterministic cascade ordering | §5.9 |
+| Automatic Token Injection | Use `injectScript('page-ssr')` to inject token CSS into every page automatically | §5.8, §5.9 |
 | Astro Actions | Replace raw `fetch()` with type-safe RPC for existing endpoints | §5.10 |
 | Server Islands | Use `server:defer` for auth-dependent UI (`AuthButton`, homepage CTA) | §5.11 |
-| Container API Email Pipeline | Render `.astro` email components via Container API + `juice` inlining | §5.12 |
-| Proxy Component Architecture | Refactor components for clean logic/presentation separation | §5.13 |
+| Container API Email Pipeline | Render `.astro` email components via Container API + `juice` inlining; token-to-value resolution for email clients | §5.12 |
+| Proxy Component Architecture | Refactor components for clean logic/presentation separation; thin scaffold wrappers | §5.13 |
 | E2E Testing (Playwright) | Full reference app testing: every page and user flow | §5.14 |
-| AI-Native Architecture | Two-tier AI guidance (framework-developer + framework-user) | §7.1 |
+| AI-Native Architecture | Dual-target AI guidance: `.github/` (Copilot) + `.cursor/rules/` (Cursor) at both framework-developer and framework-user levels | §7.1 |
+| Middleware Ordering | Integration middleware runs with `order: 'pre'` to populate `Astro.locals` before user code | §5.6 |
 | Decoupled Client Logic | Already implemented in `utils/client/`; audit and document | §8.1 |
 
 ### Deferred (Documented, Not Implemented)
@@ -43,6 +45,7 @@ behaviour is unchanged.
 | Guideline | Reason | Target |
 |-----------|--------|--------|
 | Codemods (AST migrations) | No breaking changes yet; premature pre-1.0.0 | 1.0.0+ |
+| CLI `diff` / `update` command | Scaffold files rarely change; implement when breaking changes arrive | Pre-1.0.0 |
 | Full Inversion of Control | Config-based extension sufficient; pluggable interfaces premature | 1.0.0+ |
 | RSSProvider Interface | FreshRSS is sole ingestion engine; abstraction premature | 1.0.0+ |
 | Dependency Injection | Swappable DB/auth is a future concern | 1.0.0+ |
@@ -90,7 +93,8 @@ behaviour is unchanged.
 #### AI Guidance (Scaffolded for Consumers)
 | File | Purpose |
 |------|---------|
-| `packages/core/src/cli/templates/.github/copilot-instructions.md` | Framework-user AI guidance (scaffolded into developer's project) |
+| `packages/core/src/cli/templates/.github/copilot-instructions.md` | Framework-user AI guidance for GitHub Copilot (VS Code) |
+| `packages/core/src/cli/templates/.cursor/rules/community-rss.mdc` | Framework-user AI guidance for Cursor IDE (`.mdc` format with file-pattern scoping) |
 
 #### E2E Tests
 | File | Purpose |
@@ -148,12 +152,12 @@ behaviour is unchanged.
 #### Integration
 | File | Change |
 |------|--------|
-| `src/integration.ts` | Enable `experimental.actions` (if needed); register Action exports |
+| `src/integration.ts` | Use `injectScript('page-ssr')` for automatic token/layer CSS injection; register Action exports; set middleware `order: 'pre'` |
 
 #### CLI Scaffold
 | File | Change |
 |------|--------|
-| `src/cli/init.ts` | Add `actions/index.ts` to scaffold file map; add `.github/copilot-instructions.md` |
+| `src/cli/init.ts` | Add `actions/index.ts` to scaffold file map; add `.github/copilot-instructions.md` and `.cursor/rules/community-rss.mdc` |
 | `src/cli/templates/pages/*.astro` | Update scaffold pages to use Actions instead of raw fetch |
 | `src/cli/templates/theme.css` | Update with three-tier token override examples |
 | `src/cli/templates/email-templates/*.html` | Keep as developer-level HTML fallbacks |
@@ -248,6 +252,12 @@ BaseLayout, then migrate components one by one with visual checks.
 - [ ] Remove `packages/core/src/styles/tokens.css`
 - [ ] Add backward-compatibility aliases in `system.css` for any old token
       names used by deployed consumer `theme.css` files
+- [ ] Update `src/integration.ts` to use `injectScript('page-ssr')` for
+      automatic token CSS injection — developers no longer need to manually
+      import token files in every layout
+- [ ] Update `src/integration.ts` to set middleware `order: 'pre'` so
+      authentication and `Astro.locals.app` are populated before any
+      user-defined middleware or page code runs
 - [ ] Update `src/cli/templates/theme.css` with three-tier override examples
 - [ ] Verify playground renders identically (visual check)
 
@@ -275,6 +285,9 @@ cascade ordering.
 - [ ] Add utility classes in `@layer crss-utilities { ... }` (existing
       utility styles extracted from components)
 - [ ] Update `BaseLayout.astro` to import `layers.css` first, then token files
+- [ ] Ensure `injectScript('page-ssr')` injects the layer declaration and
+      token CSS in the correct order (layers.css first) so all pages
+      receive the design system automatically
 - [ ] Verify consumer `theme.css` (loaded after framework layers) overrides
       correctly without `!important`
 - [ ] Document layer usage in `.github/instructions/implementation.instructions.md`
@@ -369,11 +382,25 @@ compatibility with existing HTML templates.
 - Use design tokens for consistent branding
 - Are rendered to static HTML via `AstroContainer.create()` + `renderToString()`
 - Are post-processed with `juice` to inline CSS for email clients
+- **Must use `@{{ }}` escape syntax** for any Handlebars-style placeholders
+  in `.astro` email components — this prevents the Astro compiler from
+  evaluating them as JavaScript expressions during rendering
+- **Token-to-value resolution:** Email styles must resolve CSS custom
+  properties (`var(--crss-*)`) to concrete values before inlining, since
+  most email clients do not support CSS custom properties. The build step
+  must parse the token CSS and replace `var()` references with resolved
+  values before `juice` inlines them.
+- **Nested slots caveat:** The Container API can strip nested slots during
+  `renderToString()`. Use a Wrapper component pattern (e.g.,
+  `EmailLayout.astro` wrapping content via a single default slot) to
+  preserve the full HTML structure.
 
 - [ ] Install `juice` as a dependency in `packages/core`
 - [ ] Create `packages/core/src/templates/email/EmailLayout.astro`
   - Table-based layout for email client compatibility
-  - Inline styles using system design tokens (resolved to values, not `var()`)
+  - Inline styles using system design tokens (resolved to concrete values,
+    not `var()` — email clients do not support CSS custom properties)
+  - Use a single default slot to avoid nested slot stripping by Container API
   - Includes common email elements: header, footer, branding
 - [ ] Create `packages/core/src/templates/email/SignInEmail.astro`
   - Props: `{ url: string, siteName: string }`
@@ -389,7 +416,11 @@ compatibility with existing HTML templates.
   - Renders the email change verification email
 - [ ] Update `src/utils/build/email-renderer.ts`
   - Add `renderAstroEmail()` function using Container API
-  - Post-process with `juice` for CSS inlining
+  - Add `resolveTokenValues()` utility that parses the token CSS files and
+    builds a map of `--crss-*` → concrete values for email style resolution
+  - Post-process with `juice` for CSS inlining (after token resolution)
+  - Use `@{{ }}` escape syntax in `.astro` templates for any placeholder
+    variables that should not be evaluated by the Astro compiler
   - Updated resolution chain:
     1. Developer `.astro` template (if exists in emailTemplateDir)
     2. Package `.astro` template (default)
@@ -400,6 +431,8 @@ compatibility with existing HTML templates.
 - [ ] Test: `test/utils/build/email-renderer.test.ts`
   - Test Container API rendering produces valid HTML
   - Test `juice` inlines styles correctly
+  - Test `resolveTokenValues()` converts `var()` to concrete values
+  - Test `@{{ }}` placeholders survive Astro compilation
   - Test resolution chain priority
   - Test backward-compatible HTML template rendering still works
 - [ ] Verify: all 3 email types render correctly in Mailpit
@@ -418,6 +451,14 @@ customised their HTML templates.
 presentation. No components should contain business logic — all logic
 must live in `utils/`.
 
+**Proxy Pattern Principle:** Scaffolded components in the developer's
+`src/components/` directory must remain **thin wrappers**. They import
+the functional core component from the npm package (e.g.,
+`<CoreFeedCard {...Astro.props} />`), allowing the developer to own the
+`<style>` block and surrounding HTML while the package owns all API
+interaction logic. This ensures the developer's styling survives package
+updates while logic improvements flow through automatically.
+
 - [ ] Audit `FeedCard.astro` — verify no inline data transformation
 - [ ] Audit `FeedGrid.astro` — verify no inline data transformation
 - [ ] Audit `TabBar.astro` — verify no inline logic
@@ -432,6 +473,8 @@ must live in `utils/`.
       facing strings
 - [ ] Update scaffold wrapper templates to demonstrate the Proxy pattern:
       import core component, add custom `<style>`, pass messages
+- [ ] Ensure scaffold wrappers are thin: no business logic, no API calls,
+      no data transformation — only styling, slot content, and props
 - [ ] Document the Proxy Component pattern in `.github/instructions/`
 
 ---
@@ -524,8 +567,22 @@ in the reference application.
 ### Phase 8: AI Guidance Updates
 
 **Goal:** Update all `.github` instruction files to reflect the new
-architectural patterns, and create a framework-user guidance file that's
-scaffolded into consumer projects.
+architectural patterns. Create framework-user guidance files scaffolded
+into consumer projects, targeting **both** GitHub Copilot (`.github/`) and
+Cursor IDE (`.cursor/rules/` with `.mdc` files).
+
+**Dual-Target AI Guidance:** The framework scaffolds AI rules for both
+IDEs. `.mdc` files in `.cursor/rules/` support file-pattern scoping
+(e.g., `globs: src/pages/**/*.astro`) so the AI only loads relevant rules
+for the file being edited, saving context window tokens.
+
+**Protected Areas:** All AI guidance files (both framework-developer and
+framework-user) must explicitly define "Protected Areas" — zones the AI
+must never suggest modifying:
+- `node_modules/` — never fork or patch the core package
+- Files not owned by the developer (injected API routes)
+- Instead, guide the AI to use scaffolded overrides, `theme.css`, and
+  `messages` props for customisation
 
 - [ ] Update `.github/copilot-instructions.md`
   - Add "Three-Tier Token System" to Architecture section
@@ -536,6 +593,8 @@ scaffolded into consumer projects.
   - Add "Proxy Component Architecture" pattern
   - Add "E2E Testing" to Testing section
   - Update Anti-Patterns: add token/layer violations
+  - Add "Protected Areas" section: never modify `node_modules/`, never
+    fork core package, never hand-edit injected API routes
 - [ ] Update `.github/instructions/implementation.instructions.md`
   - Add token naming conventions (`--crss-ref-*`, `--crss-sys-*`,
     `--crss-comp-*`)
@@ -572,8 +631,17 @@ scaffolded into consumer projects.
       don't touch `node_modules`
     - Override styles in `theme.css` — framework layers ensure your styles win
     - Components accept `messages` props for string customisation
-- [ ] Update `src/cli/init.ts` — add `.github/copilot-instructions.md` to
-      FILE_MAP
+    - **Protected Areas:** Never modify files in `node_modules/`, never fork
+      or patch `@community-rss/core`, never hand-edit injected API routes —
+      use scaffolded overrides and configuration instead
+- [ ] Create `packages/core/src/cli/templates/.cursor/rules/community-rss.mdc`
+  - Same guidance as the Copilot file but in Cursor's `.mdc` format
+  - Add file-pattern scoping via `globs:` frontmatter (e.g.,
+    `globs: src/**/*.astro, src/**/*.ts`) so rules only load for relevant
+    files, saving context window tokens
+  - Include "Protected Areas" section identical to the Copilot version
+- [ ] Update `src/cli/init.ts` — add `.github/copilot-instructions.md` and
+      `.cursor/rules/community-rss.mdc` to FILE_MAP
 
 ---
 

@@ -388,6 +388,10 @@ See [0.5.0 Implementation Plan](0_5_0/IMPLEMENTATION_PLAN.md).
       `tokens/components.css`
 - [ ] Create `layers.css` with `@layer` declarations
 - [ ] Migrate all component `<style>` blocks to reference new token hierarchy
+- [ ] Use `injectScript('page-ssr')` to inject token CSS into every page
+      automatically via the Integration API
+- [ ] Set middleware `order: 'pre'` so auth and `Astro.locals.app` are
+      populated before user-defined code runs
 - [ ] Update `theme.css` scaffold template for consumers
 - [ ] Test: visual regression — pages render identically
 - [ ] Update documentation: CSS token reference
@@ -396,6 +400,7 @@ See [0.5.0 Implementation Plan](0_5_0/IMPLEMENTATION_PLAN.md).
 - [ ] Define layer order: crss-reset, crss-tokens, crss-base,
       crss-components, crss-utilities
 - [ ] Wrap framework styles in appropriate `@layer` blocks
+- [ ] Ensure `injectScript('page-ssr')` injects layers.css before token CSS
 - [ ] Verify consumer `theme.css` overrides work without specificity issues
 - [ ] Test: layer cascade ordering
 
@@ -421,6 +426,13 @@ See [0.5.0 Implementation Plan](0_5_0/IMPLEMENTATION_PLAN.md).
 - [ ] Create `.astro` email template components in `packages/core/src/templates/email/`
 - [ ] Implement Container API renderer in `email-renderer.ts`
 - [ ] Add CSS style inlining via `juice` post-processing
+- [ ] Add token-to-value resolution: parse CSS custom properties and replace
+      `var()` references with concrete values before inlining (email clients
+      do not support CSS custom properties)
+- [ ] Use `@{{ }}` escape syntax in `.astro` templates for Handlebars-style
+      placeholders to prevent Astro compiler evaluation
+- [ ] Use Wrapper component pattern (single default slot) to avoid nested
+      slot stripping by the Container API
 - [ ] Update email resolution chain: developer .astro → package .astro →
       developer .html → package .html → code fallback
 - [ ] Update CLI scaffold email templates to use `.astro` format
@@ -434,7 +446,9 @@ See [0.5.0 Implementation Plan](0_5_0/IMPLEMENTATION_PLAN.md).
 - [ ] Ensure all components use CSS custom properties exclusively
 - [ ] Add component-scoped tokens (`--crss-comp-*`) for each component
 - [ ] Verify all components work with default and overridden tokens
-- [ ] Update scaffold templates to demonstrate wrapper pattern
+- [ ] Update scaffold templates to demonstrate thin wrapper pattern:
+      import core component, own `<style>`, pass messages — no business
+      logic in scaffold wrappers
 
 #### Phase 7: E2E Testing with Playwright
 - [ ] Install Playwright and configure `playwright.config.ts`
@@ -449,8 +463,14 @@ See [0.5.0 Implementation Plan](0_5_0/IMPLEMENTATION_PLAN.md).
 - [ ] Rewrite `.github/copilot-instructions.md` with new architecture
       patterns (tokens, layers, Actions, Server Islands)
 - [ ] Update all `.github/instructions/*.md` files
-- [ ] Create framework-user AI guidance scaffold template
-      (`src/cli/templates/.github/copilot-instructions.md`)
+- [ ] Add "Protected Areas" rules to all AI guidance: never modify
+      `node_modules/`, never fork core package, never hand-edit injected
+      API routes
+- [ ] Create framework-user AI guidance for GitHub Copilot:
+      scaffold `src/cli/templates/.github/copilot-instructions.md`
+- [ ] Create framework-user AI guidance for Cursor IDE:
+      scaffold `src/cli/templates/.cursor/rules/community-rss.mdc`
+      (`.mdc` format with `globs:` file-pattern scoping)
 - [ ] Update `.github/skills/feature-implementation/SKILL.md`
 
 #### Phase 9: Documentation Updates
@@ -921,6 +941,10 @@ granularity levels:
 - Override a system token to remap brand meaning: `--crss-sys-color-primary`
 - Override a component token for surgical adjustment: `--crss-comp-btn-bg`
 
+**Automatic Injection:** Token and layer CSS is injected into every page via
+`injectScript('page-ssr')` in the Integration API — developers never need
+to manually import CSS files into their layouts.
+
 ### CSS Cascade Layers (0.5.0+)
 
 **Principle:** Consumer stylesheets always win over framework styles. The
@@ -947,6 +971,32 @@ HTML via the Container API, then post-processed with `juice` for CSS
 inlining. This replaces the `{{variable}}` HTML template system for
 new templates while maintaining backward compatibility with existing
 HTML templates. See Spec §5.12.
+
+**Implementation Caveats:**
+- Use `@{{ }}` escape syntax to prevent Astro compiler from evaluating
+  Handlebars-style placeholders as JavaScript expressions.
+- CSS custom properties (`var(--crss-*)`) must be resolved to concrete
+  values before inlining — email clients do not support `var()`.
+- Use a single default slot in `EmailLayout.astro` to avoid nested slot
+  stripping by the Container API's `renderToString()`.
+
+### Middleware Ordering (0.5.0+)
+
+**Principle:** The integration’s middleware runs with `order: 'pre'` to
+ensure that authentication state and `Astro.locals.app` (providing `db`,
+`env`, `config`) are populated before any user-defined middleware or page
+code executes. This guarantees that consumer pages can always rely on
+`context.locals.app` being available.
+
+### CLI Scaffold Upgrade Strategy (Future)
+
+**Principle:** As the framework evolves, scaffolded files may need updates.
+Pre-1.0.0, scaffold changes are documented in release notes and developers
+manually apply them. Post-1.0.0, a `diff` / `update` CLI command will be
+implemented (similar to shadcn/ui's approach) to let developers compare
+their local modifications against the latest scaffold version before
+selectively applying changes. This is deferred until breaking changes make
+it necessary.
 
 ### AppContext Pattern (replacing Cloudflare Env)
 
@@ -1018,6 +1068,9 @@ loses Set-Cookie headers from intermediate responses.
 | Astro Actions API changes | Breaking changes in Astro minor versions | Actions are scaffolded (developer-owned); easy to update *(Added 0.5.0)* |
 | Server Islands performance overhead | Additional server round-trip per island | Minimal — auth check is fast; cache session lookups *(Added 0.5.0)* |
 | Three-tier token migration complexity | Component styles break during refactor | Phase incrementally; visual regression testing via Playwright *(Added 0.5.0)* |
+| Container API nested slot stripping | Email HTML structure corrupted | Use Wrapper component with single default slot; test rendered output *(Added 0.5.0)* |
+| CSS custom properties in email clients | `var()` not supported by most email clients | Resolve tokens to concrete values before `juice` inlining *(Added 0.5.0)* |
+| Scaffold file drift after updates | Developer's scaffolded files diverge from latest templates | Document changes in release notes; plan CLI `diff`/`update` command pre-1.0.0 *(Added 0.5.0)* |
 
 ---
 

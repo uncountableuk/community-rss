@@ -326,6 +326,10 @@ packages/core/src/styles/
  layers.css           # @layer declarations and base resets
 ```
 
+Token CSS is automatically injected into every page via the Integration
+API's `injectScript('page-ssr')` hook. Developers never need to manually
+import token files into their layouts.
+
 ### **5.9 CSS Cascade Layers** *(Added 0.5.0)*
 
 The framework uses CSS `@layer` to establish a deterministic cascade order:
@@ -343,6 +347,10 @@ The framework uses CSS `@layer` to establish a deterministic cascade order:
 Consumer stylesheets loaded **after** the framework's layers always have
 higher specificity, ensuring that `theme.css` overrides work reliably
 without `!important` hacks or specificity tricks.
+
+The layer declaration and token CSS are injected automatically via
+`injectScript('page-ssr')` in the correct order (layers.css first),
+ensuring every page receives the complete design system.
 
 ### **5.10 Astro Actions (Typed Client-Server Bridge)** *(Added 0.5.0)*
 
@@ -380,16 +388,24 @@ self-contained HTML using the Astro Container API:
 
 1. **Authoring:** Email templates are `.astro` components that accept props
    (recipient name, verification URL, etc.) and use the framework's design
-   tokens.
+   tokens. Use the `@{{ }}` escape syntax for any Handlebars-style
+   placeholders to prevent the Astro compiler from evaluating them as
+   JavaScript expressions.
 2. **Compilation:** At build time (or on-demand at runtime), the Container
-   API renders the `.astro` component into a static HTML string.
-3. **Style Inlining:** Post-render processing inlines CSS into HTML element
-   `style` attributes for email client compatibility.
-4. **Delivery:** The compiled HTML is passed to the email transport (Resend
+   API renders the `.astro` component into a static HTML string. Use a
+   single default slot in layout components to avoid nested slot stripping
+   by `renderToString()`.
+3. **Token Resolution:** CSS custom properties (`var(--crss-*)`) are
+   resolved to concrete values by parsing the token CSS files, since most
+   email clients do not support CSS custom properties.
+4. **Style Inlining:** Post-render processing (via `juice`) inlines CSS
+   into HTML element `style` attributes for email client compatibility.
+5. **Delivery:** The compiled HTML is passed to the email transport (Resend
    or SMTP) for delivery.
-5. **Developer Override:** Developers can create custom `.astro` email
+6. **Developer Override:** Developers can create custom `.astro` email
    components in their project. The resolution chain: developer's
-   `src/email-templates/` → package defaults.
+   `.astro` templates → package `.astro` defaults → developer's `.html`
+   templates → package `.html` defaults → code-based fallbacks.
 
 ### **5.13 Proxy Component Architecture** *(Added 0.5.0)*
 
@@ -477,15 +493,21 @@ To launch a community, a developer will follow these steps:
 ### **7.1 AI-Native Architecture Guidance** *(Added 0.5.0)*
 
 The framework provides structured instructions for AI coding assistants at
-two levels:
+two levels, targeting both GitHub Copilot and Cursor IDE:
 
 * **Framework-Developer Instructions:** Located in `.github/instructions/`
   — guide core contributors in maintaining API stability, test coverage,
   and the integration lifecycle.
 * **Framework-User Instructions:** Scaffolded into the developer's project
-  via CLI — guide consumer-facing AI assistants to respect architectural
-  boundaries: use design tokens (not hardcoded values), call Actions (not
-  raw endpoints), modify only developer-owned files (not `node_modules`).
+  via CLI in two formats:
+  * `.github/copilot-instructions.md` — for GitHub Copilot (VS Code)
+  * `.cursor/rules/community-rss.mdc` — for Cursor IDE, using `.mdc`
+    format with `globs:` frontmatter for file-pattern scoping (loads
+    relevant rules only for the file being edited, saving context tokens)
+* **Protected Areas:** All AI guidance files explicitly define zones the AI
+  must never suggest modifying: `node_modules/`, injected API routes, or
+  any file not owned by the developer. Instead, the AI is guided to use
+  scaffolded overrides, `theme.css`, `messages` props, and configuration.
 
 ## **8. Architecture Principles** *(Added 0.5.0)*
 
@@ -505,6 +527,8 @@ framework:
 | **Container API Emails** | `.astro` components compiled to inlined HTML | Shared tokens between web and email; component reuse |
 | **Decoupled Client Logic** | `utils/client/*.ts` — importable modules | Developers import logic separately from UI |
 | **Middleware Data Contract** | `context.locals.app` provides `db`, `env`, `config` | Clean separation; pages don't know about DB setup |
+| **Middleware Ordering** | Integration middleware runs with `order: 'pre'` | Auth and `Astro.locals.app` populated before user code |
+| **Automatic CSS Injection** | `injectScript('page-ssr')` injects token/layer CSS | Design system active on every page without manual imports |
 | **E2E Testing** | Playwright for the reference application | Validates assembled application from user perspective |
 
 ### **8.2 Deferred Principles (Documented for Future)**
@@ -512,6 +536,7 @@ framework:
 | Principle | Reason for Deferral | Target Release |
 |-----------|---------------------|----------------|
 | **Codemods (AST migrations)** | No breaking changes yet; premature until post-1.0.0 | 1.0.0+ |
+| **CLI `diff` / `update` command** | Scaffold files rarely change pre-1.0.0; implement when breaking scaffold changes arrive | Pre-1.0.0 |
 | **Full Inversion of Control** | Config-based extension is sufficient; pluggable provider interfaces add premature complexity | 1.0.0+ |
 | **RSSProvider Interface** | FreshRSS is the sole ingestion engine; abstracting providers is premature | 1.0.0+ |
 | **Dependency Injection** | Swappable database/auth engines are a future concern | 1.0.0+ |
