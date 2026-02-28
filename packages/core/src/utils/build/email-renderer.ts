@@ -2,15 +2,17 @@
  * File-based and Astro Container API email template renderer.
  *
  * Supports two rendering paths:
- * 1. **Astro templates** (`.astro`) — rendered via the Astro Container API,
- *    post-processed with `juice` for CSS inlining. Preferred for new emails.
+ * 1. **Astro templates** (`.astro`) — loaded via the `virtual:crss-email-templates`
+ *    Vite virtual module, rendered via the Astro Container API, and post-processed
+ *    with `juice` for CSS inlining. Developer templates take priority over package
+ *    built-ins. Preferred for new emails.
  * 2. **HTML templates** (`.html`) — traditional `{{variable}}` substitution.
  *    Maintained for backward compatibility.
  *
  * Resolution order for each email type:
- * 1. Developer Astro template (if exists in emailTemplateDir)
- * 2. Developer HTML template (if exists in emailTemplateDir)
- * 3. Package Astro template (via Container API)
+ * 1. Developer Astro template (via virtual module)
+ * 2. Package Astro template (via virtual module)
+ * 3. Developer HTML template (if exists in emailTemplateDir)
  * 4. Package HTML template (fallback)
  * 5. Code-based default template (last resort)
  *
@@ -231,13 +233,16 @@ export function resolveDeveloperAstroTemplatePath(
  * Renders an Astro email template via the Container API with `juice`
  * CSS inlining.
  *
- * Checks for a developer-owned `.astro` template in `developerDir` first,
- * then falls back to the package's built-in Astro template.
+ * Templates are loaded from the `virtual:crss-email-templates` Vite virtual
+ * module, which is populated by the integration's Vite plugin at startup.
+ * Developer templates (from `emailTemplateDir`) take priority over the
+ * package's built-in Astro templates.
  *
  * @param name - Email type name (e.g., 'sign-in')
  * @param props - Props to pass to the Astro component
  * @param theme - Optional resolved email theme (colours, typography, spacing, branding)
- * @param developerDir - Optional developer email template directory
+ * @param _developerDir - Deprecated: developer directory is now resolved via the virtual module.
+ *                         Parameter retained for backward compatibility.
  * @returns Rendered email content, or null if the template is unavailable
  * @since 0.5.0
  */
@@ -245,10 +250,10 @@ export async function renderAstroEmail(
   name: string,
   props: Record<string, string>,
   theme?: ResolvedEmailTheme,
-  developerDir?: string,
+  _developerDir?: string,
 ): Promise<EmailContent | null> {
-  const componentFile = ASTRO_EMAIL_COMPONENTS[name];
-  if (!componentFile) {
+  // Quick bail-out for unknown template types (avoids pointless import attempts)
+  if (!ASTRO_EMAIL_SUBJECTS[name]) {
     return null;
   }
 
@@ -256,24 +261,15 @@ export async function renderAstroEmail(
     const { experimental_AstroContainer: AstroContainer } = await import('astro/container');
     const juice = (await import('juice')).default;
 
-    // Check developer directory for a custom .astro template first
-    const devTemplatePath = resolveDeveloperAstroTemplatePath(name, developerDir);
+    // Import templates from the virtual module (populated by Vite plugin in integration.ts).
+    // Developer templates take priority over package built-in templates.
     let Component: any = null;
-
-    if (devTemplatePath) {
-      try {
-        const devMod = await import(/* @vite-ignore */ devTemplatePath);
-        Component = devMod.default;
-      } catch (devErr) {
-        console.warn(`[community-rss] Developer Astro email template failed to load for "${name}":`, devErr);
-      }
-    }
-
-    // Fall back to package built-in template
-    if (!Component) {
-      const componentPath = `../../templates/email/${componentFile}`;
-      const mod = await import(/* @vite-ignore */ componentPath);
-      Component = mod.default;
+    try {
+      const { devTemplates, packageTemplates } = await import('virtual:crss-email-templates');
+      Component = devTemplates[name] ?? packageTemplates[name] ?? null;
+    } catch {
+      // Virtual module not available (e.g., test environment without Vite plugin)
+      return null;
     }
 
     if (!Component) {

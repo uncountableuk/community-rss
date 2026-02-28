@@ -60,14 +60,24 @@ describe('Integration Factory', () => {
       };
       const mockAddMiddleware = vi.fn();
       const mockInjectScript = vi.fn();
+      const mockUpdateConfig = vi.fn();
+      const mockAstroConfig = { root: new URL('file:///app/playground/') };
 
-      // Call the hook with a mock injectRoute, addMiddleware and injectScript
+      // Call the hook with a mock injectRoute, addMiddleware, injectScript, updateConfig, and config
       const setupHook = integration.hooks['astro:config:setup'] as (params: {
         injectRoute: typeof mockInjectRoute;
         addMiddleware: typeof mockAddMiddleware;
         injectScript: typeof mockInjectScript;
+        updateConfig: typeof mockUpdateConfig;
+        config: typeof mockAstroConfig;
       }) => void;
-      setupHook({ injectRoute: mockInjectRoute, addMiddleware: mockAddMiddleware, injectScript: mockInjectScript });
+      setupHook({
+        injectRoute: mockInjectRoute,
+        addMiddleware: mockAddMiddleware,
+        injectScript: mockInjectScript,
+        updateConfig: mockUpdateConfig,
+        config: mockAstroConfig,
+      });
 
       expect(injectedRoutes).toHaveLength(11);
 
@@ -97,6 +107,53 @@ describe('Integration Factory', () => {
 
       const healthRoute = injectedRoutes.find((r) => r.pattern === '/api/v1/health');
       expect(healthRoute?.entrypoint).toContain('health.ts');
+
+      // Verify Vite plugin for email templates is injected via updateConfig
+      expect(mockUpdateConfig).toHaveBeenCalledWith(
+        expect.objectContaining({
+          vite: expect.objectContaining({
+            plugins: expect.arrayContaining([
+              expect.objectContaining({ name: 'crss-email-templates' }),
+            ]),
+          }),
+        }),
+      );
+    });
+
+    it('should generate virtual email template module with package templates', () => {
+      const integration = createIntegration();
+      const capturedConfig: any[] = [];
+      const mockUpdateConfig = (cfg: any) => capturedConfig.push(cfg);
+
+      const setupHook = integration.hooks['astro:config:setup'] as (params: any) => void;
+      setupHook({
+        injectRoute: vi.fn(),
+        addMiddleware: vi.fn(),
+        injectScript: vi.fn(),
+        updateConfig: mockUpdateConfig,
+        config: { root: new URL('file:///app/playground/') },
+      });
+
+      // Find the email templates plugin
+      const viteConfig = capturedConfig.find((c) => c.vite?.plugins);
+      const plugin = viteConfig?.vite?.plugins?.find((p: any) => p.name === 'crss-email-templates');
+      expect(plugin).toBeDefined();
+
+      // Test resolveId
+      expect(plugin.resolveId('virtual:crss-email-templates')).toBe('\0virtual:crss-email-templates');
+      expect(plugin.resolveId('some-other-module')).toBeUndefined();
+
+      // Test load — should generate module with package templates
+      const moduleSource = plugin.load('\0virtual:crss-email-templates');
+      expect(moduleSource).toContain('export const devTemplates');
+      expect(moduleSource).toContain('export const packageTemplates');
+      // Package templates should include the known email types
+      expect(moduleSource).toContain('SignInEmail');
+      expect(moduleSource).toContain('WelcomeEmail');
+      expect(moduleSource).toContain('EmailChangeEmail');
+
+      // Test load returns undefined for other modules
+      expect(plugin.load('some-other-id')).toBeUndefined();
     });
 
     it('should log config via astro:config:done', () => {

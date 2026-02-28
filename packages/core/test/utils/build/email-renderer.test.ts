@@ -264,12 +264,14 @@ describe('Email Renderer', () => {
       expect(result).toBeNull();
     });
 
-    it('should accept an optional developerDir parameter without throwing', async () => {
+    it('should accept an optional developerDir parameter without throwing (deprecated)', async () => {
+      // developerDir is now ignored — virtual module handles template discovery.
+      // Parameter retained for backward compatibility.
       const result = await renderAstroEmail('sign-in', {
         url: 'https://example.com',
         appName: 'Test',
       }, undefined, '/nonexistent/dir');
-      // Should still fall back to package template (or null if Container API unavailable)
+      // Should still return null if Container API / virtual module unavailable
       expect(result === null || typeof result?.html === 'string').toBe(true);
     });
   });
