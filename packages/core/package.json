@@ -44,10 +44,12 @@
     "astro": "^5.0.0",
     "drizzle-kit": "^0.30.0",
     "jsdom": "^28.1.0",
-    "msw": "^2.12.10"
+    "msw": "^2.12.10",
+    "zod": "^3.23.0"
   },
   "peerDependencies": {
-    "astro": "^5.0.0"
+    "astro": "^5.0.0",
+    "zod": "^3.23.0"
   },
   "license": "GPL-3.0",
   "keywords": [

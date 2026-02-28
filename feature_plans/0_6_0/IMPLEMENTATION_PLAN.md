@@ -843,7 +843,30 @@ implementation as phases are completed.*
   components, layouts, actions, auto-ejection, force/skip, and errors.
 - All 457 tests pass (442 existing + 15 new).
 
-### Phase 7: Actions Redesign — Not Started
+### Phase 7: Actions Redesign — Completed
+
+Implemented Phase 7a (`coreActions` spread) since the Phase 0 spike
+confirmed Zod singleton deduplication works across the workspace.
+
+- Created `src/actions/definitions.ts` exporting `coreActions` — a map of
+  6 action definitions (`fetchArticles`, `checkEmail`, `submitSignup`,
+  `updateProfile`, `changeEmail`, `confirmEmailChange`), each with a Zod
+  input schema and an async handler that extracts `context.locals.app`.
+- Exported `coreActions` and `ActionDefinition` from the barrel
+  `src/actions/index.ts` (backward-compatible — existing handler + type
+  exports are preserved).
+- Added `zod: "^3.23.0"` as both `peerDependencies` and `devDependencies`
+  in `packages/core/package.json` to ensure singleton resolution.
+- Rewrote `src/cli/templates/actions/index.ts` scaffold to use
+  `coreActions` spread pattern with a `wrapCoreActions()` helper that
+  wraps each `{ input, handler }` entry with `defineAction()`.
+- Updated `test/cli/init.test.ts` assertion from "handler imports" to
+  "coreActions spread" verification.
+- Added `test/actions/definitions.test.ts` with 9 tests covering: key
+  enumeration, Zod schema validation (valid + invalid inputs), and handler
+  type checks for all 6 actions.
+- Phase 7b (improved copy fallback) was not needed.
+- All 466 tests pass (457 existing + 9 new).
 
 ### Phase 8: Theme.css Improvements — Not Started
 

@@ -49,7 +49,7 @@ describe('CLI scaffold', () => {
       expect(created).toHaveLength(14);
     });
 
-    it('should create actions scaffold with handler imports', () => {
+    it('should create actions scaffold with coreActions spread', () => {
       scaffold({ cwd: tempDir });
 
       const actionsFile = readFileSync(
@@ -57,6 +57,7 @@ describe('CLI scaffold', () => {
         'utf-8',
       );
       expect(actionsFile).toContain('@community-rss/core');
+      expect(actionsFile).toContain('coreActions');
       expect(actionsFile).toContain('defineAction');
     });
 
