@@ -7,27 +7,41 @@ import { Aside } from '@astrojs/starlight/components';
 
 ## Overview
 
-Community RSS uses **CSS custom properties** (design tokens) for all
+Community RSS uses a **three-tier CSS custom property system** for all
 themeable values. Override these tokens to match your brand without
 modifying framework source code.
+
+For the complete token reference, see the
+[CSS Tokens Reference](/api-reference/css-tokens/). For detailed styling
+guidance including cascade layers and proxy components, see the
+[Styling Guide](/guides/styling/).
 
 ## CSS Design Tokens
 
 All framework tokens are prefixed with `--crss-` to avoid namespace
-collisions with your own styles.
+collisions with your own styles. Tokens are organised in three tiers:
 
-### Colour Tokens
+| Tier | Prefix | Purpose |
+|------|--------|---------|
+| **Reference** | `--crss-ref-*` | Raw palette values |
+| **System** | `--crss-sys-*` | Semantic roles (primary, surface, error) |
+| **Component** | `--crss-comp-*` | Per-component overrides |
+
+Backward-compatible flat aliases (`--crss-brand`, `--crss-surface-0`, etc.)
+are also available.
+
+### Key System Tokens
 
 ```css
 :root {
-  --crss-brand-primary: #0ea5e9;
-  --crss-brand-accent: #06b6d4;
-  --crss-brand-muted: #94a3b8;
-  --crss-bg-primary: #ffffff;
-  --crss-bg-secondary: #f8fafc;
-  --crss-text-primary: #0f172a;
-  --crss-text-secondary: #475569;
-  --crss-border-color: #e2e8f0;
+  /* System tokens — semantic roles */
+  --crss-sys-color-primary: #0ea5e9;
+  --crss-sys-color-primary-hover: #0284c7;
+  --crss-sys-color-secondary: #06b6d4;
+  --crss-sys-color-surface: #f8fafc;
+  --crss-sys-color-surface-alt: #ffffff;
+  --crss-sys-color-on-surface: #0f172a;
+  --crss-sys-color-on-surface-variant: #475569;
 }
 ```
 
@@ -68,8 +82,8 @@ layout:
 ```css
 /* src/styles/theme.css */
 :root {
-  --crss-brand-primary: #7c3aed;
-  --crss-brand-accent: #a78bfa;
+  --crss-sys-color-primary: #7c3aed;
+  --crss-sys-color-primary-hover: #6d28d9;
   --crss-font-family: 'Inter', sans-serif;
 }
 ```
@@ -102,31 +116,37 @@ with a media query:
 ```css
 @media (prefers-color-scheme: dark) {
   :root {
-    --crss-bg-primary: #0f172a;
-    --crss-bg-secondary: #1e293b;
-    --crss-text-primary: #f1f5f9;
-    --crss-text-secondary: #94a3b8;
-    --crss-border-color: #334155;
+    --crss-sys-color-surface: #0f172a;
+    --crss-sys-color-surface-alt: #1e293b;
+    --crss-sys-color-on-surface: #f1f5f9;
+    --crss-sys-color-on-surface-variant: #94a3b8;
+    --crss-border: #334155;
   }
 }
 ```
 
 ## Component-Level Overrides
 
-Individual components can be styled by targeting their CSS classes.
-All framework components use BEM-style class names prefixed with `crss-`:
+Individual components can be styled by overriding component tokens
+(`--crss-comp-*`) or by targeting their CSS classes. All framework
+components use BEM-style class names prefixed with `crss-`:
 
 ```css
-.crss-article-card {
-  border: 2px solid var(--crss-brand-primary);
+/* Override via component tokens */
+:root {
+  --crss-comp-card-bg: #eff6ff;
+  --crss-comp-card-radius: 1rem;
+  --crss-comp-modal-radius: 0.5rem;
 }
 
-.crss-auth-button {
-  background: var(--crss-brand-accent);
+/* Or target classes directly */
+.crss-feed-card {
+  border: 2px solid var(--crss-sys-color-primary);
 }
 ```
 
 <Aside type="tip">
-Since page routes are scaffolded into your project, you have full control
-over the page layout and can wrap or replace any component.
+Your `theme.css` is un-layered, so it always overrides framework defaults
+without `!important`. See [CSS Cascade Layers](/guides/styling/#css-cascade-layers)
+for details.
 </Aside>

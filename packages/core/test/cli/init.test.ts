@@ -39,10 +39,54 @@ describe('CLI scaffold', () => {
       expect(existsSync(join(tempDir, 'src/styles/theme.css'))).toBe(true);
     });
 
-    it('should create all 15 expected files', () => {
+    it('should create all 22 expected files', () => {
       const { created } = scaffold({ cwd: tempDir });
 
-      expect(created).toHaveLength(15);
+      expect(created).toHaveLength(22);
+    });
+
+    it('should create actions scaffold with handler imports', () => {
+      scaffold({ cwd: tempDir });
+
+      const actionsFile = readFileSync(
+        join(tempDir, 'src/actions/index.ts'),
+        'utf-8',
+      );
+      expect(actionsFile).toContain('@community-rss/core');
+      expect(actionsFile).toContain('defineAction');
+    });
+
+    it('should create component proxy wrappers', () => {
+      scaffold({ cwd: tempDir });
+
+      const feedCard = readFileSync(
+        join(tempDir, 'src/components/FeedCard.astro'),
+        'utf-8',
+      );
+      expect(feedCard).toContain('@community-rss/core/components/FeedCard.astro');
+      expect(feedCard).toContain('CoreFeedCard');
+
+      expect(existsSync(join(tempDir, 'src/components/FeedGrid.astro'))).toBe(true);
+      expect(existsSync(join(tempDir, 'src/components/TabBar.astro'))).toBe(true);
+    });
+
+    it('should create AI guidance files for both Copilot and Cursor', () => {
+      scaffold({ cwd: tempDir });
+
+      const copilotFile = readFileSync(
+        join(tempDir, '.github/copilot-instructions.md'),
+        'utf-8',
+      );
+      expect(copilotFile).toContain('Community RSS');
+      expect(copilotFile).toContain('Protected Areas');
+      expect(copilotFile).toContain('--crss-');
+
+      const cursorFile = readFileSync(
+        join(tempDir, '.cursor/rules/community-rss.mdc'),
+        'utf-8',
+      );
+      expect(cursorFile).toContain('globs:');
+      expect(cursorFile).toContain('Protected Areas');
     });
 
     it('should create page files with correct imports', () => {
@@ -55,18 +99,33 @@ describe('CLI scaffold', () => {
       expect(indexPage).toContain('@community-rss/core');
     });
 
-    it('should create email templates with variable placeholders', () => {
+    it('should create Astro email templates with local layout import', () => {
       scaffold({ cwd: tempDir });
 
       const signIn = readFileSync(
-        join(tempDir, 'src/email-templates/sign-in.html'),
+        join(tempDir, 'src/email-templates/SignInEmail.astro'),
         'utf-8',
       );
-      expect(signIn).toContain('{{');
-      expect(signIn).toContain('<!-- subject:');
+      expect(signIn).toContain('./EmailLayout.astro');
+      expect(signIn).toContain('theme');
+
+      expect(existsSync(join(tempDir, 'src/email-templates/WelcomeEmail.astro'))).toBe(true);
+      expect(existsSync(join(tempDir, 'src/email-templates/EmailChangeEmail.astro'))).toBe(true);
     });
 
-    it('should create astro.config.mjs with node adapter', () => {
+    it('should scaffold EmailLayout.astro into email-templates', () => {
+      scaffold({ cwd: tempDir });
+
+      const layout = readFileSync(
+        join(tempDir, 'src/email-templates/EmailLayout.astro'),
+        'utf-8',
+      );
+      expect(layout).toContain('appName');
+      expect(layout).toContain('theme');
+      expect(layout).toContain('<slot />');
+    });
+
+    it('should create astro.config.mjs with node adapter and email theme comments', () => {
       scaffold({ cwd: tempDir });
 
       const config = readFileSync(
@@ -75,6 +134,7 @@ describe('CLI scaffold', () => {
       );
       expect(config).toContain("@astrojs/node");
       expect(config).toContain('communityRss');
+      expect(config).toContain('// theme:');
     });
 
     it('should create .env.example with all required vars', () => {
@@ -151,7 +211,7 @@ describe('CLI scaffold', () => {
         true,
       );
       expect(
-        existsSync(join(tempDir, 'src/email-templates/welcome.html')),
+        existsSync(join(tempDir, 'src/email-templates/WelcomeEmail.astro')),
       ).toBe(true);
     });
 

@@ -1,0 +1,102 @@
+/**
+ * Community RSS — Component Design Tokens (Tier 3)
+ *
+ * Component-scoped tokens for fine-grained customisation.
+ * All values reference --crss-sys-* tokens via var().
+ *
+ * Naming convention: --crss-comp-{component}-{property}
+ *
+ * @since 0.5.0
+ */
+@layer crss-tokens {
+    :root {
+        /* ─── Button Tokens ───────────────────────────────── */
+        --crss-comp-btn-bg: var(--crss-sys-color-primary);
+        --crss-comp-btn-color: var(--crss-sys-color-text-inverse);
+        --crss-comp-btn-hover-bg: var(--crss-sys-color-accent);
+        --crss-comp-btn-radius: var(--crss-sys-radius-md);
+        --crss-comp-btn-padding-x: var(--crss-sys-space-md);
+        --crss-comp-btn-padding-y: var(--crss-sys-space-xs);
+        --crss-comp-btn-font-size: var(--crss-sys-font-size-sm);
+        --crss-comp-btn-transition: background-color var(--crss-sys-transition-fast);
+
+        /* ─── Card Tokens (FeedCard) ──────────────────────── */
+        --crss-comp-card-bg: var(--crss-sys-color-surface-0);
+        --crss-comp-card-border: var(--crss-sys-color-surface-2);
+        --crss-comp-card-radius: var(--crss-sys-radius-md);
+        --crss-comp-card-padding: var(--crss-sys-space-md);
+        --crss-comp-card-hover-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        --crss-comp-card-hover-lift: -2px;
+        --crss-comp-card-title-size: var(--crss-sys-font-size-lg);
+        --crss-comp-card-meta-size: var(--crss-sys-font-size-xs);
+        --crss-comp-card-summary-size: var(--crss-sys-font-size-sm);
+
+        /* ─── Grid Tokens (FeedGrid) ──────────────────────── */
+        --crss-comp-grid-gap: var(--crss-sys-space-lg);
+        --crss-comp-grid-min-col: 300px;
+        --crss-comp-grid-padding: var(--crss-sys-space-md);
+
+        /* ─── Tab Tokens (TabBar) ─────────────────────────── */
+        --crss-comp-tab-gap: var(--crss-sys-space-xs);
+        --crss-comp-tab-padding-x: var(--crss-sys-space-md);
+        --crss-comp-tab-padding-y: var(--crss-sys-space-sm);
+        --crss-comp-tab-font-size: var(--crss-sys-font-size-sm);
+        --crss-comp-tab-color: var(--crss-sys-color-text-muted);
+        --crss-comp-tab-active-color: var(--crss-sys-color-primary);
+        --crss-comp-tab-border-color: var(--crss-sys-color-surface-2);
+        --crss-comp-tab-disabled-opacity: 0.4;
+
+        /* ─── Modal Tokens (ArticleModal) ─────────────────── */
+        --crss-comp-modal-overlay-bg: var(--crss-sys-color-overlay);
+        --crss-comp-modal-bg: var(--crss-sys-color-surface-0);
+        --crss-comp-modal-radius: var(--crss-sys-radius-lg);
+        --crss-comp-modal-padding: var(--crss-sys-space-xl);
+        --crss-comp-modal-max-width: 800px;
+        --crss-comp-modal-shadow: var(--crss-sys-shadow-lg);
+        --crss-comp-modal-title-size: var(--crss-sys-font-size-2xl);
+        --crss-comp-modal-meta-size: var(--crss-sys-font-size-sm);
+
+        /* ─── Form Tokens (MagicLinkForm, SignUpForm) ─────── */
+        --crss-comp-form-bg: var(--crss-sys-color-surface-0);
+        --crss-comp-form-border: var(--crss-sys-color-surface-2);
+        --crss-comp-form-radius: var(--crss-sys-radius-md);
+        --crss-comp-form-padding: var(--crss-sys-space-xl);
+        --crss-comp-form-gap: var(--crss-sys-space-md);
+        --crss-comp-form-input-bg: var(--crss-sys-color-surface-0);
+        --crss-comp-form-input-border: var(--crss-sys-color-surface-3);
+        --crss-comp-form-input-radius: var(--crss-sys-radius-md);
+        --crss-comp-form-input-padding: var(--crss-sys-space-sm) var(--crss-sys-space-md);
+        --crss-comp-form-label-size: var(--crss-sys-font-size-sm);
+        --crss-comp-form-label-color: var(--crss-sys-color-text-secondary);
+        --crss-comp-form-focus-ring: 0 0 0 3px var(--crss-sys-color-focus-ring);
+        --crss-comp-form-success-bg: var(--crss-sys-color-success-bg);
+        --crss-comp-form-success-text: var(--crss-sys-color-success-text);
+        --crss-comp-form-success-border: var(--crss-sys-color-success-border);
+        --crss-comp-form-error-bg: var(--crss-sys-color-error-bg);
+        --crss-comp-form-error-text: var(--crss-sys-color-error-text);
+        --crss-comp-form-error-border: var(--crss-sys-color-error-border);
+
+        /* ─── Consent Modal Tokens ────────────────────────── */
+        --crss-comp-consent-overlay-bg: var(--crss-sys-color-overlay);
+        --crss-comp-consent-bg: var(--crss-sys-color-surface-0);
+        --crss-comp-consent-radius: var(--crss-sys-radius-lg);
+        --crss-comp-consent-padding: var(--crss-sys-space-xl);
+        --crss-comp-consent-max-width: 480px;
+        --crss-comp-consent-shadow: var(--crss-sys-shadow-lg);
+        --crss-comp-consent-title-size: var(--crss-sys-font-size-xl);
+
+        /* ─── Auth Button Tokens ──────────────────────────── */
+        --crss-comp-auth-gap: var(--crss-sys-space-sm);
+        --crss-comp-auth-btn-padding-x: var(--crss-sys-space-md);
+        --crss-comp-auth-btn-padding-y: var(--crss-sys-space-xs);
+        --crss-comp-auth-btn-radius: var(--crss-sys-radius-md);
+        --crss-comp-auth-btn-font-size: var(--crss-sys-font-size-sm);
+        --crss-comp-auth-signin-bg: var(--crss-sys-color-primary);
+        --crss-comp-auth-signin-color: var(--crss-sys-color-text-inverse);
+        --crss-comp-auth-signout-bg: transparent;
+        --crss-comp-auth-signout-color: var(--crss-sys-color-text-secondary);
+        --crss-comp-auth-signout-border: var(--crss-sys-color-surface-3);
+    }
+}
+
+/* end @layer crss-tokens */

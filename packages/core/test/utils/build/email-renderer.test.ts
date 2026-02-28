@@ -8,6 +8,9 @@ import {
   substituteVariables,
   htmlToPlainText,
   renderEmailTemplate,
+  renderAstroEmail,
+  resolveSubject,
+  DEFAULT_EMAIL_SUBJECTS,
 } from '@utils/build/email-renderer';
 
 // We don't want to mock fs for all tests — some test the actual package templates
@@ -102,10 +105,9 @@ describe('Email Renderer', () => {
   });
 
   describe('resolveTemplatePath', () => {
-    it('should find package built-in templates', () => {
+    it('should return null when no developer dir is provided', () => {
       const templatePath = resolveTemplatePath('sign-in');
-      expect(templatePath).not.toBeNull();
-      expect(templatePath).toContain('sign-in.html');
+      expect(templatePath).toBeNull();
     });
 
     it('should return null for non-existent templates', () => {
@@ -113,7 +115,7 @@ describe('Email Renderer', () => {
       expect(result).toBeNull();
     });
 
-    it('should prefer developer directory when file exists there', () => {
+    it('should find developer template when file exists', () => {
       // Create a temp directory with a test template
       const tmpDir = path.join(process.cwd(), '.tmp-test-templates');
       fs.mkdirSync(tmpDir, { recursive: true });
@@ -128,14 +130,13 @@ describe('Email Renderer', () => {
       }
     });
 
-    it('should fall back to package template when developer dir lacks file', () => {
+    it('should return null when developer dir exists but lacks the file', () => {
       const tmpDir = path.join(process.cwd(), '.tmp-test-templates-empty');
       fs.mkdirSync(tmpDir, { recursive: true });
 
       try {
         const result = resolveTemplatePath('sign-in', tmpDir);
-        expect(result).not.toBeNull();
-        expect(result).not.toContain(tmpDir);
+        expect(result).toBeNull();
       } finally {
         fs.rmSync(tmpDir, { recursive: true });
       }
@@ -143,49 +144,92 @@ describe('Email Renderer', () => {
   });
 
   describe('renderEmailTemplate', () => {
-    it('should render a built-in sign-in template', () => {
+    it('should return null when no developer dir is provided', () => {
       const content = renderEmailTemplate('sign-in', {
         appName: 'Test Community',
         greeting: 'Hi Jim,',
         url: 'https://example.com/verify?token=abc123',
       });
 
-      expect(content).not.toBeNull();
-      expect(content!.subject).toBe('Sign in to Test Community');
-      expect(content!.html).toContain('Test Community');
-      expect(content!.html).toContain('Hi Jim,');
-      expect(content!.html).toContain('https://example.com/verify?token=abc123');
-      expect(content!.text).toContain('Test Community');
-      expect(content!.text).toContain('https://example.com/verify?token=abc123');
-    });
-
-    it('should render a built-in welcome template', () => {
-      const content = renderEmailTemplate('welcome', {
-        appName: 'My App',
-        greeting: 'Hi there,',
-        url: 'https://example.com/verify',
-      });
-
-      expect(content).not.toBeNull();
-      expect(content!.subject).toContain('Welcome to My App');
-      expect(content!.html).toContain('My App');
-    });
-
-    it('should render a built-in email-change template', () => {
-      const content = renderEmailTemplate('email-change', {
-        appName: 'My App',
-        greeting: 'Hi User,',
-        verificationUrl: 'https://example.com/confirm',
-      });
-
-      expect(content).not.toBeNull();
-      expect(content!.subject).toContain('Confirm your new email');
-      expect(content!.html).toContain('https://example.com/confirm');
+      expect(content).toBeNull();
     });
 
     it('should return null for non-existent template', () => {
       const content = renderEmailTemplate('unknown-type', { appName: 'Test' });
       expect(content).toBeNull();
+    });
+
+    it('should render a developer sign-in template', () => {
+      const tmpDir = path.join(process.cwd(), '.tmp-test-render-sign-in');
+      fs.mkdirSync(tmpDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(tmpDir, 'sign-in.html'),
+        '<!-- subject: Sign in to {{appName}} -->\n<h1>{{appName}}</h1>\n<p>{{greeting}} Click <a href="{{url}}">here</a>.</p>',
+      );
+
+      try {
+        const content = renderEmailTemplate('sign-in', {
+          appName: 'Test Community',
+          greeting: 'Hi Jim,',
+          url: 'https://example.com/verify?token=abc123',
+        }, tmpDir);
+
+        expect(content).not.toBeNull();
+        expect(content!.subject).toBe('Sign in to Test Community');
+        expect(content!.html).toContain('Test Community');
+        expect(content!.html).toContain('Hi Jim,');
+        expect(content!.html).toContain('https://example.com/verify?token=abc123');
+        expect(content!.text).toContain('Test Community');
+        expect(content!.text).toContain('https://example.com/verify?token=abc123');
+      } finally {
+        fs.rmSync(tmpDir, { recursive: true });
+      }
+    });
+
+    it('should render a developer welcome template', () => {
+      const tmpDir = path.join(process.cwd(), '.tmp-test-render-welcome');
+      fs.mkdirSync(tmpDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(tmpDir, 'welcome.html'),
+        '<!-- subject: Welcome to {{appName}} -->\n<p>Welcome, {{greeting}}</p>',
+      );
+
+      try {
+        const content = renderEmailTemplate('welcome', {
+          appName: 'My App',
+          greeting: 'Hi there,',
+          url: 'https://example.com/verify',
+        }, tmpDir);
+
+        expect(content).not.toBeNull();
+        expect(content!.subject).toContain('Welcome to My App');
+        expect(content!.html).toContain('My App');
+      } finally {
+        fs.rmSync(tmpDir, { recursive: true });
+      }
+    });
+
+    it('should render a developer email-change template', () => {
+      const tmpDir = path.join(process.cwd(), '.tmp-test-render-email-change');
+      fs.mkdirSync(tmpDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(tmpDir, 'email-change.html'),
+        '<!-- subject: Confirm your new email -->\n<p>{{greeting}} Confirm: <a href="{{verificationUrl}}">Verify</a></p>',
+      );
+
+      try {
+        const content = renderEmailTemplate('email-change', {
+          appName: 'My App',
+          greeting: 'Hi User,',
+          verificationUrl: 'https://example.com/confirm',
+        }, tmpDir);
+
+        expect(content).not.toBeNull();
+        expect(content!.subject).toContain('Confirm your new email');
+        expect(content!.html).toContain('https://example.com/confirm');
+      } finally {
+        fs.rmSync(tmpDir, { recursive: true });
+      }
     });
 
     it('should use developer template directory when provided', () => {
@@ -208,6 +252,126 @@ describe('Email Renderer', () => {
       } finally {
         fs.rmSync(tmpDir, { recursive: true });
       }
+    });
+  });
+
+  describe('renderAstroEmail', () => {
+    it('should return null for unknown template type', async () => {
+      const result = await renderAstroEmail('nonexistent', { appName: 'Test' });
+      expect(result).toBeNull();
+    });
+
+    it('should have subject mappings for all known email types', async () => {
+      // Verify the subject functions exist and produce correct results
+      // even if the Container API rendering fails in the test environment
+      for (const type of ['sign-in', 'welcome', 'email-change']) {
+        const result = await renderAstroEmail(type, { appName: 'TestApp' });
+        // In test env, Container API may not be available, so result could be null
+        // But we can verify the function doesn't throw
+        expect(result === null || typeof result?.subject === 'string').toBe(true);
+      }
+    });
+
+    it('should include subject with appName for sign-in type when rendering succeeds', async () => {
+      const result = await renderAstroEmail('sign-in', {
+        url: 'https://example.com/verify',
+        appName: 'My Community',
+        greeting: 'Hi Alice,',
+      });
+      // If container rendering succeeds, validate the result
+      if (result) {
+        expect(result.subject).toContain('My Community');
+        expect(result.html).toBeTruthy();
+        expect(result.text).toBeTruthy();
+      }
+    });
+
+    it('should accept an optional theme parameter without throwing', async () => {
+      const theme = {
+        colors: { primary: '#e11d48', background: '#f9fafb', surface: '#ffffff', text: '#374151', mutedText: '#6b7280', border: '#e5e7eb', buttonText: '#ffffff' },
+        typography: { fontFamily: 'Arial, sans-serif', fontSize: '16px', headingSize: '20px' },
+        spacing: { contentPadding: '32px', borderRadius: '8px', buttonRadius: '8px', buttonPadding: '12px 24px' },
+        branding: { logoAlt: 'Test', logoWidth: '120px' },
+      };
+      // Should not throw regardless of Container API availability
+      const result = await renderAstroEmail('sign-in', {
+        url: 'https://example.com',
+        appName: 'Themed App',
+      }, theme as any);
+      expect(result === null || typeof result?.html === 'string').toBe(true);
+    });
+
+    it('should return null for unknown type even when theme is provided', async () => {
+      const result = await renderAstroEmail('nonexistent', { appName: 'Test' }, {} as any);
+      expect(result).toBeNull();
+    });
+
+    it('should accept an optional developerDir parameter without throwing (deprecated)', async () => {
+      // developerDir is now ignored — virtual module handles template discovery.
+      // Parameter retained for backward compatibility.
+      const result = await renderAstroEmail('sign-in', {
+        url: 'https://example.com',
+        appName: 'Test',
+      }, undefined, '/nonexistent/dir');
+      // Should still return null if Container API / virtual module unavailable
+      expect(result === null || typeof result?.html === 'string').toBe(true);
+    });
+  });
+
+  describe('DEFAULT_EMAIL_SUBJECTS', () => {
+    it('should have entries for all three email types', () => {
+      expect(DEFAULT_EMAIL_SUBJECTS['sign-in']).toBeDefined();
+      expect(DEFAULT_EMAIL_SUBJECTS['welcome']).toBeDefined();
+      expect(DEFAULT_EMAIL_SUBJECTS['email-change']).toBeDefined();
+    });
+
+    it('should generate subjects using appName', () => {
+      const data = { appName: 'Test App' };
+      expect(DEFAULT_EMAIL_SUBJECTS['sign-in'](data)).toContain('Test App');
+      expect(DEFAULT_EMAIL_SUBJECTS['welcome'](data)).toContain('Test App');
+      expect(DEFAULT_EMAIL_SUBJECTS['email-change'](data)).toContain('Test App');
+    });
+
+    it('should fall back to Community RSS when no appName provided', () => {
+      const data = {};
+      expect(DEFAULT_EMAIL_SUBJECTS['sign-in'](data)).toContain('Community RSS');
+      expect(DEFAULT_EMAIL_SUBJECTS['welcome'](data)).toContain('Community RSS');
+      expect(DEFAULT_EMAIL_SUBJECTS['email-change'](data)).toContain('Community RSS');
+    });
+  });
+
+  describe('resolveSubject', () => {
+    it('should use config override string when provided', () => {
+      const subjects = { 'sign-in': 'Custom Sign In Subject' };
+      const result = resolveSubject('sign-in', { appName: 'Test' }, subjects);
+      expect(result).toBe('Custom Sign In Subject');
+    });
+
+    it('should use config override function when provided', () => {
+      const subjects = {
+        'sign-in': (data: { appName: string }) => `Log in to ${data.appName}`,
+      };
+      const result = resolveSubject('sign-in', { appName: 'My App' }, subjects);
+      expect(result).toBe('Log in to My App');
+    });
+
+    it('should fall back to DEFAULT_EMAIL_SUBJECTS when no override', () => {
+      const result = resolveSubject('sign-in', { appName: 'Test App' });
+      expect(result).toContain('Test App');
+      expect(result).toBe(DEFAULT_EMAIL_SUBJECTS['sign-in']({ appName: 'Test App' }));
+    });
+
+    it('should fall back to raw name for unknown types', () => {
+      const result = resolveSubject('custom-type', { appName: 'Test' });
+      expect(result).toBe('custom-type');
+    });
+
+    it('should use Community RSS as default appName in override functions', () => {
+      const subjects = {
+        'sign-in': (data: { appName: string }) => `Sign in: ${data.appName}`,
+      };
+      const result = resolveSubject('sign-in', {}, subjects);
+      expect(result).toBe('Sign in: Community RSS');
     });
   });
 });

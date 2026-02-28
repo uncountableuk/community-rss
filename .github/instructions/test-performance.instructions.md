@@ -199,5 +199,35 @@ Need to mutate data?
 ```
 Testing pure logic?
  Yes → Unit test with fixtures
- No → Integration test with in-memory SQLite
+ No →
+   Testing user-visible flows across pages?
+    Yes → E2E test with Playwright
+    No → Integration test with in-memory SQLite
 ```
+
+## E2E Performance Considerations
+
+### Playwright Parallelisation
+- Playwright projects (chromium, firefox, webkit) run in parallel by default
+- Individual spec files run in parallel within a project
+- Use `test.describe.serial` only when tests have ordering dependencies
+  (e.g., sign in → profile → sign out)
+- Each spec file gets its own browser context — no shared state between files
+
+### Timeout Strategy
+- Default test timeout: 30 seconds (configured in `playwright.config.ts`)
+- Server Islands (`server:defer`) stream content after initial load —
+  use `page.waitForSelector()` with generous timeouts for deferred content
+- Navigation timeout: separate from assertion timeout — set via
+  `page.goto(url, { timeout: 15000 })` for slow cold starts
+
+### Skip Strategy for Missing Services
+- E2E tests should skip gracefully when Docker services are unavailable
+- Use `test.skip()` inside test body after checking service health
+- CI pipelines may run unit tests without Docker — E2E tests must not
+  fail the entire suite
+
+### Performance Goals
+- Individual E2E spec: <30 seconds (including navigation + assertions)
+- Full E2E suite: <5 minutes across all projects
+- Cold start (first test): allow extra time for dev server startup

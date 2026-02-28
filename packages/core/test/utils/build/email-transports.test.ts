@@ -95,6 +95,7 @@ describe('email-transports', () => {
             expect(body.To[0].Email).toBe('user@example.com');
             expect(body.Subject).toBe('Test Subject');
             expect(body.Text).toBe('Plain text body');
+            expect(body.HTML).toBe('<h1>HTML body</h1>');
         });
 
         it('should use default port 8025 when not specified', async () => {

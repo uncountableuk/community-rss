@@ -42,19 +42,32 @@ const FILE_MAP = [
     { template: 'pages/profile.astro', target: 'src/pages/profile.astro' },
     { template: 'pages/terms.astro', target: 'src/pages/terms.astro' },
 
-    // Email templates
-    { template: 'email-templates/sign-in.html', target: 'src/email-templates/sign-in.html' },
-    { template: 'email-templates/welcome.html', target: 'src/email-templates/welcome.html' },
+    // Email templates (Astro — developer-owned, including shared layout)
+    { template: 'email-templates/EmailLayout.astro', target: 'src/email-templates/EmailLayout.astro' },
+    { template: 'email-templates/SignInEmail.astro', target: 'src/email-templates/SignInEmail.astro' },
+    { template: 'email-templates/WelcomeEmail.astro', target: 'src/email-templates/WelcomeEmail.astro' },
     {
-        template: 'email-templates/email-change.html',
-        target: 'src/email-templates/email-change.html',
+        template: 'email-templates/EmailChangeEmail.astro',
+        target: 'src/email-templates/EmailChangeEmail.astro',
     },
+
+    // Actions
+    { template: 'actions/index.ts', target: 'src/actions/index.ts' },
+
+    // Component proxy wrappers (Proxy Pattern)
+    { template: 'components/FeedCard.astro', target: 'src/components/FeedCard.astro' },
+    { template: 'components/FeedGrid.astro', target: 'src/components/FeedGrid.astro' },
+    { template: 'components/TabBar.astro', target: 'src/components/TabBar.astro' },
 
     // Config files
     { template: 'astro.config.mjs', target: 'astro.config.mjs' },
     { template: 'env.example', target: '.env.example' },
     { template: 'docker-compose.yml', target: 'docker-compose.yml' },
     { template: 'theme.css', target: 'src/styles/theme.css' },
+
+    // AI guidance (GitHub Copilot + Cursor IDE)
+    { template: '.github/copilot-instructions.md', target: '.github/copilot-instructions.md' },
+    { template: '.cursor/rules/community-rss.mdc', target: '.cursor/rules/community-rss.mdc' },
 ];
 
 /**

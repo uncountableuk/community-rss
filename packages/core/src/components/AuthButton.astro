@@ -2,11 +2,23 @@
 /**
  * Auth button component — shows sign-in or sign-out based on session state.
  *
- * Uses client-side JavaScript to check the session via the better-auth
- * `/api/auth/get-session` endpoint and toggles the button accordingly.
+ * Performs a server-side session check via better-auth so that the
+ * correct UI is rendered without client-side JavaScript. Designed to
+ * be used with Astro's `server:defer` directive (Server Islands) so
+ * the initial page shell loads instantly while auth state streams in.
+ *
+ * @example
+ * ```astro
+ * <AuthButton server:defer>
+ *   <div slot="fallback" class="crss-auth-skeleton" aria-hidden="true"></div>
+ * </AuthButton>
+ * ```
  *
  * @since 0.3.0
  */
+
+import { createAuth } from '../utils/build/auth';
+import type { AppContext } from '../types/context';
 
 interface Props {
   /** Configurable label strings. @since 0.4.0 */
@@ -24,14 +36,45 @@ const {
     profileLink: profileLinkText = '',
   } = {},
 } = Astro.props;
+
+// Server-side session check via better-auth
+const app = (Astro.locals as Record<string, unknown>).app as AppContext | undefined;
+let isAuthenticated = false;
+let displayName = '';
+
+if (app) {
+  try {
+    const auth = createAuth(app);
+    const session = await auth.api.getSession({
+      headers: Astro.request.headers,
+    });
+    if (session?.user && !(session.user as Record<string, unknown>).isGuest) {
+      isAuthenticated = true;
+      displayName = session.user.name || session.user.email || '';
+    }
+  } catch {
+    /* default to sign-in button */
+  }
+}
 ---
 
 <div class="crss-auth-button" id="crss-auth-button">
-  <a href="/auth/signin" class="crss-btn crss-btn--signin" id="crss-signin-btn">{signInLabel}</a>
-  <div class="crss-auth-user" id="crss-user-info" style="display: none;">
-    <a href="/profile" class="crss-auth-user__name" id="crss-user-name">{profileLinkText}</a>
-    <button class="crss-btn crss-btn--signout" id="crss-signout-btn" type="button">{signOutLabel}</button>
-  </div>
+  {
+    isAuthenticated ? (
+      <div class="crss-auth-user" id="crss-user-info">
+        <a href="/profile" class="crss-auth-user__name" id="crss-user-name">
+          {displayName || profileLinkText || 'Profile'}
+        </a>
+        <button class="crss-btn crss-btn--signout" id="crss-signout-btn" type="button">
+          {signOutLabel}
+        </button>
+      </div>
+    ) : (
+      <a href="/auth/signin" class="crss-btn crss-btn--signin" id="crss-signin-btn">
+        {signInLabel}
+      </a>
+    )
+  }
 </div>
 
 <style>
@@ -91,28 +134,6 @@ const {
 </style>
 
 <script>
-  async function checkSession() {
-    try {
-      const response = await fetch('/api/auth/get-session', {
-        credentials: 'include',
-      });
-      if (response.ok) {
-        const data = await response.json();
-        if (data?.session && data?.user) {
-          const signInBtn = document.getElementById('crss-signin-btn');
-          const userInfo = document.getElementById('crss-user-info');
-          const userName = document.getElementById('crss-user-name');
-
-          if (signInBtn) signInBtn.style.display = 'none';
-          if (userInfo) userInfo.style.display = 'flex';
-          if (userName) userName.textContent = data.user.name || data.user.email || 'User';
-        }
-      }
-    } catch {
-      // Session check failed — show sign-in button (default state)
-    }
-  }
-
   async function signOut() {
     try {
       const response = await fetch('/api/auth/sign-out', {
@@ -126,13 +147,18 @@ const {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('[community-rss] Sign-out failed with status', response.status, ':', errorText);
+        console.error(
+          '[community-rss] Sign-out failed with status',
+          response.status,
+          ':',
+          errorText,
+        );
         return;
       }
 
       // Clear guest cookie on sign-out
       document.cookie = 'crss_guest=; path=/; max-age=0; samesite=lax';
-      
+
       // Redirect to home
       window.location.href = '/';
     } catch (err) {
@@ -148,7 +174,4 @@ const {
       signOut();
     });
   }
-
-  // Check session on page load
-  checkSession();
 </script>

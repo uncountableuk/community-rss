@@ -184,3 +184,55 @@ scaffolding script.
 ```bash
 npm run test:coverage
 ```
+
+## E2E Testing (Playwright)
+
+End-to-end tests use [Playwright](https://playwright.dev/) and live in
+`e2e/` at the repo root.
+
+### Running E2E Tests
+
+```bash
+# Prerequisites: scaffold playground + start Docker services
+npm run reset:playground
+cd playground && docker compose up -d && cd ..
+
+# Run E2E tests (starts dev server automatically)
+npm run test:e2e
+
+# Interactive UI mode
+npm run test:e2e:ui
+```
+
+### E2E Structure
+
+```
+e2e/
+  fixtures/    # Seed data, auth helpers, combined exports
+  pages/       # Per-page test specs (homepage, signin, profile, etc.)
+  flows/       # Multi-page user flow specs (auth, browsing, consent)
+```
+
+### E2E vs Unit Test Decision
+
+| Question | Unit Test | E2E Test |
+|----------|-----------|----------|
+| Testing a pure function? | ✅ | |
+| Testing a database query? | ✅ | |
+| Testing a single API route handler? | ✅ | |
+| Testing user-visible page behaviour? | | ✅ |
+| Testing multi-page navigation flows? | | ✅ |
+| Testing auth flows (sign-in → session)? | | ✅ |
+
+### E2E Conventions
+
+- Import from `@playwright/test`, not Vitest
+- Tests skip gracefully when Docker services are unavailable
+- Use generous timeouts for Server Islands (`server:defer`) content
+- Auth-dependent tests use `E2E_AUTH_COOKIE` or Mailpit magic link
+  interception
+
+<Aside type="note">
+E2E tests require Docker services (Mailpit) to be running. They are not
+included in `npm run test:run` — run them separately with `npm run test:e2e`.
+</Aside>

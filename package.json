@@ -22,10 +22,13 @@
     "test": "cd packages/core && npx vitest",
     "test:run": "cd packages/core && npx vitest run",
     "test:coverage": "cd packages/core && npx vitest run --coverage",
+    "test:e2e": "npx playwright test",
+    "test:e2e:ui": "npx playwright test --ui-host=0.0.0.0 --ui-port=8077",
     "clean": "rm -rf packages/core/.astro playground/.astro docs/.astro playground/dist docs/dist packages/core/coverage"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.3",
+    "@playwright/test": "^1.58.2",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
     "@vitest/coverage-v8": "^3.2.4",

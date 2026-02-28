@@ -1,0 +1,49 @@
+---
+/**
+ * Sign-in magic link email template.
+ *
+ * Rendered via the Astro Container API and post-processed with
+ * `juice` to inline CSS. Uses `EmailLayout.astro` for the outer
+ * table structure.
+ *
+ * Theme values are passed through as props and used directly in
+ * inline styles — no CSS custom properties.
+ *
+ * @since 0.5.0
+ */
+import EmailLayout from './EmailLayout.astro';
+
+interface Props {
+  /** Magic link URL */
+  url: string;
+  /** Application/community name */
+  appName?: string;
+  /** Personalised greeting (e.g., "Hi Alice,") */
+  greeting?: string;
+  /** Resolved email theme */
+  theme?: Record<string, any>;
+}
+
+const { url, appName = 'Community RSS', greeting = 'Hi there,', theme = {} } = Astro.props;
+const colors = theme.colors ?? {};
+const spacing = theme.spacing ?? {};
+---
+
+<EmailLayout appName={appName} theme={theme}>
+  <p style="margin: 0 0 16px 0;">{greeting}</p>
+  <p style="margin: 0 0 16px 0;">Click the button below to sign in:</p>
+  <p style="margin: 24px 0;">
+    <a
+      href={url}
+      style={`background-color: ${colors.primary ?? '#4f46e5'}; color: ${colors.buttonText ?? '#ffffff'}; padding: ${spacing.buttonPadding ?? '12px 24px'}; text-decoration: none; border-radius: ${spacing.buttonRadius ?? '8px'}; display: inline-block; font-weight: 600;`}
+    >
+      Sign In
+    </a>
+  </p>
+  <p style={`margin: 0 0 8px 0; color: ${colors.mutedText ?? '#6b7280'}; font-size: 14px;`}>
+    This link expires in 60 minutes.
+  </p>
+  <p style={`margin: 0; color: ${colors.mutedText ?? '#6b7280'}; font-size: 14px;`}>
+    If you didn't request this, you can safely ignore this email.
+  </p>
+</EmailLayout>

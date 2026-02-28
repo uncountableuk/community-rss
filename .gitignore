@@ -158,3 +158,8 @@ data/
 # Playground — ephemeral, rebuilt via: npm run reset:playground
 # Kept as a workspace for symlink resolution but not version-controlled.
 playground/
+
+# Playwright
+playwright-report/
+test-results/
+blob-report/

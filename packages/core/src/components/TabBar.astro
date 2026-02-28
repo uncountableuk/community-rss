@@ -2,8 +2,8 @@
 /**
  * TabBar component — navigation tabs for feed views.
  *
- * In 0.2.0, only "All Feeds" is active. Other tabs are stubs
- * that will be enabled in subsequent releases.
+ * Accepts a configurable list of tabs via the `tabs` prop.
+ * Defaults to the standard feed view tabs if none are provided.
  *
  * @since 0.2.0
  */
@@ -15,31 +15,42 @@ interface Tab {
   disabled: boolean;
 }
 
-const tabs: Tab[] = [
+interface Props {
+  /** Tab definitions. Defaults to standard feed view tabs. @since 0.5.0 */
+  tabs?: Tab[];
+  /** Accessible label for the tab bar. @since 0.5.0 */
+  ariaLabel?: string;
+}
+
+const defaultTabs: Tab[] = [
   { id: 'all', label: 'All Feeds', active: true, disabled: false },
   { id: 'following', label: 'My Feed', active: false, disabled: true },
   { id: 'trending', label: 'Trending', active: false, disabled: true },
   { id: 'starred', label: 'Starred', active: false, disabled: true },
 ];
+
+const { tabs = defaultTabs, ariaLabel = 'Feed views' } = Astro.props;
 ---
 
-<nav class="crss-tab-bar" role="tablist" aria-label="Feed views">
-  {tabs.map((tab) => (
-    <button
-      role="tab"
-      id={`tab-${tab.id}`}
-      class:list={[
-        'crss-tab-bar__tab',
-        { 'crss-tab-bar__tab--active': tab.active },
-        { 'crss-tab-bar__tab--disabled': tab.disabled },
-      ]}
-      aria-selected={tab.active}
-      disabled={tab.disabled}
-      data-tab={tab.id}
-    >
-      {tab.label}
-    </button>
-  ))}
+<nav class="crss-tab-bar" role="tablist" aria-label={ariaLabel}>
+  {
+    tabs.map((tab) => (
+      <button
+        role="tab"
+        id={`tab-${tab.id}`}
+        class:list={[
+          'crss-tab-bar__tab',
+          { 'crss-tab-bar__tab--active': tab.active },
+          { 'crss-tab-bar__tab--disabled': tab.disabled },
+        ]}
+        aria-selected={tab.active}
+        disabled={tab.disabled}
+        data-tab={tab.id}
+      >
+        {tab.label}
+      </button>
+    ))
+  }
 </nav>
 
 <style>
@@ -62,7 +73,9 @@ const tabs: Tab[] = [
     cursor: pointer;
     border-bottom: 2px solid transparent;
     margin-bottom: -2px;
-    transition: color 0.15s ease, border-color 0.15s ease;
+    transition:
+      color 0.15s ease,
+      border-color 0.15s ease;
     white-space: nowrap;
   }
 

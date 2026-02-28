@@ -56,7 +56,10 @@ import BaseLayout from '@community-rss/core/layouts/BaseLayout.astro';
       }
 
       let errorMessage = 'This link is invalid or has expired.';
-      const errorText = await res.clone().text().catch(() => '');
+      const errorText = await res
+        .clone()
+        .text()
+        .catch(() => '');
 
       try {
         const data = JSON.parse(errorText);
@@ -139,6 +142,8 @@ import BaseLayout from '@community-rss/core/layouts/BaseLayout.astro';
   }
 
   @keyframes crss-spin {
-    to { transform: rotate(360deg); }
+    to {
+      transform: rotate(360deg);
+    }
   }
 </style>

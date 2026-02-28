@@ -71,14 +71,63 @@ architecture, code reuse, and adherence to established patterns.
 - **Route split**: API routes (11) are injected by the integration; page
   routes (8) are scaffolded into the developer's project via
   `npx @community-rss/core init` and are developer-owned
-- Email templates use file-based HTML with `{{variable}}` substitution;
-  resolution: developer dir → package defaults → code-based fallbacks
+- Email templates: Astro Container API (`.astro`) is the primary rendering
+  path, loaded via `virtual:crss-email-templates` Vite virtual module.
+  Developer `.html` files with `{{variable}}` placeholders supported as a
+  simpler alternative. Resolution: custom code → Astro (dev → pkg) →
+  developer HTML → code defaults. Core ships no `.html` templates.
 - Components accept `messages`/`labels` props — all user-facing strings
   are configurable; no hard-coded copy in components
 - Before creating new functions, search for existing utilities that can be reused
 - The "System User" (`id: 'system'`) owns global/community feeds imported
   from FreshRSS. It is seeded during database setup and checked defensively
   in `syncFeeds()`. Admin users may also own feeds without domain verification.
+
+### Three-Tier Design Token System
+- **Tier 1 — Reference** (`--crss-ref-*`): Raw palette values, spacing/type
+  scales. Defined in `src/styles/tokens/reference.css`.
+- **Tier 2 — System** (`--crss-sys-*`): Semantic roles mapping refs to meaning
+  (e.g., `--crss-sys-color-primary`). Backward-compatible flat aliases
+  (`--crss-surface-0`, `--crss-text-primary`, etc.) are defined here.
+  In `src/styles/tokens/system.css`.
+- **Tier 3 — Component** (`--crss-comp-*`): Component-scoped overrides
+  (e.g., `--crss-comp-card-bg`). In `src/styles/tokens/components.css`.
+- All tokens live inside `@layer crss-tokens`
+- Never use hardcoded colour/spacing values — always reference a token
+
+### CSS Cascade Layers
+- Layer order: `crss-reset, crss-tokens, crss-base, crss-components, crss-utilities`
+- Defined in `src/styles/layers.css`
+- Consumer `theme.css` is un-layered so it always wins
+- Components use `@layer crss-components { ... }` only when declaring styles
+  outside scoped `<style>` blocks
+
+### Astro Actions
+- Action handlers are exported from `packages/core/src/actions/` as pure
+  functions with signature `(input, app: AppContext) => Promise<Result>`
+- Consumers register them in their scaffolded `src/actions/index.ts` via
+  Astro's `defineAction` with Zod validation
+- The core package CANNOT import `astro:actions` — only consumer projects can
+- Action handlers are also exported from `@community-rss/core/actions`
+
+### Server Islands
+- Auth-dependent UI (AuthButton, HomepageCTA) uses `server:defer` to stream
+  content after the initial page shell loads
+- These components perform server-side session checks — no client-side
+  `fetch('/api/auth/get-session')` needed
+- Always provide a `slot="fallback"` for loading skeletons
+
+### Proxy Component Pattern
+- Scaffolded components in developers' `src/components/` are **thin wrappers**
+  that import core components from `@community-rss/core/components/*`
+- Wrappers own the `<style>` block (survives package updates); core owns logic
+- No business logic, no API calls in wrappers — only styling and props
+
+### Protected Areas
+- Never modify files in `node_modules/@community-rss/core/`
+- Never fork or patch the core package — use scaffolded overrides
+- Never hand-edit injected API routes (`/api/v1/*`, `/api/auth/*`)
+- Use `theme.css`, `messages` props, and Action handlers for customisation
 
 ### API Design (Post-1.0.0 Critical)
 - All public APIs exported from `packages/core/index.ts` must remain **forward-compatible**
@@ -103,9 +152,11 @@ architecture, code reuse, and adherence to established patterns.
 
 ### Styling (Framework Defaults)
 - Use CSS custom properties for all themeable values
+- Three-tier token system: Reference → System → Component (see above)
 - Prefix all framework tokens with `--crss-` to avoid namespace collisions
-- Provide sensible defaults; consumers override via theme.css or integration config
+- Provide sensible defaults; consumers override via `theme.css` (un-layered)
 - No hard-coded colour values — use design tokens that consumers can remap
+- CSS cascade layers ensure framework styles never override consumer styles
 - Framework components must be compatible with any design system
 
 ### Testing
@@ -116,6 +167,9 @@ architecture, code reuse, and adherence to established patterns.
 - Before code review: run `npm run test:coverage` from root and verify no decrease
 - DB tests use in-memory SQLite via better-sqlite3 (not D1 or Miniflare)
 - Use `vi.hoisted()` for any variable referenced inside `vi.mock()` factories
+- **E2E tests** (Playwright): live in `e2e/` at repo root; test against
+  the running playground; skip gracefully when Docker services unavailable
+- Run unit tests: `npm run test:run`; E2E tests: `npm run test:e2e`
 
 ### Release Process
 - Feature plans go in `feature_plans/X_Y_Z/{feature_name}/`
@@ -163,3 +217,7 @@ architecture, code reuse, and adherence to established patterns.
 - ❌ Inject page routes from the package — pages are developer-owned (scaffolded)
 - ❌ Hard-code user-facing strings in components — use `messages`/`labels` props
 - ❌ Declare mock variables outside `vi.hoisted()` when used in `vi.mock()` factories
+- ❌ Use hardcoded hex/rgb colour values in components — use `--crss-*` tokens
+- ❌ Put styles outside `@layer` in framework CSS — consumer styles must win
+- ❌ Import `astro:actions` from the core package — only consumer projects can
+- ❌ Modify files in `node_modules/` or patch the core package

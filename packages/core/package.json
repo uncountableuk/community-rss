@@ -10,9 +10,11 @@
   },
   "exports": {
     ".": "./index.ts",
+    "./actions": "./src/actions/index.ts",
     "./layouts/*": "./src/layouts/*",
     "./components/*": "./src/components/*",
-    "./styles/*": "./src/styles/*"
+    "./styles/*": "./src/styles/*",
+    "./templates/email/*": "./src/templates/email/*"
   },
   "files": [
     "index.ts",
@@ -30,6 +32,7 @@
     "better-sqlite3": "^12.6.2",
     "cheerio": "^1.2.0",
     "drizzle-orm": "^0.38.0",
+    "juice": "^11.1.1",
     "node-cron": "^4.2.1",
     "sanitize-html": "^2.17.1"
   },

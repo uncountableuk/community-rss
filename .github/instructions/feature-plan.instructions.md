@@ -45,6 +45,8 @@ The `X_Y_Z` folder corresponds to the target release version.
 - Database schema changes (new tables, columns, migrations)
 - CLI scaffold additions (new template files)
 - Email template additions
+- **Astro Action handlers** (new `src/actions/` files, consumer registration)
+- **Server Islands** (components needing `server:defer` for auth-dependent UI)
 - Rationale for design decisions
 - Forward-compatibility analysis: "Can this evolve without breaking?"
 
@@ -83,7 +85,13 @@ Break work into ordered, checkbox-tracked phases:
 - [ ] CLI scaffold tests
 - [ ] Verify ≥80% coverage maintained
 
-## Phase 7: Documentation
+## Phase 7: E2E Tests
+- [ ] Page specs in `e2e/pages/` for new pages
+- [ ] Flow specs in `e2e/flows/` for multi-page user journeys
+- [ ] Fixture helpers for any new test data or service mocks
+- [ ] Skip gracefully when Docker services unavailable
+
+## Phase 8: Documentation
 - [ ] API reference for new public exports
 - [ ] Update README if applicable
 - [ ] JSDoc on all public functions with @since tags

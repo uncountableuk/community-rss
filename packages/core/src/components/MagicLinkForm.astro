@@ -33,7 +33,12 @@ const {
 } = Astro.props;
 ---
 
-<form class="crss-magic-link-form" id="crss-magic-link-form" data-error-text={errorText} data-network-error-text={networkErrorText}>
+<form
+  class="crss-magic-link-form"
+  id="crss-magic-link-form"
+  data-error-text={errorText}
+  data-network-error-text={networkErrorText}
+>
   <div class="crss-form-group">
     <label for="crss-email-input" class="crss-form-label">{emailLabel}</label>
     <input
@@ -47,15 +52,28 @@ const {
     />
   </div>
 
-  <button type="submit" class="crss-btn crss-btn--primary" id="crss-submit-btn" data-default-text={submitLabel}>
+  <button
+    type="submit"
+    class="crss-btn crss-btn--primary"
+    id="crss-submit-btn"
+    data-default-text={submitLabel}
+  >
     {submitLabel}
   </button>
 
-  <div class="crss-form-message crss-form-message--success" id="crss-success-msg" style="display: none;">
+  <div
+    class="crss-form-message crss-form-message--success"
+    id="crss-success-msg"
+    style="display: none;"
+  >
     {successText}
   </div>
 
-  <div class="crss-form-message crss-form-message--error" id="crss-error-msg" style="display: none;">
+  <div
+    class="crss-form-message crss-form-message--error"
+    id="crss-error-msg"
+    style="display: none;"
+  >
   </div>
 </form>
 
@@ -94,7 +112,7 @@ const {
   .crss-form-input:focus {
     outline: none;
     border-color: var(--crss-brand-primary);
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    box-shadow: var(--crss-comp-form-focus-ring, 0 0 0 3px var(--crss-focus-ring));
   }
 
   .crss-btn--primary {
@@ -128,15 +146,15 @@ const {
   }
 
   .crss-form-message--success {
-    background-color: #ecfdf5;
-    color: #065f46;
-    border: 1px solid #a7f3d0;
+    background-color: var(--crss-comp-form-success-bg, var(--crss-success-bg));
+    color: var(--crss-comp-form-success-text, var(--crss-success-text));
+    border: 1px solid var(--crss-comp-form-success-border, var(--crss-success-border));
   }
 
   .crss-form-message--error {
-    background-color: #fef2f2;
-    color: #991b1b;
-    border: 1px solid #fecaca;
+    background-color: var(--crss-comp-form-error-bg, var(--crss-error-bg));
+    color: var(--crss-comp-form-error-text, var(--crss-error-text));
+    border: 1px solid var(--crss-comp-form-error-border, var(--crss-error-border));
   }
 </style>
 
@@ -173,7 +191,7 @@ const {
       );
 
       if (checkResponse.ok) {
-        const checkData = await checkResponse.json();
+        const checkData = (await checkResponse.json()) as { exists: boolean };
 
         if (!checkData.exists) {
           // New user — redirect to sign-up page with email pre-filled
@@ -199,7 +217,7 @@ const {
         successMsg.style.display = 'block';
         emailInput.value = '';
       } else {
-        const data = await response.json().catch(() => ({}));
+        const data = (await response.json().catch(() => ({}))) as { message?: string };
         errorMsg.textContent = data.message || errorFallback;
         errorMsg.style.display = 'block';
       }

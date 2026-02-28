@@ -12,6 +12,7 @@
 import BaseLayout from '@community-rss/core/layouts/BaseLayout.astro';
 import TabBar from '@community-rss/core/components/TabBar.astro';
 import FeedGrid from '@community-rss/core/components/FeedGrid.astro';
+import HomepageCTA from '@community-rss/core/components/HomepageCTA.astro';
 ---
 
 <BaseLayout title="Community RSS">
@@ -20,18 +21,10 @@ import FeedGrid from '@community-rss/core/components/FeedGrid.astro';
       <h1 class="crss-homepage__title">Community RSS</h1>
     </header>
 
-    <!-- Sign-up CTA shown only to unauthenticated / guest visitors -->
-    <div id="crss-homepage-cta" style="display: none;" aria-live="polite">
-      <div class="crss-homepage-cta__inner">
-        <p class="crss-homepage-cta__text">
-          Join the community to react, comment, and keep track of your favourite articles.
-        </p>
-        <div class="crss-homepage-cta__actions">
-          <a href="/auth/signup" class="crss-btn crss-btn--cta">Create Account</a>
-          <a href="/auth/signin" class="crss-btn crss-btn--cta-secondary">Sign In</a>
-        </div>
-      </div>
-    </div>
+    <!-- Sign-up CTA — server island renders only for unauthenticated visitors -->
+    <HomepageCTA server:defer>
+      <Fragment slot="fallback"></Fragment>
+    </HomepageCTA>
 
     <TabBar />
 
@@ -79,81 +72,9 @@ import FeedGrid from '@community-rss/core/components/FeedGrid.astro';
   .crss-homepage__sentinel {
     height: 1px;
   }
-
-  .crss-homepage-cta__inner {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--crss-space-md);
-    padding: var(--crss-space-md) var(--crss-space-lg);
-    margin-bottom: var(--crss-space-lg);
-    background-color: var(--crss-surface-1);
-    border: 1px solid var(--crss-surface-3);
-    border-radius: var(--crss-radius-lg);
-  }
-
-  .crss-homepage-cta__text {
-    font-size: var(--crss-font-size-sm);
-    color: var(--crss-text-secondary);
-    margin: 0;
-  }
-
-  .crss-homepage-cta__actions {
-    display: flex;
-    align-items: center;
-    gap: var(--crss-space-sm);
-    flex-shrink: 0;
-  }
-
-  .crss-btn--cta {
-    display: inline-flex;
-    align-items: center;
-    padding: var(--crss-space-xs) var(--crss-space-md);
-    background-color: var(--crss-brand-primary);
-    color: var(--crss-text-inverse);
-    border-radius: var(--crss-radius-md);
-    font-size: var(--crss-font-size-sm);
-    font-family: var(--crss-font-family);
-    text-decoration: none;
-    transition: background-color var(--crss-transition-fast);
-  }
-
-  .crss-btn--cta:hover {
-    background-color: var(--crss-brand-accent);
-  }
-
-  .crss-btn--cta-secondary {
-    display: inline-flex;
-    align-items: center;
-    padding: var(--crss-space-xs) var(--crss-space-md);
-    background-color: transparent;
-    color: var(--crss-text-secondary);
-    border: 1px solid var(--crss-surface-3);
-    border-radius: var(--crss-radius-md);
-    font-size: var(--crss-font-size-sm);
-    font-family: var(--crss-font-family);
-    text-decoration: none;
-    transition:
-      background-color var(--crss-transition-fast),
-      color var(--crss-transition-fast);
-  }
-
-  .crss-btn--cta-secondary:hover {
-    background-color: var(--crss-surface-2);
-    color: var(--crss-text-primary);
-  }
 </style>
 
 <script>
-  // Show the sign-up CTA for unauthenticated or guest users
-  interface SessionResponse {
-    user?: {
-      id: string;
-      isGuest: boolean;
-    };
-  }
-
   interface ArticleResponse {
     data: Array<{
       id: string;
@@ -169,20 +90,6 @@ import FeedGrid from '@community-rss/core/components/FeedGrid.astro';
       hasMore?: boolean;
     };
   }
-
-  (async () => {
-    try {
-      const res = await fetch('/api/auth/get-session', { credentials: 'include' });
-      const data: SessionResponse | null = res.ok ? await res.json() : null;
-      const isAuthenticated = data?.user && !data.user.isGuest;
-      if (!isAuthenticated) {
-        const cta = document.getElementById('crss-homepage-cta');
-        if (cta) cta.style.display = 'block';
-      }
-    } catch {
-      // If session check fails, don't show the CTA to avoid noise
-    }
-  })();
 
   function createArticleCard(article: any): HTMLElement {
     const card = document.createElement('article');

@@ -1,0 +1,142 @@
+---
+/**
+ * Homepage call-to-action — shows sign-up/sign-in prompt for
+ * unauthenticated or guest visitors.
+ *
+ * Performs a server-side session check so the CTA is rendered only
+ * when appropriate, with no client-side JavaScript required. Designed
+ * to be used with Astro's `server:defer` directive (Server Islands)
+ * so the page shell loads instantly.
+ *
+ * @example
+ * ```astro
+ * <HomepageCTA server:defer>
+ *   <Fragment slot="fallback" />
+ * </HomepageCTA>
+ * ```
+ *
+ * @since 0.5.0
+ */
+
+import { createAuth } from '../utils/build/auth';
+import type { AppContext } from '../types/context';
+
+interface Props {
+  /** Configurable message strings. @since 0.5.0 */
+  messages?: {
+    text?: string;
+    createAccount?: string;
+    signIn?: string;
+  };
+}
+
+const {
+  messages: {
+    text: ctaText = 'Join the community to react, comment, and keep track of your favourite articles.',
+    createAccount: createAccountLabel = 'Create Account',
+    signIn: signInLabel = 'Sign In',
+  } = {},
+} = Astro.props;
+
+// Server-side session check via better-auth
+const app = (Astro.locals as Record<string, unknown>).app as AppContext | undefined;
+let showCta = true;
+
+if (app) {
+  try {
+    const auth = createAuth(app);
+    const session = await auth.api.getSession({
+      headers: Astro.request.headers,
+    });
+    if (session?.user && !(session.user as Record<string, unknown>).isGuest) {
+      showCta = false;
+    }
+  } catch {
+    /* show CTA by default on error */
+  }
+}
+---
+
+{
+  showCta && (
+    <div id="crss-homepage-cta" class="crss-homepage-cta" aria-live="polite">
+      <div class="crss-homepage-cta__inner">
+        <p class="crss-homepage-cta__text">{ctaText}</p>
+        <div class="crss-homepage-cta__actions">
+          <a href="/auth/signup" class="crss-btn crss-btn--cta">
+            {createAccountLabel}
+          </a>
+          <a href="/auth/signin" class="crss-btn crss-btn--cta-secondary">
+            {signInLabel}
+          </a>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+<style>
+  .crss-homepage-cta__inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--crss-space-md);
+    padding: var(--crss-space-md) var(--crss-space-lg);
+    margin-bottom: var(--crss-space-lg);
+    background-color: var(--crss-surface-1);
+    border: 1px solid var(--crss-surface-3);
+    border-radius: var(--crss-radius-lg);
+  }
+
+  .crss-homepage-cta__text {
+    font-size: var(--crss-font-size-sm);
+    color: var(--crss-text-secondary);
+    margin: 0;
+  }
+
+  .crss-homepage-cta__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--crss-space-sm);
+    flex-shrink: 0;
+  }
+
+  .crss-btn--cta {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--crss-space-xs) var(--crss-space-md);
+    background-color: var(--crss-brand-primary);
+    color: var(--crss-text-inverse);
+    border-radius: var(--crss-radius-md);
+    font-size: var(--crss-font-size-sm);
+    font-family: var(--crss-font-family);
+    text-decoration: none;
+    transition: background-color var(--crss-transition-fast);
+  }
+
+  .crss-btn--cta:hover {
+    background-color: var(--crss-brand-accent);
+  }
+
+  .crss-btn--cta-secondary {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--crss-space-xs) var(--crss-space-md);
+    background-color: transparent;
+    color: var(--crss-text-secondary);
+    border: 1px solid var(--crss-surface-3);
+    border-radius: var(--crss-radius-md);
+    font-size: var(--crss-font-size-sm);
+    font-family: var(--crss-font-family);
+    text-decoration: none;
+    transition:
+      background-color var(--crss-transition-fast),
+      color var(--crss-transition-fast);
+  }
+
+  .crss-btn--cta-secondary:hover {
+    background-color: var(--crss-surface-2);
+    color: var(--crss-text-primary);
+  }
+</style>

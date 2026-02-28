@@ -1,3 +1,4 @@
+import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { AstroIntegration } from 'astro';
@@ -7,6 +8,72 @@ import { startScheduler, stopScheduler } from './utils/build/scheduler';
 import { createDatabase, closeDatabase } from './db/connection';
 import { setGlobalConfig } from './config-store';
 import type { EnvironmentVariables } from './types/context';
+
+/**
+ * Converts a PascalCase name to kebab-case.
+ *
+ * @example pascalToKebab('SignIn') → 'sign-in'
+ * @internal
+ * @since 0.5.0
+ */
+function pascalToKebab(name: string): string {
+  return name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+}
+
+/**
+ * Generates the source code for the `virtual:crss-email-templates` module.
+ *
+ * Scans developer and package template directories for `*Email.astro` files,
+ * generates static import statements, and exports `devTemplates` and
+ * `packageTemplates` maps keyed by email type name (kebab-case).
+ *
+ * @param devDir - Absolute path to the developer's email template directory
+ * @param pkgDir - Absolute path to the package's built-in email template directory
+ * @returns JavaScript module source code
+ * @internal
+ * @since 0.5.0
+ */
+function generateEmailTemplateModule(devDir: string, pkgDir: string): string {
+  const imports: string[] = [];
+  const devEntries: string[] = [];
+  const pkgEntries: string[] = [];
+
+  // Scan developer directory for *Email.astro files
+  if (existsSync(devDir)) {
+    const files = readdirSync(devDir).filter((f) => f.endsWith('Email.astro'));
+    for (const file of files) {
+      const varName = `dev_${file.replace('.astro', '')}`;
+      const typeName = pascalToKebab(file.replace('Email.astro', ''));
+      const filePath = join(devDir, file).replace(/\\/g, '/');
+      imports.push(`import ${varName} from '${filePath}';`);
+      devEntries.push(`  '${typeName}': ${varName}`);
+    }
+  }
+
+  // Scan package template directory for *Email.astro files
+  if (existsSync(pkgDir)) {
+    const files = readdirSync(pkgDir).filter((f) => f.endsWith('Email.astro'));
+    for (const file of files) {
+      const varName = `pkg_${file.replace('.astro', '')}`;
+      const typeName = pascalToKebab(file.replace('Email.astro', ''));
+      const filePath = join(pkgDir, file).replace(/\\/g, '/');
+      imports.push(`import ${varName} from '${filePath}';`);
+      pkgEntries.push(`  '${typeName}': ${varName}`);
+    }
+  }
+
+  return [
+    ...imports,
+    '',
+    'export const devTemplates = {',
+    devEntries.join(',\n'),
+    '};',
+    '',
+    'export const packageTemplates = {',
+    pkgEntries.join(',\n'),
+    '};',
+  ].join('\n');
+}
 
 /**
  * Creates the Community RSS Astro integration.
@@ -40,7 +107,7 @@ export function createIntegration(options: CommunityRssOptions = {}): AstroInteg
   return {
     name: 'community-rss',
     hooks: {
-      'astro:config:setup': ({ injectRoute, addMiddleware: registerMiddleware }) => {
+      'astro:config:setup': ({ injectRoute, addMiddleware: registerMiddleware, injectScript, updateConfig, config: astroConfig }) => {
         // Share resolved config with middleware via globalThis bridge
         setGlobalConfig(config);
 
@@ -48,6 +115,46 @@ export function createIntegration(options: CommunityRssOptions = {}): AstroInteg
         registerMiddleware({
           entrypoint: new URL('./middleware.ts', import.meta.url).pathname,
           order: 'pre',
+        });
+
+        // Inject design token CSS into every page via SSR script.
+        // Developers no longer need to manually import token files.
+        // layers.css declares @layer order and must be injected first.
+        const tokenImport = [
+          `import '${new URL('./styles/layers.css', import.meta.url).pathname}';`,
+          `import '${new URL('./styles/tokens/reference.css', import.meta.url).pathname}';`,
+          `import '${new URL('./styles/tokens/system.css', import.meta.url).pathname}';`,
+          `import '${new URL('./styles/tokens/components.css', import.meta.url).pathname}';`,
+        ].join('\n');
+        injectScript('page-ssr', tokenImport);
+
+        // --- Virtual module for Astro email templates ---
+        // Scans the developer's email template directory and the package's
+        // built-in templates, generating static imports that Vite compiles
+        // through its pipeline (including the Astro transform). This allows
+        // renderAstroEmail() to load .astro components at request time.
+        const astroRoot = astroConfig.root instanceof URL
+          ? fileURLToPath(astroConfig.root)
+          : String(astroConfig.root);
+        const cleanRoot = astroRoot.replace(/\/$/, '');
+        const devTemplateDir = join(cleanRoot, config.emailTemplateDir);
+        const pkgTemplateDir = fileURLToPath(new URL('./templates/email', import.meta.url));
+
+        updateConfig({
+          vite: {
+            plugins: [{
+              name: 'crss-email-templates',
+              resolveId(id: string) {
+                if (id === 'virtual:crss-email-templates') {
+                  return '\0virtual:crss-email-templates';
+                }
+              },
+              load(id: string) {
+                if (id !== '\0virtual:crss-email-templates') return;
+                return generateEmailTemplateModule(devTemplateDir, pkgTemplateDir);
+              },
+            }],
+          },
         });
 
         // --- API Routes (injected — update automatically with package) ---

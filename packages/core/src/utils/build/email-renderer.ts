@@ -1,9 +1,21 @@
 /**
- * File-based email template renderer.
+ * Astro Container API and file-based email template renderer.
  *
- * Resolves HTML template files from the developer's project directory
- * first, then falls back to the package's built-in templates. Supports
- * `{{variable}}` substitution and subject extraction from HTML comments.
+ * Supports two rendering paths:
+ * 1. **Astro templates** (`.astro`) — loaded via the `virtual:crss-email-templates`
+ *    Vite virtual module, rendered via the Astro Container API, and post-processed
+ *    with `juice` for CSS inlining. Developer templates take priority over package
+ *    built-ins. This is the primary rendering path.
+ * 2. **Developer HTML templates** (`.html`) — traditional `{{variable}}` substitution.
+ *    Supported as a developer convenience — developers can drop an `.html` file
+ *    into their `emailTemplateDir` to override an email without writing Astro.
+ *    The core package does NOT ship any `.html` templates.
+ *
+ * Resolution order (managed by `email-service.ts`):
+ * 1. Code-based custom templates (`emailConfig.templates`)
+ * 2. Astro templates via virtual module (developer → package)
+ * 3. Developer HTML templates (`.html` in emailTemplateDir)
+ * 4. Code-based default templates (last resort)
  *
  * @since 0.4.0
  */
@@ -11,22 +23,17 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import type { EmailContent } from '../../types/email';
+import type { ResolvedEmailTheme } from '../../types/email-theme';
 
 /**
- * Default template directory inside the package.
- * @internal
- */
-const PACKAGE_TEMPLATE_DIR = path.join(
-  path.dirname(new URL(import.meta.url).pathname),
-  '../../templates/email',
-);
-
-/**
- * Resolves a template file path, checking the developer's directory first,
- * then falling back to the package's built-in templates.
+ * Resolves a developer HTML template file path.
+ *
+ * Looks for `{name}.html` in the developer's email template directory.
+ * The core package does not ship `.html` email templates — this function
+ * only resolves developer-owned overrides.
  *
  * @param name - Template name (e.g., 'sign-in', 'welcome')
- * @param developerDir - Optional developer-provided template directory
+ * @param developerDir - Developer-provided template directory
  * @returns Resolved file path, or null if not found
  * @since 0.4.0
  */
@@ -34,18 +41,13 @@ export function resolveTemplatePath(
   name: string,
   developerDir?: string,
 ): string | null {
-  // Check developer directory first
-  if (developerDir) {
-    const devPath = path.resolve(developerDir, `${name}.html`);
-    if (fs.existsSync(devPath)) {
-      return devPath;
-    }
+  if (!developerDir) {
+    return null;
   }
 
-  // Fall back to package templates
-  const packagePath = path.join(PACKAGE_TEMPLATE_DIR, `${name}.html`);
-  if (fs.existsSync(packagePath)) {
-    return packagePath;
+  const devPath = path.resolve(developerDir, `${name}.html`);
+  if (fs.existsSync(devPath)) {
+    return devPath;
   }
 
   return null;
@@ -120,15 +122,15 @@ export function htmlToPlainText(html: string): string {
 }
 
 /**
- * Renders a file-based email template.
+ * Renders a developer-owned HTML email template.
  *
- * Resolution order:
- * 1. Developer's template directory (if configured)
- * 2. Package's built-in templates
+ * Looks for `{name}.html` in the developer's email template directory.
+ * Returns null if the file doesn't exist or no developer directory is
+ * configured. The core package does not ship `.html` email templates.
  *
  * @param name - Email template name (e.g., 'sign-in', 'welcome', 'email-change')
  * @param data - Template variables to substitute
- * @param developerDir - Optional developer-provided template directory
+ * @param developerDir - Developer-provided template directory
  * @returns Rendered email content (subject, html, text), or null if template not found
  * @since 0.4.0
  *
@@ -138,7 +140,7 @@ export function htmlToPlainText(html: string): string {
  *   appName: 'My Community',
  *   greeting: 'Hi Jim,',
  *   url: 'https://example.com/auth/verify?token=abc',
- * });
+ * }, './src/email-templates');
  * ```
  */
 export function renderEmailTemplate(
@@ -161,4 +163,125 @@ export function renderEmailTemplate(
   const text = htmlToPlainText(html);
 
   return { subject, html, text };
+}
+
+/**
+ * Default subject line generators for each email type.
+ *
+ * These provide sensible defaults when the email template doesn't
+ * supply its own subject. Developers can override subjects via
+ * `emailConfig.templates` (code-based custom templates).
+ *
+ * @internal
+ * @since 0.5.0
+ */
+export const DEFAULT_EMAIL_SUBJECTS: Record<string, (data: Record<string, string>) => string> = {
+  'sign-in': (data) => `Sign in to ${data.appName ?? 'Community RSS'}`,
+  'welcome': (data) => `Welcome to ${data.appName ?? 'Community RSS'}! Verify your account`,
+  'email-change': (data) => `Confirm your new email address — ${data.appName ?? 'Community RSS'}`,
+};
+
+/**
+ * Resolves the subject line for an email type.
+ *
+ * Checks config overrides first (`EmailConfig.subjects`), then falls back
+ * to `DEFAULT_EMAIL_SUBJECTS`, then to the raw template name.
+ *
+ * @param name - Email type name (e.g., 'sign-in')
+ * @param data - Template variables (must include `appName`)
+ * @param subjects - Optional subject overrides from EmailConfig
+ * @returns Resolved subject string
+ * @since 0.5.0
+ */
+export function resolveSubject(
+  name: string,
+  data: Record<string, string>,
+  subjects?: Record<string, string | ((data: { appName: string }) => string)>,
+): string {
+  // 1. Config override
+  const override = subjects?.[name];
+  if (override !== undefined) {
+    if (typeof override === 'function') {
+      return override({ appName: data.appName ?? 'Community RSS' });
+    }
+    return override;
+  }
+
+  // 2. Built-in default
+  const defaultFn = DEFAULT_EMAIL_SUBJECTS[name];
+  if (defaultFn) {
+    return defaultFn(data);
+  }
+
+  // 3. Fallback to raw name
+  return name;
+}
+
+/**
+ * Renders an Astro email template via the Container API with `juice`
+ * CSS inlining.
+ *
+ * Templates are loaded from the `virtual:crss-email-templates` Vite virtual
+ * module, which is populated by the integration's Vite plugin at startup.
+ * Developer templates (from `emailTemplateDir`) take priority over the
+ * package's built-in Astro templates.
+ *
+ * @param name - Email type name (e.g., 'sign-in')
+ * @param props - Props to pass to the Astro component
+ * @param theme - Optional resolved email theme (colours, typography, spacing, branding)
+ * @param _developerDir - Deprecated: developer directory is now resolved via the virtual module.
+ *                         Parameter retained for backward compatibility.
+ * @param subjects - Optional subject line overrides from `EmailConfig.subjects`
+ * @returns Rendered email content, or null if the template is unavailable
+ * @since 0.5.0
+ */
+export async function renderAstroEmail(
+  name: string,
+  props: Record<string, string>,
+  theme?: ResolvedEmailTheme,
+  _developerDir?: string,
+  subjects?: Record<string, string | ((data: { appName: string }) => string)>,
+): Promise<EmailContent | null> {
+  // Quick bail-out for unknown template types (avoids pointless import attempts)
+  if (!DEFAULT_EMAIL_SUBJECTS[name]) {
+    return null;
+  }
+
+  try {
+    const { experimental_AstroContainer: AstroContainer } = await import('astro/container');
+    const juice = (await import('juice')).default;
+
+    // Import templates from the virtual module (populated by Vite plugin in integration.ts).
+    // Developer templates take priority over package built-in templates.
+    let Component: any = null;
+    try {
+      const { devTemplates, packageTemplates } = await import('virtual:crss-email-templates');
+      Component = devTemplates[name] ?? packageTemplates[name] ?? null;
+    } catch {
+      // Virtual module not available (e.g., test environment without Vite plugin)
+      return null;
+    }
+
+    if (!Component) {
+      return null;
+    }
+
+    const container = await AstroContainer.create();
+    const rawHtml = await container.renderToString(Component, {
+      props: { ...props, ...(theme ? { theme } : {}) },
+    });
+
+    // Inline CSS for email client compatibility
+    const html = juice(rawHtml);
+    const text = htmlToPlainText(html);
+
+    // Subject resolution: config override → DEFAULT_EMAIL_SUBJECTS → fallback to name
+    const subject = resolveSubject(name, props, subjects);
+
+    return { subject, html, text };
+  } catch (err) {
+    // Container API not available or rendering failed — fall through
+    console.warn(`[community-rss] Astro email rendering failed for "${name}":`, err);
+    return null;
+  }
 }

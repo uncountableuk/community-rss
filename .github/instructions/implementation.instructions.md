@@ -87,12 +87,22 @@ Before creating a new utility:
 
 ## Email Templates
 - File-based HTML templates with `{{variable}}` substitution
-- Resolution order: developer directory → package defaults → code-based
-  fallbacks
-- Templates live in `src/templates/email-templates/` (package defaults)
+- Resolution order: custom code → developer HTML → Astro Container →
+  package HTML → code defaults (5-step chain)
+- HTML templates live in `src/templates/email-templates/` (package defaults)
+- Astro email components live in `src/templates/email/` (Container API)
 - Scaffolded to developer project via CLI `init` command
 - Subject line extracted from `<!-- subject: ... -->` HTML comment
 - Never hard-code email content in utility functions
+
+### Astro Email Components (`src/templates/email/`)
+- Use `EmailLayout.astro` as the shared wrapper (table-based layout)
+- Accept props like `{ url, appName, greeting }` — typed and validated
+- Use inline styles (not CSS classes) — email clients require it
+- `renderAstroEmail(Component, props)` renders via Container API + juice
+  for CSS inlining
+- Container API requires Astro's Vite pipeline — returns `null` gracefully
+  in test environments without it
 
 ## Route Architecture
 - **API routes** (11) are injected by the integration into `/api/v1/...`
@@ -102,6 +112,32 @@ Before creating a new utility:
 - Pages fetch data client-side from API routes
 - Components accept configurable `messages`/`labels` props for all
   user-facing strings
+
+## Astro Actions
+- Action handlers are pure functions in `src/actions/` with signature:
+  `(input: T, app: AppContext) => Promise<Result>`
+- Consumers register them via `defineAction` + Zod in their scaffolded
+  `src/actions/index.ts`
+- The core package CANNOT import `astro:actions` — only consumer projects can
+- Action handlers are exported from `@community-rss/core/actions`
+- Client-side code calls `actions.fetchArticles(input)` through Astro's
+  built-in action system — no manual `fetch()` calls needed
+
+### Writing a New Action Handler
+1. Create handler function in `src/actions/{domain}.ts`
+2. Export from `src/actions/index.ts` barrel
+3. Re-export from `packages/core/index.ts` with JSDoc `@since`
+4. Add Zod-validated `defineAction` wrapper to scaffold template
+5. Write tests: `test/actions/{domain}.test.ts`
+
+## Server Islands
+- Auth-dependent UI (AuthButton, HomepageCTA) uses `server:defer` to
+  stream content after the initial page shell loads
+- These components perform server-side session checks via
+  `createAuth(app).api.getSession()` — no client-side fetch needed
+- Always provide a `slot="fallback"` with a loading skeleton
+- Components using `server:defer` must accept their context from
+  `Astro.locals.app` rather than props passed from the parent page
 
 ## Background Processing
 - Uses `node-cron` for scheduled tasks (feed sync, cleanup)
@@ -143,6 +179,67 @@ Before creating a new utility:
 - Prefix all framework tokens with `--crss-` to avoid consumer namespace collisions
 - Framework ships sensible defaults; consumers remap tokens via `theme.css`
   or integration config
+- No hardcoded colour, spacing, or font values in components — always use
+  CSS custom properties
+
+### Three-Tier Token System
+- **Tier 1 — Reference** (`--crss-ref-*`): Raw palette values, spacing/type
+  scales. Defined in `src/styles/tokens/reference.css`.
+- **Tier 2 — System** (`--crss-sys-*`): Semantic roles mapping refs to meaning
+  (e.g., `--crss-sys-color-primary`). Backward-compatible flat aliases
+  (`--crss-surface-0`, `--crss-text-primary`, etc.) are defined here.
+  In `src/styles/tokens/system.css`.
+- **Tier 3 — Component** (`--crss-comp-*`): Component-scoped overrides
+  (e.g., `--crss-comp-card-bg`). In `src/styles/tokens/components.css`.
+
+### Token Naming Conventions
+| Tier | Prefix | Example | Purpose |
+|------|--------|---------|---------|
+| Reference | `--crss-ref-` | `--crss-ref-gray-900` | Raw palette value |
+| System | `--crss-sys-` | `--crss-sys-color-primary` | Semantic role |
+| Component | `--crss-comp-` | `--crss-comp-card-bg` | Component-scoped override |
+| Flat alias | `--crss-` | `--crss-surface-0` | Backward-compatible shorthand |
+
+### CSS Cascade Layers
+- Layer order: `crss-reset, crss-tokens, crss-base, crss-components, crss-utilities`
+- Defined in `src/styles/layers.css` and injected by the integration
+- Consumer `theme.css` is un-layered so it always wins
+- Components use `@layer crss-components { ... }` when declaring styles
+  outside Astro scoped `<style>` blocks
+- All token definitions must be inside `@layer crss-tokens`
+- Never define styles outside `@layer` in framework CSS
+
+## Proxy Component Pattern
+Components in the core package own logic and default styling. When scaffolded
+into a developer's project, **Proxy Wrappers** import the core component
+and add a local `<style>` block for customisation.
+
+**Why:** Developers own their styling (survives package updates) while the
+package owns logic (improvements flow through automatically).
+
+```astro
+---
+// Developer's src/components/FeedCard.astro (scaffolded proxy wrapper)
+import CoreFeedCard from '@community-rss/core/components/FeedCard.astro';
+const props = Astro.props;
+---
+<div class="my-feed-card">
+  <CoreFeedCard {...props} />
+</div>
+<style>
+  /* Custom styles scoped to this wrapper */
+  .my-feed-card :global(.crss-feed-card) {
+    --crss-comp-card-bg: #1e293b;
+  }
+</style>
+```
+
+**Rules for proxy wrappers:**
+- Import the core component from `@community-rss/core/components/*`
+- Pass all props through via `{...props}` or `{...Astro.props}`
+- No business logic, no API calls, no data transformation
+- Only: styling overrides, slot content, surrounding markup, token overrides
+- Override component tokens (`--crss-comp-*`) in the `<style>` block
 
 ## Example Pattern
 ```typescript

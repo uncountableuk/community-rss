@@ -32,11 +32,17 @@ through testing and documentation in the `@community-rss/core` NPM monorepo.
 - Create utils in correct directory (build/client/shared)
 - Database queries in `packages/core/src/db/`
 - API routes under `/api/v1/` namespace
+- **Action handlers** in `src/actions/` with signature `(input, app) => Promise<Result>`
+  — export from `index.ts`, add Zod wrapper to scaffold template
 - Components as thin wrappers with `messages`/`labels` props and CSS custom properties
+- **Server Islands** for auth-dependent UI — use `server:defer` with fallback slots
 - Page routes scaffolded via CLI (never injected by integration)
-- Email templates in `src/cli/templates/email-templates/` and `src/templates/email-templates/`
+- Email templates: Astro components in `src/templates/email/`, HTML fallbacks in
+  `src/cli/templates/email-templates/`
 - Use relative imports in source code (path aliases in test code only)
 - Add JSDoc with `@since` tags to all public exports
+- **Token audit**: Verify no hardcoded colours — use `--crss-ref-*`, `--crss-sys-*`,
+  or `--crss-comp-*` tokens; styles inside `@layer crss-components`
 - **After each phase**: update the feature plan Implementation Notes:
   - Check off completed tasks (`[x]`)
   - Mark phase heading ✅ Completed / ❌ Blocked / 🔄 In Progress
@@ -45,12 +51,15 @@ through testing and documentation in the `@community-rss/core` NPM monorepo.
 
 ### Step 4: Testing
 - Create tests mirroring source structure in `packages/core/test/`
-- Use path aliases for imports (`@utils/`, `@fixtures/`, `@test/`, `@cli/`)
+- Use path aliases for imports (`@utils/`, `@fixtures/`, `@test/`, `@cli/`, `@actions/`)
 - Cover happy path, edge cases, errors
 - **Unit tests**: Fixtures, pure functions, <100ms
 - **Integration tests**: In-memory SQLite, timeouts, real DB operations
 - **API tests**: Route handlers, request/response validation
 - **CLI tests**: Scaffold operations, --force flag, file creation
+- **Action tests**: Handler functions with mocked AppContext
+- **E2E tests** (Playwright): Page specs in `e2e/pages/`, flow specs in
+  `e2e/flows/`, skip gracefully when Docker services unavailable
 - Maintain ≥80% coverage
 
 ### Step 5: Documentation
@@ -78,7 +87,12 @@ This agent enforces:
 - Testable architecture (utils, not components, hold logic)
 - API forward-compatibility (Options pattern, optional params)
 - Relative imports in source; path aliases in test code
-- CSS custom property theming (`--crss-` prefix)
+- Three-tier design token system (`--crss-ref-*`, `--crss-sys-*`, `--crss-comp-*`)
+- CSS cascade layers (`crss-reset, crss-tokens, crss-base, crss-components, crss-utilities`)
+- Astro Actions: pure handlers in `src/actions/`, consumer registration via `defineAction`
+- Server Islands: `server:defer` for auth-dependent UI with fallback slots
+- Container API email pipeline with 5-step resolution chain
+- Proxy Component Pattern: scaffolded wrappers own `<style>`, core owns logic
 - AppContext (BetterSQLite3Database, EnvironmentVariables, config)
 - Component `messages`/`labels` props (no hard-coded strings)
 - Page routes scaffolded via CLI (not injected by integration)

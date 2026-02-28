@@ -118,7 +118,49 @@ export interface EmailConfig {
    * @since 0.4.0
    */
   templateDir?: string;
+
+  /**
+   * Email theme configuration for colours, typography, spacing, and branding.
+   *
+   * All properties are optional — unspecified values use sensible defaults
+   * matching the framework's built-in email styles.
+   *
+   * @since 0.5.0
+   *
+   * @example
+   * ```typescript
+   * theme: {
+   *   colors: { primary: '#e11d48', background: '#0f172a' },
+   *   branding: { logoUrl: 'https://example.com/logo.png' },
+   * }
+   * ```
+   */
+  theme?: import('./email-theme').EmailThemeConfig;
+
+  /**
+   * Override default email subject lines by type.
+   *
+   * Each key is an email type name (e.g., `'sign-in'`, `'welcome'`,
+   * `'email-change'`). The value is either a static string or a function
+   * that receives `{ appName }` and returns a string.
+   *
+   * Unspecified types fall back to `DEFAULT_EMAIL_SUBJECTS`.
+   *
+   * @since 0.5.0
+   *
+   * @example
+   * ```typescript
+   * subjects: {
+   *   'sign-in': ({ appName }) => `Log in to ${appName}`,
+   *   'welcome': 'Welcome aboard!',
+   * }
+   * ```
+   */
+  subjects?: Record<string, string | ((data: { appName: string }) => string)>;
 }
+
+import type { ResolvedEmailTheme } from './email-theme';
+import { mergeEmailTheme } from './email-theme';
 
 /**
  * Fully resolved configuration with all defaults applied.
@@ -132,6 +174,8 @@ export type ResolvedCommunityRssOptions = Required<Pick<CommunityRssOptions, 'ma
     transport: CommunityRssOptions['email'] extends { transport?: infer T } ? T : undefined;
     templates: import('./email').EmailTemplateMap | undefined;
     templateDir: string;
+    theme: ResolvedEmailTheme;
+    subjects: Record<string, string | ((data: { appName: string }) => string)>;
   };
 };
 
@@ -144,6 +188,7 @@ export type ResolvedCommunityRssOptions = Required<Pick<CommunityRssOptions, 'ma
  * @since 0.1.0
  */
 export function resolveOptions(options: CommunityRssOptions = {}): ResolvedCommunityRssOptions {
+  const appName = options.email?.appName ?? 'Community RSS';
   return {
     maxFeeds: options.maxFeeds ?? 5,
     commentTier: options.commentTier ?? 'registered',
@@ -152,10 +197,12 @@ export function resolveOptions(options: CommunityRssOptions = {}): ResolvedCommu
     emailTemplateDir: options.emailTemplateDir ?? './src/email-templates',
     email: {
       from: options.email?.from,
-      appName: options.email?.appName ?? 'Community RSS',
+      appName,
       transport: options.email?.transport,
       templates: options.email?.templates,
       templateDir: options.email?.templateDir ?? './src/email-templates',
+      theme: mergeEmailTheme(options.email?.theme, appName),
+      subjects: options.email?.subjects ?? {},
     },
   };
 }

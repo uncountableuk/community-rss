@@ -73,6 +73,7 @@ export function createSmtpTransport(host: string, port: string = '8025'): EmailT
                         To: [{ Email: message.to }],
                         Subject: message.subject,
                         Text: message.text,
+                        HTML: message.html,
                     }),
                 });
 

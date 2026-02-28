@@ -36,6 +36,15 @@ export default function communityRss(options?: CommunityRssOptions): AstroIntegr
 export type { CommunityRssOptions, EmailConfig, ResolvedCommunityRssOptions } from './src/types/options';
 export type { AppContext, EnvironmentVariables } from './src/types/context';
 export type {
+  EmailThemeConfig,
+  EmailThemeColors,
+  EmailThemeTypography,
+  EmailThemeSpacing,
+  EmailThemeBranding,
+  ResolvedEmailTheme,
+} from './src/types/email-theme';
+export { DEFAULT_EMAIL_THEME, mergeEmailTheme } from './src/types/email-theme';
+export type {
   UserTier,
   UserRole,
   FeedStatus,
@@ -81,10 +90,36 @@ export {
 export { createEmailService } from './src/utils/build/email-service';
 
 // Email template renderer
-export { renderEmailTemplate } from './src/utils/build/email-renderer';
+export { renderEmailTemplate, renderAstroEmail, resolveSubject, DEFAULT_EMAIL_SUBJECTS } from './src/utils/build/email-renderer';
 
 // Database exports
 export { createDatabase, closeDatabase } from './src/db/connection';
 
 // Scheduler exports
 export { startScheduler, stopScheduler, isSchedulerRunning } from './src/utils/build/scheduler';
+
+// Action handlers (for use with Astro Actions via defineAction)
+export {
+  fetchArticlesHandler,
+  checkEmailHandler,
+  submitSignupHandler,
+  updateProfileHandler,
+  changeEmailHandler,
+  confirmEmailChangeHandler,
+} from './src/actions/index';
+
+// Action handler types
+export type {
+  FetchArticlesInput,
+  FetchArticlesOutput,
+  CheckEmailInput,
+  CheckEmailOutput,
+  SubmitSignupInput,
+  SubmitSignupOutput,
+  UpdateProfileInput,
+  UpdateProfileOutput,
+  ChangeEmailInput,
+  ChangeEmailOutput,
+  ConfirmEmailChangeInput,
+  ConfirmEmailChangeOutput,
+} from './src/actions/index';
