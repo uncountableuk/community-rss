@@ -7,7 +7,7 @@
  * @since 0.5.0
  */
 
-import { getUserById, getUserByEmail, updateUser, setPendingEmail, confirmEmailChange } from '../db/queries/users';
+import { getUserByEmail, updateUser, setPendingEmail, confirmEmailChange } from '../db/queries/users';
 import { sendEmailChangeEmail } from '../utils/build/email';
 import type { AppContext } from '../types/context';
 import type { EmailUserProfile } from '../types/email';
@@ -125,7 +125,7 @@ export async function updateProfileHandler(
 
     return {
         id: updated.id,
-        email: updated.email,
+        email: updated.email ?? '',
         name: updated.name,
         bio: updated.bio ?? null,
         avatarUrl: updated.avatarUrl ?? null,

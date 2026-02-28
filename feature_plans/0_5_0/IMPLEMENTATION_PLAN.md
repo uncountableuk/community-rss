@@ -696,13 +696,13 @@ must never suggest modifying:
 **Goal:** Ensure all existing tests pass with new patterns and all new
 tests are green.
 
-- [ ] Run all existing 309+ Vitest tests — fix any failures from token
+- [x] Run all existing 309+ Vitest tests — fix any failures from token
       renames, import changes, or email renderer changes
-- [ ] Update `test/utils/build/email-renderer.test.ts` for Container API
-- [ ] Update `test/utils/build/email-service.test.ts` for resolution chain
-- [ ] Update `test/cli/init.test.ts` for new scaffold files
-- [ ] Update `test/integration/integration-factory.test.ts` for Actions
-- [ ] Run `npm run test:coverage` — verify ≥80% on all metrics
+- [x] Update `test/utils/build/email-renderer.test.ts` for Container API
+- [x] Update `test/utils/build/email-service.test.ts` for resolution chain
+- [x] Update `test/cli/init.test.ts` for new scaffold files
+- [x] Update `test/integration/integration-factory.test.ts` for Actions
+- [x] Run `npm run test:coverage` — verify ≥80% on all metrics
 - [ ] Run `npm run test:e2e` — verify all E2E tests pass on Chromium
 - [ ] Run E2E tests on Firefox and WebKit
 - [ ] Manual smoke test:
@@ -739,7 +739,7 @@ problems.*
 | 7. E2E Testing (Playwright) | ✅ Completed | Config, fixtures, 7 page specs, 3 flow specs, CI scripts |
 | 8. AI Guidance Updates | ✅ Completed | All instruction files + consumer scaffolds + dual-target AI guidance |
 | 9. Documentation Updates | ✅ Completed | Starlight docs: 4 new pages, 5 updated, theming rewrite |
-| 10. Test Migration & Verification | Not Started | |
+| 10. Test Migration & Verification | ✅ Completed | 407 tests, 87.58% coverage, E2E deferred to playground |
 
 ### Decisions Log
 
@@ -860,6 +860,17 @@ problems.*
 - **Phase 9:** Created `coding-standards.md` contributor doc covering token
   naming, `@layer` rules, Action handler pattern, Server Island conventions,
   import standards, and JSDoc requirements.
+- **Phase 10:** All 407 unit tests passing across 35 test files. Coverage:
+  87.58% statements, 86.7% branches, 91.5% functions — all above 80%
+  threshold. Test updates for email-renderer (Container API), email-service
+  (5-step chain), init (21 files + AI guidance), and integration were
+  already completed in their respective phases.
+- **Phase 10:** E2E tests, manual smoke tests, playground build verification,
+  and multi-browser testing deferred — require `npm run reset:playground`
+  + Docker services (Mailpit, FreshRSS, MinIO) which are not available
+  in this environment. E2E infrastructure (Playwright config, fixtures,
+  10 spec files) is in place and ready for verification when the
+  playground is scaffolded.
 
 ### Problems Log
 
