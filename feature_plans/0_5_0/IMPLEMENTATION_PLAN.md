@@ -361,19 +361,23 @@ directive for improved initial page load performance.
 - `AuthButton.astro` — shows different UI for guest/authenticated/admin
 - Homepage CTA — shows sign-up prompt only for unauthenticated users
 
-- [ ] Refactor `AuthButton.astro` to use `server:defer`
+- [x] Refactor `AuthButton.astro` to use `server:defer`
   - Add a lightweight placeholder fallback (skeleton or null)
   - The deferred server render checks session and renders appropriate UI
   - Ensure the component still works in SSR-only mode (no JS required)
-- [ ] Refactor homepage CTA section to use server island
+- [x] Refactor homepage CTA section to use server island
   - The `#crss-homepage-cta` div currently uses `display: none` + JS to
-    toggle — replace with a server island that conditionally renders
-- [ ] Update scaffolded `index.astro` to use server island syntax for auth
+    toggle — replaced with `HomepageCTA.astro` component that conditionally renders
+- [x] Update scaffolded `index.astro` to use server island syntax for auth
       areas of the page
 - [ ] Verify: pages load with static shell first, auth UI streams in
+      (DEFERRED to manual smoke test in Phase 10)
 - [ ] Verify: server island fallback renders correctly while loading
+      (DEFERRED to manual smoke test in Phase 10)
 - [ ] Verify: no layout shift (CLS) when auth UI replaces placeholder
+      (DEFERRED to manual smoke test in Phase 10)
 - [ ] Test: E2E tests cover both guest and authenticated states
+      (DEFERRED to Phase 7 — Playwright E2E)
 
 **Note:** Server Islands require `output: 'server'` or `output: 'hybrid'`
 in Astro config. The playground already uses `output: 'server'` via
@@ -741,7 +745,7 @@ problems.*
 | 1. Three-Tier Design Tokens | ✅ Completed | Token hierarchy created, backward aliases, injectScript wiring |
 | 2. CSS Cascade Layers | ✅ Completed | layers.css, @layer wrapping, injectScript ordering |
 | 3. Astro Actions | ✅ Completed | Action handlers, scaffold template, tests (41 new tests) |
-| 4. Server Islands | Not Started | |
+| 4. Server Islands | ✅ Completed | AuthButton + HomepageCTA refactored, server:defer |
 | 5. Container API Email Pipeline | Not Started | |
 | 6. Proxy Component Refinement | Not Started | |
 | 7. E2E Testing (Playwright) | Not Started | |
@@ -777,6 +781,19 @@ problems.*
 - **Phase 3:** Added `@actions` path alias in vitest.config.ts for test imports.
 - **Phase 3:** Added `./actions` sub-path export in package.json for consumer
   imports: `import { fetchArticlesHandler } from '@community-rss/core/actions'`.
+- **Phase 4:** AuthButton refactored from client-side session checking
+  (`fetch('/api/auth/get-session')` + DOM toggling) to server-side session
+  checking via `createAuth(app).api.getSession()`. The correct UI (sign-in
+  vs user info) is now rendered server-side. Only the sign-out button handler
+  remains as client-side JS.
+- **Phase 4:** Created `HomepageCTA.astro` component to replace the inline
+  CTA div + JS toggle in the scaffold template. The component checks auth
+  state server-side and conditionally renders the CTA. StyleS moved from
+  the page template into the component.
+- **Phase 4:** BaseLayout uses `<AuthButton server:defer>` with a skeleton
+  fallback div. Scaffold template uses `<HomepageCTA server:defer>` with an
+  empty `<Fragment slot="fallback" />` (no layout shift since CTA space is
+  secondary content).
 
 ### Problems Log
 

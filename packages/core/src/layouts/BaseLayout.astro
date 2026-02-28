@@ -45,7 +45,9 @@ const hasFooterSlot = Astro.slots.has('footer');
             <a href="/" class="crss-nav-brand">
               Community RSS
             </a>
-            <AuthButton />
+            <AuthButton server:defer>
+              <div slot="fallback" class="crss-auth-skeleton" aria-hidden="true"></div>
+            </AuthButton>
           </nav>
         </header>
       )
@@ -92,6 +94,13 @@ const hasFooterSlot = Astro.slots.has('footer');
 
     .crss-nav-brand:hover {
       color: var(--crss-primary);
+    }
+
+    .crss-auth-skeleton {
+      width: 80px;
+      height: 36px;
+      border-radius: var(--crss-radius-md);
+      background: var(--crss-surface-2);
     }
   }
 </style>
