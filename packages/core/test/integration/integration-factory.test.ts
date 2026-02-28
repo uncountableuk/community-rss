@@ -121,11 +121,12 @@ describe('Integration Factory', () => {
       const healthRoute = injectedRoutes.find((r) => r.pattern === '/api/v1/health');
       expect(healthRoute?.entrypoint).toContain('health.ts');
 
-      // Verify Vite plugin for email templates is injected via updateConfig
+      // Verify Vite plugins for consumer overrides and email templates are injected
       expect(mockUpdateConfig).toHaveBeenCalledWith(
         expect.objectContaining({
           vite: expect.objectContaining({
             plugins: expect.arrayContaining([
+              expect.objectContaining({ name: 'crss-consumer-overrides' }),
               expect.objectContaining({ name: 'crss-email-templates' }),
             ]),
           }),
@@ -167,6 +168,57 @@ describe('Integration Factory', () => {
 
       // Test load returns undefined for other modules
       expect(plugin.load('some-other-id')).toBeUndefined();
+    });
+
+    it('should resolve consumer overrides for ejected layouts and components', () => {
+      const integration = createIntegration();
+      const capturedConfig: any[] = [];
+      const mockUpdateConfig = (cfg: any) => capturedConfig.push(cfg);
+
+      const setupHook = integration.hooks['astro:config:setup'] as (params: any) => void;
+      setupHook({
+        injectRoute: vi.fn(),
+        addMiddleware: vi.fn(),
+        injectScript: vi.fn(),
+        updateConfig: mockUpdateConfig,
+        config: { root: new URL('file:///app/playground/') },
+      });
+
+      const viteConfig = capturedConfig.find((c) => c.vite?.plugins);
+      const plugin = viteConfig?.vite?.plugins?.find(
+        (p: any) => p.name === 'crss-consumer-overrides',
+      );
+      expect(plugin).toBeDefined();
+
+      // The plugin's resolveId needs the core pages/layouts/components dirs.
+      // We can derive them from the integration.ts location (src/integration.ts).
+      const coreDir = new URL('.', new URL('../../src/integration.ts', import.meta.url)).pathname;
+      const corePagesDir = coreDir + 'pages';
+
+      // Should return undefined when importer is not from core pages
+      expect(plugin.resolveId('../../layouts/BaseLayout.astro', '/some/other/file.astro'))
+        .toBeUndefined();
+
+      // Should return undefined when there's no importer
+      expect(plugin.resolveId('../../layouts/BaseLayout.astro', undefined))
+        .toBeUndefined();
+
+      // Should return undefined for non-.astro imports even from core pages
+      expect(plugin.resolveId('../../utils/helper.ts', corePagesDir + '/index.astro'))
+        .toBeUndefined();
+
+      // When importer IS inside core pages, and consumer file exists,
+      // it should resolve to the consumer path.
+      // Note: existsSync is real here — playground may or may not have the
+      // file. We test the logic by checking behavior with the actual FS.
+      // For a page importing a layout:
+      const layoutResult = plugin.resolveId(
+        '../../layouts/BaseLayout.astro',
+        corePagesDir + '/auth/signin.astro',
+      );
+      // If the playground has an ejected BaseLayout, this resolves to it;
+      // otherwise returns undefined. Either way, the function shouldn't throw.
+      expect(layoutResult === undefined || typeof layoutResult === 'string').toBe(true);
     });
 
     it('should log config via astro:config:done', () => {

@@ -1,5 +1,5 @@
 import { existsSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { AstroIntegration, AstroConfig } from 'astro';
 import type { CommunityRssOptions } from './types/options';
@@ -150,9 +150,51 @@ export function createIntegration(options: CommunityRssOptions = {}): AstroInteg
         const devTemplateDir = join(cleanRoot, config.emailTemplateDir);
         const pkgTemplateDir = fileURLToPath(new URL('./templates/email', import.meta.url));
 
+        // --- Consumer override resolution ---
+        // When a developer ejects a layout or component proxy into their
+        // project (e.g., src/layouts/BaseLayout.astro), injected pages
+        // should use the consumer's version instead of the core's internal
+        // copy. This Vite plugin intercepts relative imports from the
+        // core's injected page files and redirects them to the consumer's
+        // local file when one exists.
+        //
+        // Circular resolution is avoided because the consumer's proxy
+        // imports from `@community-rss/core/layouts/*` (a bare package
+        // specifier), which resolves via package.json exports — NOT
+        // through this plugin (which only intercepts from core pages).
+        const coreDir = fileURLToPath(new URL('.', import.meta.url));
+        const corePagesDir = join(coreDir, 'pages');
+        const coreLayoutsDir = join(coreDir, 'layouts');
+        const coreComponentsDir = join(coreDir, 'components');
+        const consumerLayoutsDir = join(cleanRoot, 'src', 'layouts');
+        const consumerComponentsDir = join(cleanRoot, 'src', 'components');
+
         updateConfig({
           vite: {
             plugins: [{
+              name: 'crss-consumer-overrides',
+              resolveId(source: string, importer: string | undefined) {
+                if (!importer || !source.endsWith('.astro')) return;
+                // Only intercept imports originating from core's injected pages
+                if (!importer.startsWith(corePagesDir)) return;
+
+                const resolved = resolve(dirname(importer), source);
+
+                // Check if resolved path is inside core layouts
+                if (resolved.startsWith(coreLayoutsDir)) {
+                  const relative = resolved.slice(coreLayoutsDir.length);
+                  const consumerFile = join(consumerLayoutsDir, relative);
+                  if (existsSync(consumerFile)) return consumerFile;
+                }
+
+                // Check if resolved path is inside core components
+                if (resolved.startsWith(coreComponentsDir)) {
+                  const relative = resolved.slice(coreComponentsDir.length);
+                  const consumerFile = join(consumerComponentsDir, relative);
+                  if (existsSync(consumerFile)) return consumerFile;
+                }
+              },
+            }, {
               name: 'crss-email-templates',
               resolveId(id: string) {
                 if (id === 'virtual:crss-email-templates') {
