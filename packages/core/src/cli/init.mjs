@@ -27,20 +27,16 @@ const TEMPLATES_DIR = join(__dirname, 'templates');
 
 /**
  * File mapping: template path (relative to templates/) → target path (relative to project root).
+ *
+ * Pages and component proxies are NOT scaffolded — pages are injected
+ * by the integration, and components are available via `eject`.
+ * Signpost READMEs explain this to developers.
  */
 const FILE_MAP = [
-    // Pages
-    { template: 'pages/index.astro', target: 'src/pages/index.astro' },
-    { template: 'pages/article/[id].astro', target: 'src/pages/article/[id].astro' },
-    { template: 'pages/auth/signin.astro', target: 'src/pages/auth/signin.astro' },
-    { template: 'pages/auth/signup.astro', target: 'src/pages/auth/signup.astro' },
-    { template: 'pages/auth/verify.astro', target: 'src/pages/auth/verify.astro' },
-    {
-        template: 'pages/auth/verify-email-change.astro',
-        target: 'src/pages/auth/verify-email-change.astro',
-    },
-    { template: 'pages/profile.astro', target: 'src/pages/profile.astro' },
-    { template: 'pages/terms.astro', target: 'src/pages/terms.astro' },
+    // Signpost READMEs (explain injection / eject model)
+    { template: 'pages/README.md', target: 'src/pages/README.md' },
+    { template: 'components/README.md', target: 'src/components/README.md' },
+    { template: 'layouts/README.md', target: 'src/layouts/README.md' },
 
     // Email templates (Astro — developer-owned, including shared layout)
     { template: 'email-templates/EmailLayout.astro', target: 'src/email-templates/EmailLayout.astro' },
@@ -53,11 +49,6 @@ const FILE_MAP = [
 
     // Actions
     { template: 'actions/index.ts', target: 'src/actions/index.ts' },
-
-    // Component proxy wrappers (Proxy Pattern)
-    { template: 'components/FeedCard.astro', target: 'src/components/FeedCard.astro' },
-    { template: 'components/FeedGrid.astro', target: 'src/components/FeedGrid.astro' },
-    { template: 'components/TabBar.astro', target: 'src/components/TabBar.astro' },
 
     // Config files
     { template: 'astro.config.mjs', target: 'astro.config.mjs' },

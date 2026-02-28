@@ -32,17 +32,21 @@ describe('CLI scaffold', () => {
       expect(skipped).toHaveLength(0);
 
       // Verify key files exist
-      expect(existsSync(join(tempDir, 'src/pages/index.astro'))).toBe(true);
+      expect(existsSync(join(tempDir, 'src/pages/README.md'))).toBe(true);
       expect(existsSync(join(tempDir, 'astro.config.mjs'))).toBe(true);
       expect(existsSync(join(tempDir, '.env.example'))).toBe(true);
       expect(existsSync(join(tempDir, 'docker-compose.yml'))).toBe(true);
       expect(existsSync(join(tempDir, 'src/styles/theme.css'))).toBe(true);
+
+      // Pages are NOT scaffolded (they are injected by the integration)
+      expect(existsSync(join(tempDir, 'src/pages/index.astro'))).toBe(false);
+      expect(existsSync(join(tempDir, 'src/pages/profile.astro'))).toBe(false);
     });
 
-    it('should create all 22 expected files', () => {
+    it('should create all 14 expected files', () => {
       const { created } = scaffold({ cwd: tempDir });
 
-      expect(created).toHaveLength(22);
+      expect(created).toHaveLength(14);
     });
 
     it('should create actions scaffold with handler imports', () => {
@@ -56,18 +60,35 @@ describe('CLI scaffold', () => {
       expect(actionsFile).toContain('defineAction');
     });
 
-    it('should create component proxy wrappers', () => {
+    it('should create signpost READMEs instead of page/component files', () => {
       scaffold({ cwd: tempDir });
 
-      const feedCard = readFileSync(
-        join(tempDir, 'src/components/FeedCard.astro'),
+      // Signpost READMEs exist
+      const pagesReadme = readFileSync(
+        join(tempDir, 'src/pages/README.md'),
         'utf-8',
       );
-      expect(feedCard).toContain('@community-rss/core/components/FeedCard.astro');
-      expect(feedCard).toContain('CoreFeedCard');
+      expect(pagesReadme).toContain('eject');
+      expect(pagesReadme).toContain('Available Pages');
 
-      expect(existsSync(join(tempDir, 'src/components/FeedGrid.astro'))).toBe(true);
-      expect(existsSync(join(tempDir, 'src/components/TabBar.astro'))).toBe(true);
+      const componentsReadme = readFileSync(
+        join(tempDir, 'src/components/README.md'),
+        'utf-8',
+      );
+      expect(componentsReadme).toContain('eject');
+      expect(componentsReadme).toContain('Available Components');
+
+      const layoutsReadme = readFileSync(
+        join(tempDir, 'src/layouts/README.md'),
+        'utf-8',
+      );
+      expect(layoutsReadme).toContain('eject');
+      expect(layoutsReadme).toContain('BaseLayout');
+
+      // Component proxies are NOT scaffolded
+      expect(existsSync(join(tempDir, 'src/components/FeedCard.astro'))).toBe(false);
+      expect(existsSync(join(tempDir, 'src/components/FeedGrid.astro'))).toBe(false);
+      expect(existsSync(join(tempDir, 'src/components/TabBar.astro'))).toBe(false);
     });
 
     it('should create AI guidance files for both Copilot and Cursor', () => {
@@ -89,14 +110,15 @@ describe('CLI scaffold', () => {
       expect(cursorFile).toContain('Protected Areas');
     });
 
-    it('should create page files with correct imports', () => {
+    it('should create page signpost README with correct content', () => {
       scaffold({ cwd: tempDir });
 
-      const indexPage = readFileSync(
-        join(tempDir, 'src/pages/index.astro'),
+      const pagesReadme = readFileSync(
+        join(tempDir, 'src/pages/README.md'),
         'utf-8',
       );
-      expect(indexPage).toContain('@community-rss/core');
+      expect(pagesReadme).toContain('index.astro');
+      expect(pagesReadme).toContain('profile.astro');
     });
 
     it('should create Astro email templates with local layout import', () => {
@@ -152,18 +174,18 @@ describe('CLI scaffold', () => {
       // Pre-create a file
       mkdirSync(join(tempDir, 'src/pages'), { recursive: true });
       writeFileSync(
-        join(tempDir, 'src/pages/index.astro'),
+        join(tempDir, 'src/pages/README.md'),
         'custom content',
       );
 
       const { created, skipped } = scaffold({ cwd: tempDir });
 
-      expect(skipped).toContain('src/pages/index.astro');
-      expect(created).not.toContain('src/pages/index.astro');
+      expect(skipped).toContain('src/pages/README.md');
+      expect(created).not.toContain('src/pages/README.md');
 
       // Verify original content preserved
       const content = readFileSync(
-        join(tempDir, 'src/pages/index.astro'),
+        join(tempDir, 'src/pages/README.md'),
         'utf-8',
       );
       expect(content).toBe('custom content');
@@ -173,18 +195,18 @@ describe('CLI scaffold', () => {
       // Pre-create a file
       mkdirSync(join(tempDir, 'src/pages'), { recursive: true });
       writeFileSync(
-        join(tempDir, 'src/pages/index.astro'),
+        join(tempDir, 'src/pages/README.md'),
         'custom content',
       );
 
       const { created, skipped } = scaffold({ cwd: tempDir, force: true });
 
-      expect(created).toContain('src/pages/index.astro');
+      expect(created).toContain('src/pages/README.md');
       expect(skipped).toHaveLength(0);
 
       // Verify content was overwritten
       const content = readFileSync(
-        join(tempDir, 'src/pages/index.astro'),
+        join(tempDir, 'src/pages/README.md'),
         'utf-8',
       );
       expect(content).not.toBe('custom content');
@@ -204,12 +226,10 @@ describe('CLI scaffold', () => {
     it('should create nested directory structures', () => {
       scaffold({ cwd: tempDir });
 
-      expect(existsSync(join(tempDir, 'src/pages/auth/signin.astro'))).toBe(
-        true,
-      );
-      expect(existsSync(join(tempDir, 'src/pages/article/[id].astro'))).toBe(
-        true,
-      );
+      // Signpost READMEs create the directories
+      expect(existsSync(join(tempDir, 'src/pages/README.md'))).toBe(true);
+      expect(existsSync(join(tempDir, 'src/components/README.md'))).toBe(true);
+      expect(existsSync(join(tempDir, 'src/layouts/README.md'))).toBe(true);
       expect(
         existsSync(join(tempDir, 'src/email-templates/WelcomeEmail.astro')),
       ).toBe(true);

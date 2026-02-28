@@ -801,7 +801,22 @@ implementation as phases are completed.*
   for test environments where logger isn't provided.
 - All 442 tests pass.
 
-### Phase 5: CLI Scaffold Redesign — Not Started
+### Phase 5: CLI Scaffold Redesign — Completed
+
+- Removed 8 page entries and 3 component proxy entries from `FILE_MAP`
+  (total entries reduced from 22 to 14).
+- Created 3 signpost README templates:
+  - `pages/README.md`: Lists all 8 available pages, explains injection
+    model, shows eject command.
+  - `components/README.md`: Lists all 9 available components, explains
+    proxy pattern, shows eject command with example proxy code.
+  - `layouts/README.md`: Lists BaseLayout, explains layout proxy with
+    named slot passthrough example.
+- Added README entries to `FILE_MAP` (3 entries).
+- Updated FILE_MAP JSDoc to explain why pages/components are excluded.
+- Updated test assertions: file count 22→14, signpost READMEs verified,
+  page and component absence asserted.
+- All 442 tests pass.
 
 ### Phase 6: `eject` CLI Command — Not Started
 
