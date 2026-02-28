@@ -148,8 +148,9 @@ function generateLayoutProxy(name) {
  * ${name} proxy wrapper — developer-owned layout wrapper around
  * the core ${name}.
  *
- * Passes through all named slots. Add custom header, footer,
- * or head content by editing the slot passthrough below.
+ * Passes through the default and head slots. The core layout
+ * provides default header and footer — to override them, add
+ * your own content with slot="header" or slot="footer".
  *
  * @since 0.6.0
  */
@@ -160,9 +161,7 @@ const props = Astro.props;
 
 <Core${name} {...props}>
   <slot name="head" slot="head" />
-  <slot name="header" slot="header" />
   <slot />
-  <slot name="footer" slot="footer" />
 </Core${name}>
 `;
 }

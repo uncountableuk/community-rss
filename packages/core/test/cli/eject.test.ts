@@ -138,10 +138,12 @@ describe('CLI eject', () => {
             );
             expect(content).toContain('@community-rss/core/layouts/BaseLayout.astro');
             expect(content).toContain('slot name="head"');
-            expect(content).toContain('slot name="header"');
-            expect(content).toContain('slot name="footer"');
             expect(content).toContain('<slot />');
-        });
+            // Header/footer slots are NOT forwarded by default — the core
+            // layout renders its own defaults. Developers add slot="header"
+            // or slot="footer" content in their proxy when they want to override.
+            expect(content).not.toContain('slot name="header"');
+            expect(content).not.toContain('slot name="footer"');        });
 
         it('should throw for unknown layout', () => {
             expect(() => eject({ target: 'layouts/NonExistent', cwd: tempDir })).toThrow(
