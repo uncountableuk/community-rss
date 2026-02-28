@@ -57,13 +57,20 @@ Rules for proxy wrappers:
 - Only: styling overrides, slot content, surrounding markup
 
 ## Email Templates
-Customise emails by editing HTML files in `src/email-templates/`:
-- `welcome.html` — Sent after registration
-- `sign-in.html` — Magic link email
-- `email-change.html` — Email change verification
+Customise emails by editing the `.astro` files in `src/email-templates/`:
+- `SignInEmail.astro` — Magic link email
+- `WelcomeEmail.astro` — Sent after registration
+- `EmailChangeEmail.astro` — Email change verification
 
-Use `{{variable}}` placeholders. The framework resolves your files first,
-then falls back to package defaults.
+These are full Astro components that import the shared `EmailLayout`
+from the core package. Edit the markup, styles, or structure freely.
+Theme values are available via the `theme` prop.
+
+Alternatively, drop in a plain `.html` file (e.g., `sign-in.html`) with
+`{{variable}}` placeholders — the framework will use it as an override.
+
+Subject lines are set in the email service configuration or default
+to sensible values per email type (e.g., "Sign in to {appName}").
 
 ## Protected Areas — DO NOT MODIFY
 - **`node_modules/@community-rss/core/`** — Never fork or patch
@@ -80,7 +87,7 @@ Instead, use:
 These files are yours to modify freely:
 - `src/pages/*.astro` — Page routes
 - `src/styles/theme.css` — Token overrides
-- `src/email-templates/*.html` — Email templates
+- `src/email-templates/*.astro` — Astro email templates
 - `src/components/*.astro` — Proxy wrapper components
 - `src/actions/index.ts` — Action registration
 - `astro.config.mjs` — Integration configuration

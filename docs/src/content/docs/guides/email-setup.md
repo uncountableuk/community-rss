@@ -59,38 +59,54 @@ SMTP_FROM=noreply@example.com
 
 ## Email Templates
 
-Community RSS uses a **5-step resolution chain** for email rendering:
+Community RSS uses a **4-step resolution chain** for email rendering:
 
 1. **Custom code templates** — Developer-registered rendering functions
-2. **Developer HTML** — `{{variable}}` templates in your `emailTemplateDir`
-3. **Astro Container API** — `.astro` email components rendered server-side
-4. **Package HTML** — Default `{{variable}}` templates shipped with the framework
-5. **Code-based fallbacks** — Minimal inline HTML
+2. **Astro templates** — `.astro` email components rendered via Container API (developer → package)
+3. **Developer HTML** — `{{variable}}` templates in your `emailTemplateDir`
+4. **Code-based fallbacks** — Minimal inline HTML
 
-Developer HTML templates take priority, so your customisations are always
-used when present.
+Astro templates are the primary rendering path. The CLI scaffolds editable
+`.astro` templates into your project. Developers can also drop in a plain
+`.html` file as a simpler alternative.
 
 ### Available Templates
 
 | Template | Variables | Purpose |
 |----------|-----------|---------|
-| `sign-in.html` | `{{url}}`, `{{appName}}` | Sign-in magic link |
-| `welcome.html` | `{{url}}`, `{{appName}}` | Welcome email |
-| `email-change.html` | `{{verificationUrl}}`, `{{appName}}` | Email change verification |
+| `SignInEmail.astro` | `url`, `appName`, `greeting`, `theme` | Sign-in magic link |
+| `WelcomeEmail.astro` | `url`, `appName`, `greeting`, `theme` | Welcome email |
+| `EmailChangeEmail.astro` | `verificationUrl`, `appName`, `greeting`, `theme` | Email change verification |
 
-### Customising Templates
+### Customising Astro Email Templates
 
-Create your own templates in the `emailTemplateDir` directory:
+The scaffolded `.astro` templates in `src/email-templates/` are yours to
+edit. They import the shared `EmailLayout` from the core package:
 
+```astro
+---
+import EmailLayout from '@community-rss/core/templates/email/EmailLayout.astro';
+
+const { url, appName = 'My Community', greeting = 'Hi there,', theme = {} } = Astro.props;
+const colors = theme.colors ?? {};
+---
+
+<EmailLayout appName={appName} theme={theme}>
+  <p>{greeting}</p>
+  <p>Click below to sign in:</p>
+  <a
+    href={url}
+    style={`background-color: ${colors.primary ?? '#4f46e5'}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block;`}
+  >
+    Sign In
+  </a>
+</EmailLayout>
 ```
-src/
-  email-templates/
-    magic-link.html
-    verify-domain.html
-    welcome.html
-```
 
-Use `{{variable}}` placeholders that match the variables listed above:
+### Alternative: HTML Templates
+
+For simpler customisations, create a `.html` file in the same directory.
+Use `{{variable}}` placeholders and an HTML comment for the subject line:
 
 ```html
 <!DOCTYPE html>
@@ -109,6 +125,25 @@ Templates are plain HTML files. You can use any HTML email tooling
 in the template directory.
 </Aside>
 
+### Subject Lines
+
+Subject lines are managed by the email service, not inside the templates
+themselves.  They come from `DEFAULT_EMAIL_SUBJECTS` which you can import
+and override via the `email.templates` configuration option:
+
+```js
+import { DEFAULT_EMAIL_SUBJECTS } from '@community-rss/core';
+```
+
+| Template | Default Subject |
+|----------|----------------|
+| `sign-in` | `Sign in to {appName}` |
+| `welcome` | `Welcome to {appName}!` |
+| `email-change` | `Verify your new email address` |
+
+For HTML templates, embed a comment at the top of the file to set the
+subject: `<!-- subject: My Custom Subject -->`
+
 ### Template Directory Configuration
 
 Set the template directory in your Astro config:
@@ -119,46 +154,27 @@ communityRss({
 });
 ```
 
-The CLI scaffolds example templates when you run `npx @community-rss/core init`.
+The CLI scaffolds example `.astro` templates when you run `npx @community-rss/core init`.
 
-## Astro Email Components (Container API)
+### Theme Configuration
 
-The framework also ships `.astro` email components that render via the
-Astro Container API. These are used as step 3 in the resolution chain
-when no developer HTML template is found.
+Pass brand colours to all email templates via the integration config:
 
-Built-in Astro email templates:
-- `EmailLayout.astro` — Shared table-based layout
-- `SignInEmail.astro` — Magic link sign-in
-- `WelcomeEmail.astro` — Post-registration welcome
-- `EmailChangeEmail.astro` — Email change verification
-
-### Creating Custom Astro Email Templates
-
-To create your own `.astro` email component:
-
-```astro
----
-// src/templates/email/MyEmail.astro
-import EmailLayout from '@community-rss/core/templates/email/EmailLayout.astro';
-
-interface Props {
-  url: string;
-  appName: string;
-}
-
-const { url, appName } = Astro.props;
----
-<EmailLayout title={`Welcome to ${appName}`}>
-  <tr>
-    <td style="padding: 20px; text-align: center;">
-      <h1 style="color: #0f172a;">Welcome!</h1>
-      <a href={url} style="background: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">
-        Get Started
-      </a>
-    </td>
-  </tr>
-</EmailLayout>
+```js
+communityRss({
+  email: {
+    theme: {
+      colors: {
+        primary: '#4f46e5',
+        background: '#ffffff',
+        surface: '#f8fafc',
+        text: '#0f172a',
+        textMuted: '#64748b',
+        border: '#e2e8f0',
+      },
+    },
+  },
+});
 ```
 
 <Aside type="caution">

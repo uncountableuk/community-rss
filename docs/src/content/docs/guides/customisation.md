@@ -102,11 +102,16 @@ import CommunityLayout from '@community-rss/core/layouts/CommunityLayout.astro';
 
 ## Email Templates
 
-Customise email content by placing HTML templates in your
-`emailTemplateDir` directory (default: `./src/email-templates/`).
+Customise email content by editing the scaffolded `.astro` templates in
+your `emailTemplateDir` directory (default: `./src/email-templates/`).
+Templates are full Astro components that receive props like `url`,
+`appName`, `greeting`, and `theme`.
+
+For simpler customisations, you can also drop in a plain `.html` file
+using `{{variable}}` placeholders.
 
 See the [Email Setup](/guides/email-setup/#email-templates) guide for
-template variables and examples.
+template variables, theming, and examples.
 
 ## Theming
 

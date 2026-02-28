@@ -71,9 +71,11 @@ architecture, code reuse, and adherence to established patterns.
 - **Route split**: API routes (11) are injected by the integration; page
   routes (8) are scaffolded into the developer's project via
   `npx @community-rss/core init` and are developer-owned
-- Email templates: Astro Container API (`.astro`) preferred, file-based
-  HTML (`.html`) with `{{variable}}` for backward compatibility; resolution:
-  custom code → developer HTML → Astro Container → package HTML → code defaults
+- Email templates: Astro Container API (`.astro`) is the primary rendering
+  path, loaded via `virtual:crss-email-templates` Vite virtual module.
+  Developer `.html` files with `{{variable}}` placeholders supported as a
+  simpler alternative. Resolution: custom code → Astro (dev → pkg) →
+  developer HTML → code defaults. Core ships no `.html` templates.
 - Components accept `messages`/`labels` props — all user-facing strings
   are configurable; no hard-coded copy in components
 - Before creating new functions, search for existing utilities that can be reused

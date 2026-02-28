@@ -140,8 +140,8 @@ export function createEmailService(
             // Resolution order:
             // 1. Code-based custom templates (emailConfig.templates) — highest priority
             // 2. Astro templates via virtual module (developer → package)
-            // 3. File-based HTML templates (developer dir → package dir)
-            // 4. Code-based default templates (built-in)
+            // 3. Developer HTML templates (.html in emailTemplateDir)
+            // 4. Code-based default templates (built-in last resort)
 
             // 1. Check code-based custom templates first
             const customTemplate = emailConfig?.templates?.[type];
@@ -175,14 +175,14 @@ export function createEmailService(
                 // Astro Container not available — fall through
             }
 
-            // 3. Try file-based HTML template (developer dir → package dir)
+            // 3. Try developer HTML template (.html in emailTemplateDir only — core has no .html templates)
             const fileContent = renderEmailTemplate(type, templateVars, templateDir);
             if (fileContent) {
                 await transport.send({ from, to, subject: fileContent.subject, text: fileContent.text, html: fileContent.html });
                 return;
             }
 
-            // 4. Fall back to code-based default template
+            // 4. Fall back to code-based default template (built-in last resort)
             const template = resolveTemplate(type, emailConfig);
             if (!template) {
                 console.warn(

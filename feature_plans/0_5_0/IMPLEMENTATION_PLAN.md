@@ -933,15 +933,15 @@ to `package.json` exports so developer templates can import
   - Pass resolved theme to `renderAstroEmail()`
 
 **Sub-phase 11c: Developer Template Discovery**
-- [ ] Add Vite plugin to `src/integration.ts` for
+- [x] Add Vite plugin to `src/integration.ts` for
       `virtual:crss-email-templates` module
   - `import.meta.glob('/src/email-templates/*.astro', { eager: true })`
   - PascalCase-to-kebab name mapping (strip `Email` suffix)
   - Handles zero developer templates gracefully (empty object)
-- [ ] Update `renderAstroEmail()` to check virtual module first
+- [x] Update `renderAstroEmail()` to check virtual module first
   - `import('virtual:crss-email-templates')` → check `devTemplates[type]`
   - Fall back to package template if not found
-- [ ] Add TypeScript declaration for the virtual module
+- [x] Add TypeScript declaration for the virtual module
   (`src/types/virtual-email-templates.d.ts`)
 
 **Sub-phase 11d: CLI Scaffold Migration**
@@ -969,18 +969,19 @@ to `package.json` exports so developer templates can import
   - Assert `astro.config.mjs` contains email theme section
 
 **Sub-phase 11e: Documentation & Verification**
-- [ ] Update `docs/src/content/docs/guides/email-setup.md`
+- [x] Update `docs/src/content/docs/guides/email-setup.md`
   - Document `EmailThemeConfig` options
   - Document developer Astro email template customization
   - Document resolution order change
-- [ ] Update `docs/src/content/docs/guides/customisation.md`
+  - Document subject line sources
+- [x] Update `docs/src/content/docs/guides/customisation.md`
   - Add email theming section
-- [ ] Update consumer AI scaffolds (copilot-instructions.md,
+- [x] Update consumer AI scaffolds (copilot-instructions.md,
       community-rss.mdc) with email theming patterns
-- [ ] Verify in Mailpit: all 3 email types render with themed HTML
-- [ ] Verify: developer template overrides are discovered and used
-- [ ] Verify: plain text fallback still correct
-- [ ] Verify: backward compat — existing `.html` templates still work
+- [x] Verify in Mailpit: all 3 email types render with themed HTML
+- [x] Verify: developer template overrides are discovered and used
+- [x] Verify: plain text fallback still correct
+- [x] Verify: backward compat — existing `.html` templates still work
       (lower priority in resolution chain)
 
 **Backward Compatibility:**
@@ -1022,7 +1023,7 @@ problems.*
 | 8. AI Guidance Updates | ✅ Completed | All instruction files + consumer scaffolds + dual-target AI guidance |
 | 9. Documentation Updates | ✅ Completed | Starlight docs: 4 new pages, 5 updated, theming rewrite |
 | 10. Test Migration & Verification | ✅ Completed | 407 tests, 87.58% coverage, E2E deferred to playground |
-| 11. Email Theming & Dev Templates | ✅ Completed | EmailThemeConfig, direct theme props, 3 scaffolded .astro templates, CLI migration (428 tests) |
+| 11. Email Theming & Dev Templates | ✅ Completed | EmailThemeConfig, direct theme props, 3 scaffolded .astro templates, CLI migration, virtual module discovery, HTML removal from core (434 tests) |
 
 ### Decisions Log
 
@@ -1288,18 +1289,61 @@ problems.*
   section check. Updated `test/utils/build/email-renderer.test.ts`: added
   2 tests for renderAstroEmail() theme parameter acceptance and null
   handling. Overall: 428 tests passing (21 new), all above 80% coverage.
-- **Phase 11:** Virtual module discovery (Sub-phase 11c) and documentation
-  updates (Sub-phase 11e) deferred:
-  - Virtual module discovery not implemented because the scaffolded
-    developer email templates are in `src/email-templates/` and the
-    resolution chain already supports both Astro (Container API, step 4)
-    and HTML (step 3) files in the project. The virtual module was designed
-    for auto-discovery when developers added custom email types, but given
-    the current scope (3 fixed email types: sign-in, welcome, email-change),
-    explicit scaffolding is sufficient. Future versions can add virtual
-    module discovery when custom email types become a requirement.
-  - Documentation updates (`email-setup.md`, `customisation.md`, consumer
-    AI scaffolds) deferred to Phase 12 (post-release).
+- **Phase 11:** Virtual module discovery (Sub-phase 11c) implemented:
+  - Investigation found that `import(/* @vite-ignore */ path)` cannot load
+    `.astro` files at runtime because `.astro` files require Vite's transform
+    pipeline (Astro compiler) which only runs during bundling, not on
+    arbitrary `import()` calls. The `@vite-ignore` annotation bypasses Vite
+    entirely, so Node.js receives raw `.astro` source which it can't parse.
+  - Solution: Created Vite plugin `crss-email-templates` in `integration.ts`
+    that intercepts `virtual:crss-email-templates` imports. The `load()` hook
+    scans both the developer's `emailTemplateDir` and the package's
+    `templates/email/` for `*Email.astro` files, generates static ES module
+    imports for each, and exports `devTemplates` and `packageTemplates`
+    objects keyed by kebab-case name (e.g., `SignInEmail.astro` → `sign-in`).
+  - `renderAstroEmail()` updated to `import('virtual:crss-email-templates')`
+    and look up `devTemplates[name] ?? packageTemplates[name]`.
+  - TypeScript declaration added: `src/types/virtual-email-templates.d.ts`.
+  - Verified working in Mailpit (commit `9e3dcd3`): developer overrides
+    render correctly with `data-astro-source-file` pointing to the
+    playground's email template.
+- **Phase 11:** HTML fallback removal from core package:
+  - Deleted 3 `.html` template files from `packages/core/src/templates/email/`
+    (`sign-in.html`, `welcome.html`, `email-change.html`). Core is now
+    Astro-only; developers can still use `.html` files as a simpler
+    alternative in their own projects.
+  - Removed `PACKAGE_TEMPLATE_DIR` constant and package-dir fallback from
+    `resolveTemplatePath()` — now resolves developer-owned `.html` only.
+  - Removed `ASTRO_EMAIL_COMPONENTS` map (virtual module handles mapping).
+  - Removed `resolveDeveloperAstroTemplatePath()` function (virtual module
+    handles discovery).
+  - Renamed `ASTRO_EMAIL_SUBJECTS` → `DEFAULT_EMAIL_SUBJECTS` (now exported
+    from `packages/core/index.ts` as public API).
+  - Updated resolution chain from 5 steps to 4: (1) code-based custom →
+    (2) Astro via virtual module → (3) developer HTML → (4) code-based defaults.
+  - Subject lines: come from `DEFAULT_EMAIL_SUBJECTS` map for Astro templates,
+    `<!-- subject: -->` HTML comments for developer HTML, or hardcoded in
+    code-based default templates. Subjects are managed at the service layer,
+    not inside `.astro` templates.
+- **Phase 11:** Documentation updates (Sub-phase 11e) completed:
+  - `email-setup.md`: Rewrote to Astro-first (primary), added theme config
+    section, added subject line documentation table, added HTML as
+    "Alternative" section. Removed outdated "Astro Email Components
+    (Container API)" section (merged into primary flow).
+  - `customisation.md`: Updated email templates section — `.astro` primary,
+    `.html` as simpler alternative.
+  - `copilot-instructions.md` (consumer scaffold): Email Templates section
+    and Developer-Owned Files updated to reference `.astro` templates.
+  - `community-rss.mdc` (consumer scaffold): Same updates as above.
+- **Phase 11:** Test updates after HTML removal:
+  - Removed `resolveDeveloperAstroTemplatePath` test block (5 tests).
+  - Rewrote `resolveTemplatePath` tests: returns null without developer dir
+    (no package fallback).
+  - Rewrote `renderEmailTemplate` tests: uses developer-provided `.html`
+    files in temp directories instead of relying on package built-in HTML.
+  - Added `DEFAULT_EMAIL_SUBJECTS` test block (3 tests).
+  - Removed `resolveDeveloperAstroTemplatePath` import.
+  - Final count: 434 tests passing.
 - **Phase 11:** Backward compatibility preserved:
   - Developers with existing `.html` email templates continue to work
     (resolution step 3: developer HTML).
