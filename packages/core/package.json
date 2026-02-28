@@ -6,7 +6,8 @@
   "main": "./index.ts",
   "types": "./index.ts",
   "bin": {
-    "community-rss": "./src/cli/init.mjs"
+    "community-rss": "./src/cli/bin.mjs",
+    "crss": "./src/cli/bin.mjs"
   },
   "exports": {
     ".": "./index.ts",

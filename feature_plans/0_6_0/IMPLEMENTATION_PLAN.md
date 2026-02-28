@@ -818,7 +818,30 @@ implementation as phases are completed.*
   page and component absence asserted.
 - All 442 tests pass.
 
-### Phase 6: `eject` CLI Command — Not Started
+### Phase 6: `eject` CLI Command — Completed
+
+- Created `src/cli/eject.mjs` with full eject functionality:
+  - `pages/<name>`: Copies page from core `src/pages/`, rewrites imports
+    to point to local layout/component proxies. Auto-ejects layout and
+    component proxies if they don't already exist locally.
+  - `components/<name>`: Generates a proxy wrapper that re-exports the
+    core component with `<slot />` passthrough and a `<style>` block.
+  - `layouts/<name>`: Generates a proxy wrapper with named slot
+    passthrough (`head`, `header`, default, `footer`).
+  - `actions`: Copies the latest actions scaffold template.
+- Page registry defines 8 pages with their layout/component dependencies
+  — auto-ejection creates only what's needed.
+- Conversational CLI output: `↳ Auto-created` messages explain why each
+  dependency file was created.
+- `--force` flag to overwrite existing files; skips by default.
+- Created `src/cli/bin.mjs` as unified CLI entry point that routes
+  `init` and `eject` subcommands. Backward compatible — no subcommand
+  defaults to `init`.
+- Updated `package.json` bin: `"community-rss"` and `"crss"` both point
+  to `bin.mjs`.
+- Added 15 new tests in `test/cli/eject.test.ts` covering pages,
+  components, layouts, actions, auto-ejection, force/skip, and errors.
+- All 457 tests pass (442 existing + 15 new).
 
 ### Phase 7: Actions Redesign — Not Started
 
