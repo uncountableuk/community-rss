@@ -53,43 +53,45 @@ const { tabs = defaultTabs, ariaLabel = 'Feed views' } = Astro.props;
   }
 </nav>
 
-<style>
-  .crss-tab-bar {
-    display: flex;
-    gap: var(--crss-space-xs);
-    border-bottom: 2px solid var(--crss-surface-2);
-    margin-bottom: var(--crss-space-lg);
-    overflow-x: auto;
-  }
+<style is:global>
+  @layer crss-components {
+    .crss-tab-bar {
+      display: flex;
+      gap: var(--crss-space-xs);
+      border-bottom: 2px solid var(--crss-surface-2);
+      margin-bottom: var(--crss-space-lg);
+      overflow-x: auto;
+    }
 
-  .crss-tab-bar__tab {
-    padding: var(--crss-space-sm) var(--crss-space-md);
-    border: none;
-    background: none;
-    font-family: var(--crss-font-family);
-    font-size: var(--crss-font-size-sm);
-    font-weight: 500;
-    color: var(--crss-text-muted);
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    margin-bottom: -2px;
-    transition:
-      color 0.15s ease,
-      border-color 0.15s ease;
-    white-space: nowrap;
-  }
+    .crss-tab-bar__tab {
+      padding: var(--crss-space-sm) var(--crss-space-md);
+      border: none;
+      background: none;
+      font-family: var(--crss-font-family);
+      font-size: var(--crss-font-size-sm);
+      font-weight: 500;
+      color: var(--crss-text-muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition:
+        color 0.15s ease,
+        border-color 0.15s ease;
+      white-space: nowrap;
+    }
 
-  .crss-tab-bar__tab:hover:not(:disabled) {
-    color: var(--crss-text-primary);
-  }
+    .crss-tab-bar__tab:hover:not(:disabled) {
+      color: var(--crss-text-primary);
+    }
 
-  .crss-tab-bar__tab--active {
-    color: var(--crss-brand-primary);
-    border-bottom-color: var(--crss-brand-primary);
-  }
+    .crss-tab-bar__tab--active {
+      color: var(--crss-brand-primary);
+      border-bottom-color: var(--crss-brand-primary);
+    }
 
-  .crss-tab-bar__tab--disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
+    .crss-tab-bar__tab--disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
   }
 </style>

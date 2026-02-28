@@ -716,7 +716,20 @@ implementation as phases are completed.*
 - **Decision gate**: Both spikes pass → proceeding with Phase 7a
   (coreActions spread pattern).
 
-### Phase 1: CSS Overridability — Not Started
+### Phase 1: CSS Overridability — Completed
+
+- Migrated all 9 component `<style>` blocks to `<style is:global>` +
+  `@layer crss-components { ... }`:
+  AuthButton, FeedCard, FeedGrid, TabBar, ArticleModal, MagicLinkForm,
+  SignUpForm, ConsentModal, HomepageCTA.
+- FeedCard: Removed the entire `:global()` duplicate block (~70 lines).
+  Since all styles are now global + layered, dynamically-created cards
+  (infinite scroll) are styled automatically without duplication.
+- ArticleModal: Removed `:global()` wrappers from content element selectors
+  (img, a, pre, blockquote) — now direct selectors within the layer.
+- BaseLayout was already using `<style is:global>` + `@layer crss-components`
+  — no change needed.
+- All 442 tests pass.
 
 ### Phase 2: Wire Tier 3 Tokens — Not Started
 

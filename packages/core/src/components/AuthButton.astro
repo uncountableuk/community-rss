@@ -77,59 +77,61 @@ if (app) {
   }
 </div>
 
-<style>
-  .crss-auth-button {
-    display: flex;
-    align-items: center;
-    gap: var(--crss-space-sm);
-  }
+<style is:global>
+  @layer crss-components {
+    .crss-auth-button {
+      display: flex;
+      align-items: center;
+      gap: var(--crss-space-sm);
+    }
 
-  .crss-btn {
-    display: inline-flex;
-    align-items: center;
-    padding: var(--crss-space-xs) var(--crss-space-md);
-    border-radius: var(--crss-radius-md);
-    font-size: var(--crss-font-size-sm);
-    font-family: var(--crss-font-family);
-    cursor: pointer;
-    text-decoration: none;
-    border: none;
-    transition: background-color var(--crss-transition-fast);
-  }
+    .crss-btn {
+      display: inline-flex;
+      align-items: center;
+      padding: var(--crss-space-xs) var(--crss-space-md);
+      border-radius: var(--crss-radius-md);
+      font-size: var(--crss-font-size-sm);
+      font-family: var(--crss-font-family);
+      cursor: pointer;
+      text-decoration: none;
+      border: none;
+      transition: background-color var(--crss-transition-fast);
+    }
 
-  .crss-btn--signin {
-    background-color: var(--crss-brand-primary);
-    color: var(--crss-text-inverse);
-  }
+    .crss-btn--signin {
+      background-color: var(--crss-brand-primary);
+      color: var(--crss-text-inverse);
+    }
 
-  .crss-btn--signin:hover {
-    background-color: var(--crss-brand-accent);
-  }
+    .crss-btn--signin:hover {
+      background-color: var(--crss-brand-accent);
+    }
 
-  .crss-btn--signout {
-    background-color: var(--crss-surface-2);
-    color: var(--crss-text-primary);
-  }
+    .crss-btn--signout {
+      background-color: var(--crss-surface-2);
+      color: var(--crss-text-primary);
+    }
 
-  .crss-btn--signout:hover {
-    background-color: var(--crss-surface-3);
-  }
+    .crss-btn--signout:hover {
+      background-color: var(--crss-surface-3);
+    }
 
-  .crss-auth-user {
-    display: flex;
-    align-items: center;
-    gap: var(--crss-space-sm);
-  }
+    .crss-auth-user {
+      display: flex;
+      align-items: center;
+      gap: var(--crss-space-sm);
+    }
 
-  .crss-auth-user__name {
-    font-size: var(--crss-font-size-sm);
-    color: var(--crss-text-secondary);
-    text-decoration: none;
-    transition: color var(--crss-transition-fast);
-  }
+    .crss-auth-user__name {
+      font-size: var(--crss-font-size-sm);
+      color: var(--crss-text-secondary);
+      text-decoration: none;
+      transition: color var(--crss-transition-fast);
+    }
 
-  .crss-auth-user__name:hover {
-    color: var(--crss-brand-primary);
+    .crss-auth-user__name:hover {
+      color: var(--crss-brand-primary);
+    }
   }
 </style>
 

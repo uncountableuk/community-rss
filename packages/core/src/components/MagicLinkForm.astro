@@ -77,84 +77,86 @@ const {
   </div>
 </form>
 
-<style>
-  .crss-magic-link-form {
-    display: flex;
-    flex-direction: column;
-    gap: var(--crss-space-md);
-    max-width: 400px;
-    width: 100%;
-  }
+<style is:global>
+  @layer crss-components {
+    .crss-magic-link-form {
+      display: flex;
+      flex-direction: column;
+      gap: var(--crss-space-md);
+      max-width: 400px;
+      width: 100%;
+    }
 
-  .crss-form-group {
-    display: flex;
-    flex-direction: column;
-    gap: var(--crss-space-xs);
-  }
+    .crss-form-group {
+      display: flex;
+      flex-direction: column;
+      gap: var(--crss-space-xs);
+    }
 
-  .crss-form-label {
-    font-size: var(--crss-font-size-sm);
-    font-weight: 500;
-    color: var(--crss-text-primary);
-  }
+    .crss-form-label {
+      font-size: var(--crss-font-size-sm);
+      font-weight: 500;
+      color: var(--crss-text-primary);
+    }
 
-  .crss-form-input {
-    padding: var(--crss-space-sm) var(--crss-space-md);
-    border: 1px solid var(--crss-surface-3);
-    border-radius: var(--crss-radius-md);
-    font-size: var(--crss-font-size-base);
-    font-family: var(--crss-font-family);
-    color: var(--crss-text-primary);
-    background-color: var(--crss-surface-0);
-    transition: border-color var(--crss-transition-fast);
-  }
+    .crss-form-input {
+      padding: var(--crss-space-sm) var(--crss-space-md);
+      border: 1px solid var(--crss-surface-3);
+      border-radius: var(--crss-radius-md);
+      font-size: var(--crss-font-size-base);
+      font-family: var(--crss-font-family);
+      color: var(--crss-text-primary);
+      background-color: var(--crss-surface-0);
+      transition: border-color var(--crss-transition-fast);
+    }
 
-  .crss-form-input:focus {
-    outline: none;
-    border-color: var(--crss-brand-primary);
-    box-shadow: var(--crss-comp-form-focus-ring, 0 0 0 3px var(--crss-focus-ring));
-  }
+    .crss-form-input:focus {
+      outline: none;
+      border-color: var(--crss-brand-primary);
+      box-shadow: var(--crss-comp-form-focus-ring, 0 0 0 3px var(--crss-focus-ring));
+    }
 
-  .crss-btn--primary {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: var(--crss-space-sm) var(--crss-space-lg);
-    background-color: var(--crss-brand-primary);
-    color: var(--crss-text-inverse);
-    border: none;
-    border-radius: var(--crss-radius-md);
-    font-size: var(--crss-font-size-base);
-    font-family: var(--crss-font-family);
-    cursor: pointer;
-    transition: background-color var(--crss-transition-fast);
-  }
+    .crss-btn--primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--crss-space-sm) var(--crss-space-lg);
+      background-color: var(--crss-brand-primary);
+      color: var(--crss-text-inverse);
+      border: none;
+      border-radius: var(--crss-radius-md);
+      font-size: var(--crss-font-size-base);
+      font-family: var(--crss-font-family);
+      cursor: pointer;
+      transition: background-color var(--crss-transition-fast);
+    }
 
-  .crss-btn--primary:hover {
-    background-color: var(--crss-brand-accent);
-  }
+    .crss-btn--primary:hover {
+      background-color: var(--crss-brand-accent);
+    }
 
-  .crss-btn--primary:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
+    .crss-btn--primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
 
-  .crss-form-message {
-    padding: var(--crss-space-sm) var(--crss-space-md);
-    border-radius: var(--crss-radius-md);
-    font-size: var(--crss-font-size-sm);
-  }
+    .crss-form-message {
+      padding: var(--crss-space-sm) var(--crss-space-md);
+      border-radius: var(--crss-radius-md);
+      font-size: var(--crss-font-size-sm);
+    }
 
-  .crss-form-message--success {
-    background-color: var(--crss-comp-form-success-bg, var(--crss-success-bg));
-    color: var(--crss-comp-form-success-text, var(--crss-success-text));
-    border: 1px solid var(--crss-comp-form-success-border, var(--crss-success-border));
-  }
+    .crss-form-message--success {
+      background-color: var(--crss-comp-form-success-bg, var(--crss-success-bg));
+      color: var(--crss-comp-form-success-text, var(--crss-success-text));
+      border: 1px solid var(--crss-comp-form-success-border, var(--crss-success-border));
+    }
 
-  .crss-form-message--error {
-    background-color: var(--crss-comp-form-error-bg, var(--crss-error-bg));
-    color: var(--crss-comp-form-error-text, var(--crss-error-text));
-    border: 1px solid var(--crss-comp-form-error-border, var(--crss-error-border));
+    .crss-form-message--error {
+      background-color: var(--crss-comp-form-error-bg, var(--crss-error-bg));
+      color: var(--crss-comp-form-error-text, var(--crss-error-text));
+      border: 1px solid var(--crss-comp-form-error-border, var(--crss-error-border));
+    }
   }
 </style>
 

@@ -45,17 +45,19 @@ import FeedCard from './FeedCard.astro';
   ))}
 </div>
 
-<style>
-  .crss-feed-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: var(--crss-space-lg);
-    padding: var(--crss-space-md) 0;
-  }
-
-  @media (max-width: 640px) {
+<style is:global>
+  @layer crss-components {
     .crss-feed-grid {
-      grid-template-columns: 1fr;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: var(--crss-space-lg);
+      padding: var(--crss-space-md) 0;
+    }
+
+    @media (max-width: 640px) {
+      .crss-feed-grid {
+        grid-template-columns: 1fr;
+      }
     }
   }
 </style>
