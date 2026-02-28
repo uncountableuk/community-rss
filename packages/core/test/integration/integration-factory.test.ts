@@ -126,7 +126,7 @@ describe('Integration Factory', () => {
         expect.objectContaining({
           vite: expect.objectContaining({
             plugins: expect.arrayContaining([
-              expect.objectContaining({ name: 'crss-consumer-overrides' }),
+              expect.objectContaining({ name: 'crss-consumer-overrides', enforce: 'pre' }),
               expect.objectContaining({ name: 'crss-email-templates' }),
             ]),
           }),
@@ -189,6 +189,7 @@ describe('Integration Factory', () => {
         (p: any) => p.name === 'crss-consumer-overrides',
       );
       expect(plugin).toBeDefined();
+      expect(plugin.enforce).toBe('pre');
 
       // The plugin's resolveId needs the core pages/layouts/components dirs.
       // We can derive them from the integration.ts location (src/integration.ts).

@@ -173,6 +173,7 @@ export function createIntegration(options: CommunityRssOptions = {}): AstroInteg
           vite: {
             plugins: [{
               name: 'crss-consumer-overrides',
+              enforce: 'pre' as const,
               resolveId(source: string, importer: string | undefined) {
                 if (!importer || !source.endsWith('.astro')) return;
                 // Only intercept imports originating from core's injected pages
