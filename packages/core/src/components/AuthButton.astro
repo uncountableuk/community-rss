@@ -82,55 +82,56 @@ if (app) {
     .crss-auth-button {
       display: flex;
       align-items: center;
-      gap: var(--crss-space-sm);
+      gap: var(--crss-comp-auth-gap);
     }
 
     .crss-btn {
       display: inline-flex;
       align-items: center;
-      padding: var(--crss-space-xs) var(--crss-space-md);
-      border-radius: var(--crss-radius-md);
-      font-size: var(--crss-font-size-sm);
+      padding: var(--crss-comp-auth-btn-padding-y) var(--crss-comp-auth-btn-padding-x);
+      border-radius: var(--crss-comp-auth-btn-radius);
+      font-size: var(--crss-comp-auth-btn-font-size);
       font-family: var(--crss-font-family);
       cursor: pointer;
       text-decoration: none;
       border: none;
-      transition: background-color var(--crss-transition-fast);
+      transition: var(--crss-comp-btn-transition);
     }
 
     .crss-btn--signin {
-      background-color: var(--crss-brand-primary);
-      color: var(--crss-text-inverse);
+      background-color: var(--crss-comp-auth-signin-bg);
+      color: var(--crss-comp-auth-signin-color);
     }
 
     .crss-btn--signin:hover {
-      background-color: var(--crss-brand-accent);
+      background-color: var(--crss-comp-btn-hover-bg);
     }
 
     .crss-btn--signout {
-      background-color: var(--crss-surface-2);
-      color: var(--crss-text-primary);
+      background-color: var(--crss-comp-auth-signout-bg);
+      color: var(--crss-comp-auth-signout-color);
+      border: 1px solid var(--crss-comp-auth-signout-border);
     }
 
     .crss-btn--signout:hover {
-      background-color: var(--crss-surface-3);
+      background-color: var(--crss-sys-color-surface-2);
     }
 
     .crss-auth-user {
       display: flex;
       align-items: center;
-      gap: var(--crss-space-sm);
+      gap: var(--crss-comp-auth-gap);
     }
 
     .crss-auth-user__name {
-      font-size: var(--crss-font-size-sm);
-      color: var(--crss-text-secondary);
+      font-size: var(--crss-comp-auth-btn-font-size);
+      color: var(--crss-sys-color-text-secondary);
       text-decoration: none;
-      transition: color var(--crss-transition-fast);
+      transition: color var(--crss-sys-transition-fast);
     }
 
     .crss-auth-user__name:hover {
-      color: var(--crss-brand-primary);
+      color: var(--crss-sys-color-primary);
     }
   }
 </style>

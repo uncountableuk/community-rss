@@ -72,17 +72,17 @@ const hasFooterSlot = Astro.slots.has('footer');
 
   @layer crss-components {
     .crss-header {
-      border-bottom: 1px solid var(--crss-border);
-      background: var(--crss-surface-0);
+      border-bottom: 1px solid var(--crss-comp-header-border);
+      background: var(--crss-comp-header-bg);
     }
 
     .crss-nav {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      max-width: 1200px;
+      max-width: var(--crss-comp-nav-max-width);
       margin: 0 auto;
-      padding: var(--crss-space-sm) var(--crss-space-lg);
+      padding: var(--crss-sys-space-sm) var(--crss-sys-space-lg);
     }
 
     .crss-nav-brand {

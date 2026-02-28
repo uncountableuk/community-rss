@@ -731,9 +731,53 @@ implementation as phases are completed.*
   — no change needed.
 - All 442 tests pass.
 
-### Phase 2: Wire Tier 3 Tokens — Not Started
+### Phase 2: Wire Tier 3 Tokens — Completed
 
-### Phase 3: Remove Hardcoded Values — Not Started
+- Wired all 9 components + BaseLayout to their respective Tier 3 tokens:
+  - AuthButton → `--crss-comp-auth-*` and `--crss-comp-btn-*` tokens
+  - FeedCard → `--crss-comp-card-*` tokens (bg, border, radius, padding,
+    hover-shadow, hover-lift, title/meta/summary sizes)
+  - FeedGrid → `--crss-comp-grid-*` tokens (gap, min-col, padding)
+  - TabBar → `--crss-comp-tab-*` tokens (gap, padding, font-size, color,
+    active-color, border-color, disabled-opacity)
+  - ArticleModal → `--crss-comp-modal-*` tokens (overlay-bg, bg, radius,
+    max-width, padding, title-size, meta-size)
+  - MagicLinkForm → `--crss-comp-form-*` tokens (gap, max-width,
+    input-padding, input-border, input-radius, input-bg, focus-ring)
+  - SignUpForm → Same form tokens + confirm panel wired to sys tokens
+  - ConsentModal → `--crss-comp-consent-*` tokens (overlay-bg, bg,
+    radius, padding, max-width, shadow, title-size)
+  - HomepageCTA → `--crss-comp-cta-*` tokens (bg, border, radius,
+    padding, text-color)
+  - BaseLayout → `--crss-comp-header-*` tokens (bg, border) +
+    `--crss-comp-nav-max-width`
+- Added missing tokens to `components.css`: CTA section (5 tokens),
+  Header section (3 tokens), `--crss-comp-form-max-width`.
+- All flat aliases (e.g., `--crss-surface-0`, `--crss-text-primary`)
+  replaced with either Tier 3 `--crss-comp-*` or Tier 2 `--crss-sys-*`
+  tokens in component style blocks.
+- All 442 tests pass.
+
+### Phase 3: Remove Hardcoded Values — Completed
+
+- Done alongside Phase 2 since same style blocks were being modified.
+- ConsentModal: `rgba(0, 0, 0, 0.5)` → `var(--crss-comp-consent-overlay-bg)`
+- TabBar: `opacity: 0.4` → `var(--crss-comp-tab-disabled-opacity)`
+- TabBar: `0.15s ease` (×2) → `var(--crss-sys-transition-fast)`
+- ArticleModal: `0.15s ease` (×5) → `var(--crss-sys-transition-fast)`
+- MagicLinkForm: `max-width: 400px` → `var(--crss-comp-form-max-width)`
+- SignUpForm: `max-width: 400px` (×2, form + confirm panel) →
+  `var(--crss-comp-form-max-width)`
+- BaseLayout: `max-width: 1200px` → `var(--crss-comp-nav-max-width)`
+- FeedCard: `0.15s` transition fallback removed (was
+  `var(--crss-transition-fast, 0.15s)`) — now uses
+  `var(--crss-sys-transition-fast)`
+- FeedGrid: `300px` min-col → `var(--crss-comp-grid-min-col)`
+- ArticleModal: `800px` max-width → `var(--crss-comp-modal-max-width)`
+- ConsentModal: `480px` max-width → `var(--crss-comp-consent-max-width)`
+- No hardcoded colour, size, or transition values remain in any
+  component `<style>` block.
+- All 442 tests pass.
 
 ### Phase 4: Conditional Page Injection — Not Started
 

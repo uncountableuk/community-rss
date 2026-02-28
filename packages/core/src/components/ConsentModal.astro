@@ -65,27 +65,27 @@ const {
       position: fixed;
       inset: 0;
       z-index: 1000;
-      background-color: rgba(0, 0, 0, 0.5);
+      background-color: var(--crss-comp-consent-overlay-bg);
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: var(--crss-space-md);
+      padding: var(--crss-sys-space-md);
     }
 
     .crss-consent-modal {
-      background-color: var(--crss-surface-0);
-      border-radius: var(--crss-radius-lg);
-      padding: var(--crss-space-xl);
-      max-width: 480px;
+      background-color: var(--crss-comp-consent-bg);
+      border-radius: var(--crss-comp-consent-radius);
+      padding: var(--crss-comp-consent-padding);
+      max-width: var(--crss-comp-consent-max-width);
       width: 100%;
-      box-shadow: var(--crss-shadow-lg);
+      box-shadow: var(--crss-comp-consent-shadow);
     }
 
     .crss-consent-title {
-      font-size: var(--crss-font-size-xl);
+      font-size: var(--crss-comp-consent-title-size);
       font-weight: 600;
-      color: var(--crss-text-primary);
-      margin-bottom: var(--crss-space-md);
+      color: var(--crss-sys-color-text-primary);
+      margin-bottom: var(--crss-sys-space-md);
     }
 
     .crss-consent-text {

@@ -158,8 +158,8 @@ const {
     .crss-signup-form {
       display: flex;
       flex-direction: column;
-      gap: var(--crss-space-md);
-      max-width: 400px;
+      gap: var(--crss-comp-form-gap);
+      max-width: var(--crss-comp-form-max-width);
       width: 100%;
     }
 
@@ -181,20 +181,20 @@ const {
     }
 
     .crss-form-input {
-      padding: var(--crss-space-sm) var(--crss-space-md);
-      border: 1px solid var(--crss-surface-3);
-      border-radius: var(--crss-radius-md);
-      font-size: var(--crss-font-size-base);
-      font-family: var(--crss-font-family);
-      color: var(--crss-text-primary);
-      background-color: var(--crss-surface-0);
-      transition: border-color var(--crss-transition-fast);
+      padding: var(--crss-comp-form-input-padding);
+      border: 1px solid var(--crss-comp-form-input-border);
+      border-radius: var(--crss-comp-form-input-radius);
+      font-size: var(--crss-sys-font-size-base);
+      font-family: var(--crss-sys-font-family);
+      color: var(--crss-sys-color-text-primary);
+      background-color: var(--crss-comp-form-input-bg);
+      transition: border-color var(--crss-sys-transition-fast);
     }
 
     .crss-form-input:focus {
       outline: none;
-      border-color: var(--crss-brand-primary);
-      box-shadow: var(--crss-comp-form-focus-ring, 0 0 0 3px var(--crss-focus-ring));
+      border-color: var(--crss-sys-color-primary);
+      box-shadow: var(--crss-comp-form-focus-ring);
     }
 
     .crss-form-input--readonly {
@@ -279,14 +279,14 @@ const {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: var(--crss-space-md);
+      gap: var(--crss-sys-space-md);
       text-align: center;
-      max-width: 400px;
+      max-width: var(--crss-comp-form-max-width);
       width: 100%;
-      padding: var(--crss-space-xl) var(--crss-space-lg);
-      background-color: var(--crss-surface-1);
-      border: 1px solid var(--crss-surface-3);
-      border-radius: var(--crss-radius-lg);
+      padding: var(--crss-sys-space-xl) var(--crss-sys-space-lg);
+      background-color: var(--crss-sys-color-surface-1);
+      border: 1px solid var(--crss-sys-color-surface-3);
+      border-radius: var(--crss-sys-radius-lg);
     }
 
     .crss-signup-confirm__icon {

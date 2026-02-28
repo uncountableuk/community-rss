@@ -57,40 +57,40 @@ const { tabs = defaultTabs, ariaLabel = 'Feed views' } = Astro.props;
   @layer crss-components {
     .crss-tab-bar {
       display: flex;
-      gap: var(--crss-space-xs);
-      border-bottom: 2px solid var(--crss-surface-2);
-      margin-bottom: var(--crss-space-lg);
+      gap: var(--crss-comp-tab-gap);
+      border-bottom: 2px solid var(--crss-comp-tab-border-color);
+      margin-bottom: var(--crss-sys-space-lg);
       overflow-x: auto;
     }
 
     .crss-tab-bar__tab {
-      padding: var(--crss-space-sm) var(--crss-space-md);
+      padding: var(--crss-comp-tab-padding-y) var(--crss-comp-tab-padding-x);
       border: none;
       background: none;
       font-family: var(--crss-font-family);
-      font-size: var(--crss-font-size-sm);
+      font-size: var(--crss-comp-tab-font-size);
       font-weight: 500;
-      color: var(--crss-text-muted);
+      color: var(--crss-comp-tab-color);
       cursor: pointer;
       border-bottom: 2px solid transparent;
       margin-bottom: -2px;
       transition:
-        color 0.15s ease,
-        border-color 0.15s ease;
+        color var(--crss-sys-transition-fast),
+        border-color var(--crss-sys-transition-fast);
       white-space: nowrap;
     }
 
     .crss-tab-bar__tab:hover:not(:disabled) {
-      color: var(--crss-text-primary);
+      color: var(--crss-sys-color-text-primary);
     }
 
     .crss-tab-bar__tab--active {
-      color: var(--crss-brand-primary);
-      border-bottom-color: var(--crss-brand-primary);
+      color: var(--crss-comp-tab-active-color);
+      border-bottom-color: var(--crss-comp-tab-active-color);
     }
 
     .crss-tab-bar__tab--disabled {
-      opacity: 0.4;
+      opacity: var(--crss-comp-tab-disabled-opacity);
       cursor: not-allowed;
     }
   }

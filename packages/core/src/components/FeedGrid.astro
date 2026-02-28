@@ -49,9 +49,9 @@ import FeedCard from './FeedCard.astro';
   @layer crss-components {
     .crss-feed-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: var(--crss-space-lg);
-      padding: var(--crss-space-md) 0;
+      grid-template-columns: repeat(auto-fill, minmax(var(--crss-comp-grid-min-col), 1fr));
+      gap: var(--crss-comp-grid-gap);
+      padding: var(--crss-comp-grid-padding) 0;
     }
 
     @media (max-width: 640px) {
