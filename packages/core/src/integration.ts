@@ -131,15 +131,22 @@ export function createIntegration(options: CommunityRssOptions = {}): AstroInteg
         ].join('\n');
         injectScript('page-ssr', tokenImport);
 
+        // Inject the consumer's theme.css (un-layered overrides) after all
+        // framework styles so it wins the cascade automatically.
+        const astroRoot = astroConfig.root instanceof URL
+          ? fileURLToPath(astroConfig.root)
+          : String(astroConfig.root);
+        const cleanRoot = astroRoot.replace(/\/$/, '');
+        const themeCssPath = join(cleanRoot, 'src', 'styles', 'theme.css');
+        if (existsSync(themeCssPath)) {
+          injectScript('page-ssr', `import '${themeCssPath}';`);
+        }
+
         // --- Virtual module for Astro email templates ---
         // Scans the developer's email template directory and the package's
         // built-in templates, generating static imports that Vite compiles
         // through its pipeline (including the Astro transform). This allows
         // renderAstroEmail() to load .astro components at request time.
-        const astroRoot = astroConfig.root instanceof URL
-          ? fileURLToPath(astroConfig.root)
-          : String(astroConfig.root);
-        const cleanRoot = astroRoot.replace(/\/$/, '');
         const devTemplateDir = join(cleanRoot, config.emailTemplateDir);
         const pkgTemplateDir = fileURLToPath(new URL('./templates/email', import.meta.url));
 
