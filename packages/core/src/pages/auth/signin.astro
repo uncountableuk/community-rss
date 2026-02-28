@@ -26,7 +26,8 @@ import MagicLinkForm from '../../components/MagicLinkForm.astro';
   </main>
 </BaseLayout>
 
-<style>
+<style is:global>
+@layer crss-components {
   .crss-signin-page {
     display: flex;
     align-items: center;
@@ -59,4 +60,5 @@ import MagicLinkForm from '../../components/MagicLinkForm.astro';
     font-size: var(--crss-font-size-sm);
     color: var(--crss-text-secondary);
   }
+}
 </style>

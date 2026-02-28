@@ -4,6 +4,7 @@ import { join } from 'node:path';
 
 const COMPONENTS_DIR = join(__dirname, '../../src/components');
 const LAYOUTS_DIR = join(__dirname, '../../src/layouts');
+const PAGES_DIR = join(__dirname, '../../src/pages');
 const TOKENS_FILE = join(__dirname, '../../src/styles/tokens/components.css');
 
 /**
@@ -37,19 +38,27 @@ function getConsumedTokens(): Set<string> {
 }
 
 /**
- * Get all .astro files from components + layouts
+ * Get all .astro files from components, layouts, and pages (recursive)
  */
 function getAllAstroFiles(): Array<{ name: string; content: string }> {
     const files: Array<{ name: string; content: string }> = [];
 
-    for (const dir of [COMPONENTS_DIR, LAYOUTS_DIR]) {
-        const entries = readdirSync(dir).filter((f) => f.endsWith('.astro'));
+    function collectFromDir(dir: string, prefix = '') {
+        const entries = readdirSync(dir, { withFileTypes: true });
         for (const entry of entries) {
-            files.push({
-                name: entry,
-                content: readFileSync(join(dir, entry), 'utf-8'),
-            });
+            if (entry.isDirectory()) {
+                collectFromDir(join(dir, entry.name), `${prefix}${entry.name}/`);
+            } else if (entry.name.endsWith('.astro')) {
+                files.push({
+                    name: `${prefix}${entry.name}`,
+                    content: readFileSync(join(dir, entry.name), 'utf-8'),
+                });
+            }
         }
+    }
+
+    for (const dir of [COMPONENTS_DIR, LAYOUTS_DIR, PAGES_DIR]) {
+        collectFromDir(dir);
     }
 
     return files;
@@ -110,7 +119,9 @@ describe('CSS Architecture', () => {
                     const cssNoComments = css.replace(/\/\*[\s\S]*?\*\//g, '');
                     // Allow #crss- id selectors — they're not colour values
                     const cleaned = cssNoComments.replace(/#crss-[\w-]+/g, '');
-                    expect(cleaned, `${name} should not have hardcoded hex colours`).not.toMatch(
+                    // Allow hex fallbacks inside var() — e.g. var(--crss-error, #dc2626)
+                    const noVarFallbacks = cleaned.replace(/var\([^,]+,\s*#[0-9a-fA-F]{3,8}\s*\)/g, '');
+                    expect(noVarFallbacks, `${name} should not have hardcoded hex colours`).not.toMatch(
                         hexPattern,
                     );
                 }

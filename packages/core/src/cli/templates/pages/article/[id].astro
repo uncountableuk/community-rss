@@ -52,7 +52,8 @@ const { id } = Astro.params;
   </main>
 </BaseLayout>
 
-<style>
+<style is:global>
+@layer crss-components {
   .crss-article-page {
     max-width: 800px;
     margin: 0 auto;
@@ -112,18 +113,18 @@ const { id } = Astro.params;
     color: var(--crss-text-secondary);
   }
 
-  .crss-article__content :global(img) {
+  .crss-article__content img {
     max-width: 100%;
     height: auto;
     border-radius: var(--crss-radius-sm);
     margin: var(--crss-space-md) 0;
   }
 
-  .crss-article__content :global(a) {
+  .crss-article__content a {
     color: var(--crss-brand-primary);
   }
 
-  .crss-article__content :global(pre) {
+  .crss-article__content pre {
     background: var(--crss-surface-1);
     padding: var(--crss-space-md);
     border-radius: var(--crss-radius-sm);
@@ -132,7 +133,7 @@ const { id } = Astro.params;
     font-size: var(--crss-font-size-sm);
   }
 
-  .crss-article__content :global(blockquote) {
+  .crss-article__content blockquote {
     border-left: 3px solid var(--crss-brand-primary);
     padding-left: var(--crss-space-md);
     margin: var(--crss-space-md) 0;
@@ -155,6 +156,7 @@ const { id } = Astro.params;
   .crss-article__original-link:hover {
     text-decoration: underline;
   }
+}
 </style>
 
 <script define:vars={{ id }}>

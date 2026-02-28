@@ -43,7 +43,8 @@ import HomepageCTA from '../components/HomepageCTA.astro';
   </main>
 </BaseLayout>
 
-<style>
+<style is:global>
+@layer crss-components {
   .crss-homepage {
     max-width: 1200px;
     margin: 0 auto;
@@ -72,6 +73,7 @@ import HomepageCTA from '../components/HomepageCTA.astro';
   .crss-homepage__sentinel {
     height: 1px;
   }
+}
 </style>
 
 <script>

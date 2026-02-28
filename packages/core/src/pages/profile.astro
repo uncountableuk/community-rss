@@ -185,7 +185,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   </main>
 </BaseLayout>
 
-<style>
+<style is:global>
+@layer crss-components {
   .crss-profile-page {
     display: flex;
     justify-content: center;
@@ -263,9 +264,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   }
   .crss-pending-notice {
     font-size: var(--crss-font-size-sm);
-    color: #065f46;
-    background-color: #d1fae5;
-    border: 1px solid #6ee7b7;
+    color: var(--crss-success-text, #065f46);
+    background-color: var(--crss-success-bg, #d1fae5);
+    border: 1px solid var(--crss-success-border, #6ee7b7);
     border-radius: var(--crss-radius-md);
     padding: var(--crss-space-xs) var(--crss-space-md);
     margin-top: var(--crss-space-xs);
@@ -350,7 +351,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   }
   .crss-inline-status {
     font-size: var(--crss-font-size-sm);
-    color: #065f46;
+    color: var(--crss-success-text, #065f46);
   }
   .crss-inline-status--error {
     color: var(--crss-error);
@@ -385,6 +386,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       transform: rotate(360deg);
     }
   }
+}
 </style>
 
 <script>

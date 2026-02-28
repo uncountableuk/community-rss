@@ -62,7 +62,8 @@ import BaseLayout from '@community-rss/core/layouts/BaseLayout.astro';
   </main>
 </BaseLayout>
 
-<style>
+<style is:global>
+@layer crss-components {
   .crss-terms-page {
     display: flex;
     justify-content: center;
@@ -113,4 +114,5 @@ import BaseLayout from '@community-rss/core/layouts/BaseLayout.astro';
     border-radius: var(--crss-radius-sm);
     font-family: var(--crss-font-family-mono, monospace);
   }
+}
 </style>

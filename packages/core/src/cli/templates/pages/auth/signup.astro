@@ -25,7 +25,8 @@ import SignUpForm from '@community-rss/core/components/SignUpForm.astro';
   </main>
 </BaseLayout>
 
-<style>
+<style is:global>
+@layer crss-components {
   .crss-signup-page {
     display: flex;
     align-items: center;
@@ -52,4 +53,5 @@ import SignUpForm from '@community-rss/core/components/SignUpForm.astro';
     color: var(--crss-text-secondary);
     margin-bottom: var(--crss-space-xl);
   }
+}
 </style>
