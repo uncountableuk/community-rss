@@ -23,7 +23,7 @@ import HomepageCTA from '@community-rss/core/components/HomepageCTA.astro';
 
     <!-- Sign-up CTA — server island renders only for unauthenticated visitors -->
     <HomepageCTA server:defer>
-      <Fragment slot="fallback" />
+      <Fragment slot="fallback"></Fragment>
     </HomepageCTA>
 
     <TabBar />

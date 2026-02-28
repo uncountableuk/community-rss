@@ -51,21 +51,29 @@ if (app) {
     if (session?.user && !(session.user as Record<string, unknown>).isGuest) {
       showCta = false;
     }
-  } catch { /* show CTA by default on error */ }
+  } catch {
+    /* show CTA by default on error */
+  }
 }
 ---
 
-{showCta && (
-  <div id="crss-homepage-cta" class="crss-homepage-cta" aria-live="polite">
-    <div class="crss-homepage-cta__inner">
-      <p class="crss-homepage-cta__text">{ctaText}</p>
-      <div class="crss-homepage-cta__actions">
-        <a href="/auth/signup" class="crss-btn crss-btn--cta">{createAccountLabel}</a>
-        <a href="/auth/signin" class="crss-btn crss-btn--cta-secondary">{signInLabel}</a>
+{
+  showCta && (
+    <div id="crss-homepage-cta" class="crss-homepage-cta" aria-live="polite">
+      <div class="crss-homepage-cta__inner">
+        <p class="crss-homepage-cta__text">{ctaText}</p>
+        <div class="crss-homepage-cta__actions">
+          <a href="/auth/signup" class="crss-btn crss-btn--cta">
+            {createAccountLabel}
+          </a>
+          <a href="/auth/signin" class="crss-btn crss-btn--cta-secondary">
+            {signInLabel}
+          </a>
+        </div>
       </div>
     </div>
-  </div>
-)}
+  )
+}
 
 <style>
   .crss-homepage-cta__inner {
@@ -122,7 +130,9 @@ if (app) {
     font-size: var(--crss-font-size-sm);
     font-family: var(--crss-font-family);
     text-decoration: none;
-    transition: background-color var(--crss-transition-fast), color var(--crss-transition-fast);
+    transition:
+      background-color var(--crss-transition-fast),
+      color var(--crss-transition-fast);
   }
 
   .crss-btn--cta-secondary:hover {

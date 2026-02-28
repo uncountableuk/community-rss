@@ -16,14 +16,14 @@ import type { AppContext } from '../types/context';
  * @since 0.5.0
  */
 export interface FetchArticlesInput {
-  /** Page number (default: 1) */
-  page?: number;
-  /** Items per page (default: 20, max: 100) */
-  limit?: number;
-  /** Filter by feed ID */
-  feedId?: string;
-  /** Sort order: 'newest' | 'oldest' */
-  sort?: string;
+    /** Page number (default: 1) */
+    page?: number;
+    /** Items per page (default: 20, max: 100) */
+    limit?: number;
+    /** Filter by feed ID */
+    feedId?: string;
+    /** Sort order: 'newest' | 'oldest' */
+    sort?: string;
 }
 
 /**
@@ -31,12 +31,12 @@ export interface FetchArticlesInput {
  * @since 0.5.0
  */
 export interface FetchArticlesOutput {
-  data: Array<Record<string, unknown>>;
-  pagination: {
-    page: number;
-    limit: number;
-    hasMore: boolean;
-  };
+    data: Array<Record<string, unknown>>;
+    pagination: {
+        page: number;
+        limit: number;
+        hasMore: boolean;
+    };
 }
 
 /**
@@ -51,21 +51,21 @@ export interface FetchArticlesOutput {
  * @since 0.5.0
  */
 export async function fetchArticlesHandler(
-  input: FetchArticlesInput,
-  app: AppContext,
+    input: FetchArticlesInput,
+    app: AppContext,
 ): Promise<FetchArticlesOutput> {
-  const page = Math.max(1, input.page ?? 1);
-  const limit = Math.min(100, Math.max(1, input.limit ?? 20));
-  const offset = (page - 1) * limit;
+    const page = Math.max(1, input.page ?? 1);
+    const limit = Math.min(100, Math.max(1, input.limit ?? 20));
+    const offset = (page - 1) * limit;
 
-  const articles = await getArticles(app.db, limit, offset);
+    const articles = await getArticles(app.db, limit, offset);
 
-  return {
-    data: articles,
-    pagination: {
-      page,
-      limit,
-      hasMore: articles.length === limit,
-    },
-  };
+    return {
+        data: articles,
+        pagination: {
+            page,
+            limit,
+            hasMore: articles.length === limit,
+        },
+    };
 }

@@ -20,7 +20,7 @@ import type {
 } from '../../types/email';
 import { defaultTemplates } from './email-templates';
 import { createResendTransport, createSmtpTransport } from './email-transports';
-import { renderEmailTemplate } from './email-renderer';
+import { renderEmailTemplate, renderAstroEmail } from './email-renderer';
 
 /**
  * Resolves the transport adapter from configuration.
@@ -139,8 +139,9 @@ export function createEmailService(
 
             // Resolution order:
             // 1. Code-based custom templates (emailConfig.templates) — highest priority
-            // 2. File-based templates (developer dir → package defaults)
-            // 3. Code-based default templates (built-in)
+            // 2. File-based HTML templates (developer dir → package defaults)
+            // 3. Astro Container API templates (package defaults)
+            // 4. Code-based default templates (built-in)
 
             // 1. Check code-based custom templates first
             const customTemplate = emailConfig?.templates?.[type];
@@ -153,7 +154,7 @@ export function createEmailService(
                 return;
             }
 
-            // 2. Try file-based template
+            // 2. Try file-based HTML template (developer overrides)
             const greetingText = profile?.name ? `Hi ${profile.name},` : 'Hi there,';
             const templateVars: Record<string, string> = {
                 appName,
@@ -168,7 +169,18 @@ export function createEmailService(
                 return;
             }
 
-            // 3. Fall back to code-based default template
+            // 3. Try Astro Container API template (package defaults)
+            try {
+                const astroContent = await renderAstroEmail(type, templateVars);
+                if (astroContent) {
+                    await transport.send({ from, to, subject: astroContent.subject, text: astroContent.text, html: astroContent.html });
+                    return;
+                }
+            } catch {
+                // Astro Container not available — fall through
+            }
+
+            // 4. Fall back to code-based default template
             const template = resolveTemplate(type, emailConfig);
             if (!template) {
                 console.warn(

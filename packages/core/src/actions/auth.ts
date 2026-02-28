@@ -16,8 +16,8 @@ import type { AppContext } from '../types/context';
  * @since 0.5.0
  */
 export interface CheckEmailInput {
-  /** Email address to check */
-  email: string;
+    /** Email address to check */
+    email: string;
 }
 
 /**
@@ -25,8 +25,8 @@ export interface CheckEmailInput {
  * @since 0.5.0
  */
 export interface CheckEmailOutput {
-  /** Whether a registered (non-guest) user exists with this email */
-  exists: boolean;
+    /** Whether a registered (non-guest) user exists with this email */
+    exists: boolean;
 }
 
 /**
@@ -34,12 +34,12 @@ export interface CheckEmailOutput {
  * @since 0.5.0
  */
 export interface SubmitSignupInput {
-  /** Email address */
-  email: string;
-  /** Display name */
-  name: string;
-  /** Whether the user accepted the Terms of Service */
-  termsAccepted: boolean;
+    /** Email address */
+    email: string;
+    /** Display name */
+    name: string;
+    /** Whether the user accepted the Terms of Service */
+    termsAccepted: boolean;
 }
 
 /**
@@ -47,12 +47,12 @@ export interface SubmitSignupInput {
  * @since 0.5.0
  */
 export interface SubmitSignupOutput {
-  /** Whether the signup was successful */
-  success: boolean;
-  /** Whether the account already exists (sign-in link sent instead) */
-  exists?: boolean;
-  /** Human-readable message */
-  message: string;
+    /** Whether the signup was successful */
+    success: boolean;
+    /** Whether the account already exists (sign-in link sent instead) */
+    exists?: boolean;
+    /** Human-readable message */
+    message: string;
 }
 
 /**
@@ -68,19 +68,19 @@ export interface SubmitSignupOutput {
  * @since 0.5.0
  */
 export async function checkEmailHandler(
-  input: CheckEmailInput,
-  app: AppContext,
+    input: CheckEmailInput,
+    app: AppContext,
 ): Promise<CheckEmailOutput> {
-  const email = input.email.trim().toLowerCase();
+    const email = input.email.trim().toLowerCase();
 
-  if (!email || !email.includes('@') || email.length < 3) {
-    throw new Error('Invalid email format');
-  }
+    if (!email || !email.includes('@') || email.length < 3) {
+        throw new Error('Invalid email format');
+    }
 
-  const user = await getUserByEmail(app.db, email);
-  const exists = user !== null && !user.isGuest;
+    const user = await getUserByEmail(app.db, email);
+    const exists = user !== null && !user.isGuest;
 
-  return { exists };
+    return { exists };
 }
 
 /**
@@ -96,69 +96,69 @@ export async function checkEmailHandler(
  * @since 0.5.0
  */
 export async function submitSignupHandler(
-  input: SubmitSignupInput,
-  app: AppContext,
+    input: SubmitSignupInput,
+    app: AppContext,
 ): Promise<SubmitSignupOutput> {
-  const email = input.email.trim().toLowerCase();
-  const name = input.name.trim();
+    const email = input.email.trim().toLowerCase();
+    const name = input.name.trim();
 
-  if (!email || !email.includes('@') || email.length < 3) {
-    throw new Error('Valid email is required');
-  }
+    if (!email || !email.includes('@') || email.length < 3) {
+        throw new Error('Valid email is required');
+    }
 
-  if (!name || name.length < 1) {
-    throw new Error('Display name is required');
-  }
+    if (!name || name.length < 1) {
+        throw new Error('Display name is required');
+    }
 
-  if (name.length > 100) {
-    throw new Error('Display name must be 100 characters or less');
-  }
+    if (name.length > 100) {
+        throw new Error('Display name must be 100 characters or less');
+    }
 
-  if (!input.termsAccepted) {
-    throw new Error('You must accept the Terms of Service');
-  }
+    if (!input.termsAccepted) {
+        throw new Error('You must accept the Terms of Service');
+    }
 
-  // Check if this email already belongs to a registered (non-guest) user
-  const existingUser = await getUserByEmail(app.db, email);
-  if (existingUser && !existingUser.isGuest) {
-    // Send a sign-in magic link instead of welcome link
+    // Check if this email already belongs to a registered (non-guest) user
+    const existingUser = await getUserByEmail(app.db, email);
+    if (existingUser && !existingUser.isGuest) {
+        // Send a sign-in magic link instead of welcome link
+        const auth = createAuth(app);
+        await auth.handler(
+            new Request(`${app.env.PUBLIC_SITE_URL}/api/auth/sign-in/magic-link`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, callbackURL: '/profile' }),
+            }),
+        ).catch((err: unknown) => {
+            console.warn('[community-rss] Sign-in link send failed for existing account:', err);
+        });
+
+        return {
+            success: true,
+            exists: true,
+            message: "An account with this email already exists. We've sent a sign-in link to your email.",
+        };
+    }
+
+    // Store pending sign-up data
+    await createPendingSignup(app.db, email, name);
+
+    // Trigger magic link email via better-auth
     const auth = createAuth(app);
-    await auth.handler(
-      new Request(`${app.env.PUBLIC_SITE_URL}/api/auth/sign-in/magic-link`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, callbackURL: '/profile' }),
-      }),
-    ).catch((err: unknown) => {
-      console.warn('[community-rss] Sign-in link send failed for existing account:', err);
-    });
+    const magicLinkResponse = await auth.handler(
+        new Request(`${app.env.PUBLIC_SITE_URL}/api/auth/sign-in/magic-link`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, callbackURL: '/profile' }),
+        }),
+    );
+
+    if (!magicLinkResponse.ok) {
+        throw new Error('Failed to send verification email');
+    }
 
     return {
-      success: true,
-      exists: true,
-      message: "An account with this email already exists. We've sent a sign-in link to your email.",
+        success: true,
+        message: 'Check your email to verify your account',
     };
-  }
-
-  // Store pending sign-up data
-  await createPendingSignup(app.db, email, name);
-
-  // Trigger magic link email via better-auth
-  const auth = createAuth(app);
-  const magicLinkResponse = await auth.handler(
-    new Request(`${app.env.PUBLIC_SITE_URL}/api/auth/sign-in/magic-link`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, callbackURL: '/profile' }),
-    }),
-  );
-
-  if (!magicLinkResponse.ok) {
-    throw new Error('Failed to send verification email');
-  }
-
-  return {
-    success: true,
-    message: 'Check your email to verify your account',
-  };
 }

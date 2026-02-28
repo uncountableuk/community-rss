@@ -12,69 +12,70 @@
  *
  * @since 0.5.0
  */
-@layer crss-tokens {:root {
-    /* ─── Colour Roles ────────────────────────────────── */
-    --crss-sys-color-primary: var(--crss-ref-indigo-600);
-    --crss-sys-color-accent: var(--crss-ref-violet-600);
+@layer crss-tokens {
+    :root {
+        /* ─── Colour Roles ────────────────────────────────── */
+        --crss-sys-color-primary: var(--crss-ref-indigo-600);
+        --crss-sys-color-accent: var(--crss-ref-violet-600);
 
-    --crss-sys-color-surface-0: var(--crss-ref-white);
-    --crss-sys-color-surface-1: var(--crss-ref-gray-100);
-    --crss-sys-color-surface-2: var(--crss-ref-gray-200);
-    --crss-sys-color-surface-3: var(--crss-ref-gray-300);
+        --crss-sys-color-surface-0: var(--crss-ref-white);
+        --crss-sys-color-surface-1: var(--crss-ref-gray-100);
+        --crss-sys-color-surface-2: var(--crss-ref-gray-200);
+        --crss-sys-color-surface-3: var(--crss-ref-gray-300);
 
-    --crss-sys-color-text-primary: var(--crss-ref-gray-900);
-    --crss-sys-color-text-secondary: var(--crss-ref-gray-600);
-    --crss-sys-color-text-muted: var(--crss-ref-gray-400);
-    --crss-sys-color-text-inverse: var(--crss-ref-white);
+        --crss-sys-color-text-primary: var(--crss-ref-gray-900);
+        --crss-sys-color-text-secondary: var(--crss-ref-gray-600);
+        --crss-sys-color-text-muted: var(--crss-ref-gray-400);
+        --crss-sys-color-text-inverse: var(--crss-ref-white);
 
-    --crss-sys-color-border: var(--crss-ref-gray-200);
+        --crss-sys-color-border: var(--crss-ref-gray-200);
 
-    --crss-sys-color-heart: var(--crss-ref-red-500);
-    --crss-sys-color-star: var(--crss-ref-amber-500);
-    --crss-sys-color-comment: var(--crss-ref-blue-500);
-    --crss-sys-color-success: var(--crss-ref-green-500);
-    --crss-sys-color-error: var(--crss-ref-red-500);
+        --crss-sys-color-heart: var(--crss-ref-red-500);
+        --crss-sys-color-star: var(--crss-ref-amber-500);
+        --crss-sys-color-comment: var(--crss-ref-blue-500);
+        --crss-sys-color-success: var(--crss-ref-green-500);
+        --crss-sys-color-error: var(--crss-ref-red-500);
 
-    --crss-sys-color-overlay: rgba(0, 0, 0, 0.5);
+        --crss-sys-color-overlay: rgba(0, 0, 0, 0.5);
 
-    /* ─── Typography Roles ────────────────────────────── */
-    --crss-sys-font-family: var(--crss-ref-font-sans);
-    --crss-sys-font-family-mono: var(--crss-ref-font-mono);
+        /* ─── Typography Roles ────────────────────────────── */
+        --crss-sys-font-family: var(--crss-ref-font-sans);
+        --crss-sys-font-family-mono: var(--crss-ref-font-mono);
 
-    --crss-sys-font-size-xs: var(--crss-ref-font-size-xs);
-    --crss-sys-font-size-sm: var(--crss-ref-font-size-sm);
-    --crss-sys-font-size-base: var(--crss-ref-font-size-base);
-    --crss-sys-font-size-lg: var(--crss-ref-font-size-lg);
-    --crss-sys-font-size-xl: var(--crss-ref-font-size-xl);
-    --crss-sys-font-size-2xl: var(--crss-ref-font-size-2xl);
-    --crss-sys-font-size-3xl: var(--crss-ref-font-size-3xl);
+        --crss-sys-font-size-xs: var(--crss-ref-font-size-xs);
+        --crss-sys-font-size-sm: var(--crss-ref-font-size-sm);
+        --crss-sys-font-size-base: var(--crss-ref-font-size-base);
+        --crss-sys-font-size-lg: var(--crss-ref-font-size-lg);
+        --crss-sys-font-size-xl: var(--crss-ref-font-size-xl);
+        --crss-sys-font-size-2xl: var(--crss-ref-font-size-2xl);
+        --crss-sys-font-size-3xl: var(--crss-ref-font-size-3xl);
 
-    /* ─── Spacing Roles ───────────────────────────────── */
-    --crss-sys-space-xs: var(--crss-ref-space-xs);
-    --crss-sys-space-sm: var(--crss-ref-space-sm);
-    --crss-sys-space-md: var(--crss-ref-space-md);
-    --crss-sys-space-lg: var(--crss-ref-space-lg);
-    --crss-sys-space-xl: var(--crss-ref-space-xl);
-    --crss-sys-space-2xl: var(--crss-ref-space-2xl);
-    --crss-sys-space-3xl: var(--crss-ref-space-3xl);
+        /* ─── Spacing Roles ───────────────────────────────── */
+        --crss-sys-space-xs: var(--crss-ref-space-xs);
+        --crss-sys-space-sm: var(--crss-ref-space-sm);
+        --crss-sys-space-md: var(--crss-ref-space-md);
+        --crss-sys-space-lg: var(--crss-ref-space-lg);
+        --crss-sys-space-xl: var(--crss-ref-space-xl);
+        --crss-sys-space-2xl: var(--crss-ref-space-2xl);
+        --crss-sys-space-3xl: var(--crss-ref-space-3xl);
 
-    /* ─── Border Radius Roles ─────────────────────────── */
-    --crss-sys-radius-sm: var(--crss-ref-radius-sm);
-    --crss-sys-radius-md: var(--crss-ref-radius-md);
-    --crss-sys-radius-lg: var(--crss-ref-radius-lg);
-    --crss-sys-radius-full: var(--crss-ref-radius-full);
+        /* ─── Border Radius Roles ─────────────────────────── */
+        --crss-sys-radius-sm: var(--crss-ref-radius-sm);
+        --crss-sys-radius-md: var(--crss-ref-radius-md);
+        --crss-sys-radius-lg: var(--crss-ref-radius-lg);
+        --crss-sys-radius-full: var(--crss-ref-radius-full);
 
-    /* ─── Shadow Roles ────────────────────────────────── */
-    --crss-sys-shadow-sm: var(--crss-ref-shadow-sm);
-    --crss-sys-shadow-md: var(--crss-ref-shadow-md);
-    --crss-sys-shadow-lg: var(--crss-ref-shadow-lg);
+        /* ─── Shadow Roles ────────────────────────────────── */
+        --crss-sys-shadow-sm: var(--crss-ref-shadow-sm);
+        --crss-sys-shadow-md: var(--crss-ref-shadow-md);
+        --crss-sys-shadow-lg: var(--crss-ref-shadow-lg);
 
-    /* ─── Transition Roles ────────────────────────────── */
-    --crss-sys-transition-fast: var(--crss-ref-transition-fast);
-    --crss-sys-transition-base: var(--crss-ref-transition-base);
-    --crss-sys-transition-slow: var(--crss-ref-transition-slow);
+        /* ─── Transition Roles ────────────────────────────── */
+        --crss-sys-transition-fast: var(--crss-ref-transition-fast);
+        --crss-sys-transition-base: var(--crss-ref-transition-base);
+        --crss-sys-transition-slow: var(--crss-ref-transition-slow);
 
-    /* ═══════════════════════════════════════════════════════
+        /* ═══════════════════════════════════════════════════════
    * Backward-Compatible Aliases (0.1.0–0.4.0 flat names)
    *
    * These ensure existing consumer theme.css files and
@@ -82,65 +83,67 @@
    * either the old flat names or the new --crss-sys-* names.
    * ═══════════════════════════════════════════════════════ */
 
-    /* Surface aliases */
-    --crss-surface-0: var(--crss-sys-color-surface-0);
-    --crss-surface-1: var(--crss-sys-color-surface-1);
-    --crss-surface-2: var(--crss-sys-color-surface-2);
-    --crss-surface-3: var(--crss-sys-color-surface-3);
+        /* Surface aliases */
+        --crss-surface-0: var(--crss-sys-color-surface-0);
+        --crss-surface-1: var(--crss-sys-color-surface-1);
+        --crss-surface-2: var(--crss-sys-color-surface-2);
+        --crss-surface-3: var(--crss-sys-color-surface-3);
 
-    /* Text aliases */
-    --crss-text-primary: var(--crss-sys-color-text-primary);
-    --crss-text-secondary: var(--crss-sys-color-text-secondary);
-    --crss-text-muted: var(--crss-sys-color-text-muted);
-    --crss-text-inverse: var(--crss-sys-color-text-inverse);
+        /* Text aliases */
+        --crss-text-primary: var(--crss-sys-color-text-primary);
+        --crss-text-secondary: var(--crss-sys-color-text-secondary);
+        --crss-text-muted: var(--crss-sys-color-text-muted);
+        --crss-text-inverse: var(--crss-sys-color-text-inverse);
 
-    /* Brand aliases */
-    --crss-brand-primary: var(--crss-sys-color-primary);
-    --crss-brand-accent: var(--crss-sys-color-accent);
+        /* Brand aliases */
+        --crss-brand-primary: var(--crss-sys-color-primary);
+        --crss-brand-accent: var(--crss-sys-color-accent);
 
-    /* Interaction aliases */
-    --crss-heart: var(--crss-sys-color-heart);
-    --crss-star: var(--crss-sys-color-star);
-    --crss-comment: var(--crss-sys-color-comment);
+        /* Interaction aliases */
+        --crss-heart: var(--crss-sys-color-heart);
+        --crss-star: var(--crss-sys-color-star);
+        --crss-comment: var(--crss-sys-color-comment);
 
-    /* Typography aliases */
-    --crss-font-family: var(--crss-sys-font-family);
-    --crss-font-family-mono: var(--crss-sys-font-family-mono);
-    --crss-font-size-xs: var(--crss-sys-font-size-xs);
-    --crss-font-size-sm: var(--crss-sys-font-size-sm);
-    --crss-font-size-base: var(--crss-sys-font-size-base);
-    --crss-font-size-lg: var(--crss-sys-font-size-lg);
-    --crss-font-size-xl: var(--crss-sys-font-size-xl);
-    --crss-font-size-2xl: var(--crss-sys-font-size-2xl);
-    --crss-font-size-3xl: var(--crss-sys-font-size-3xl);
+        /* Typography aliases */
+        --crss-font-family: var(--crss-sys-font-family);
+        --crss-font-family-mono: var(--crss-sys-font-family-mono);
+        --crss-font-size-xs: var(--crss-sys-font-size-xs);
+        --crss-font-size-sm: var(--crss-sys-font-size-sm);
+        --crss-font-size-base: var(--crss-sys-font-size-base);
+        --crss-font-size-lg: var(--crss-sys-font-size-lg);
+        --crss-font-size-xl: var(--crss-sys-font-size-xl);
+        --crss-font-size-2xl: var(--crss-sys-font-size-2xl);
+        --crss-font-size-3xl: var(--crss-sys-font-size-3xl);
 
-    /* Spacing aliases */
-    --crss-space-xs: var(--crss-sys-space-xs);
-    --crss-space-sm: var(--crss-sys-space-sm);
-    --crss-space-md: var(--crss-sys-space-md);
-    --crss-space-lg: var(--crss-sys-space-lg);
-    --crss-space-xl: var(--crss-sys-space-xl);
-    --crss-space-2xl: var(--crss-sys-space-2xl);
-    --crss-space-3xl: var(--crss-sys-space-3xl);
+        /* Spacing aliases */
+        --crss-space-xs: var(--crss-sys-space-xs);
+        --crss-space-sm: var(--crss-sys-space-sm);
+        --crss-space-md: var(--crss-sys-space-md);
+        --crss-space-lg: var(--crss-sys-space-lg);
+        --crss-space-xl: var(--crss-sys-space-xl);
+        --crss-space-2xl: var(--crss-sys-space-2xl);
+        --crss-space-3xl: var(--crss-sys-space-3xl);
 
-    /* Border radius aliases */
-    --crss-radius-sm: var(--crss-sys-radius-sm);
-    --crss-radius-md: var(--crss-sys-radius-md);
-    --crss-radius-lg: var(--crss-sys-radius-lg);
-    --crss-radius-full: var(--crss-sys-radius-full);
+        /* Border radius aliases */
+        --crss-radius-sm: var(--crss-sys-radius-sm);
+        --crss-radius-md: var(--crss-sys-radius-md);
+        --crss-radius-lg: var(--crss-sys-radius-lg);
+        --crss-radius-full: var(--crss-sys-radius-full);
 
-    /* Shadow aliases */
-    --crss-shadow-sm: var(--crss-sys-shadow-sm);
-    --crss-shadow-md: var(--crss-sys-shadow-md);
-    --crss-shadow-lg: var(--crss-sys-shadow-lg);
+        /* Shadow aliases */
+        --crss-shadow-sm: var(--crss-sys-shadow-sm);
+        --crss-shadow-md: var(--crss-sys-shadow-md);
+        --crss-shadow-lg: var(--crss-sys-shadow-lg);
 
-    /* Transition aliases */
-    --crss-transition-fast: var(--crss-sys-transition-fast);
-    --crss-transition-base: var(--crss-sys-transition-base);
-    --crss-transition-slow: var(--crss-sys-transition-slow);
+        /* Transition aliases */
+        --crss-transition-fast: var(--crss-sys-transition-fast);
+        --crss-transition-base: var(--crss-sys-transition-base);
+        --crss-transition-slow: var(--crss-sys-transition-slow);
 
-    /* Missing aliases used in BaseLayout/components */
-    --crss-border: var(--crss-sys-color-border);
-    --crss-primary: var(--crss-sys-color-primary);
+        /* Missing aliases used in BaseLayout/components */
+        --crss-border: var(--crss-sys-color-border);
+        --crss-primary: var(--crss-sys-color-primary);
+    }
 }
-} /* end @layer crss-tokens */
+
+/* end @layer crss-tokens */

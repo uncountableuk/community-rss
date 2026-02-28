@@ -1,9 +1,17 @@
 /**
- * File-based email template renderer.
+ * File-based and Astro Container API email template renderer.
  *
- * Resolves HTML template files from the developer's project directory
- * first, then falls back to the package's built-in templates. Supports
- * `{{variable}}` substitution and subject extraction from HTML comments.
+ * Supports two rendering paths:
+ * 1. **Astro templates** (`.astro`) — rendered via the Astro Container API,
+ *    post-processed with `juice` for CSS inlining. Preferred for new emails.
+ * 2. **HTML templates** (`.html`) — traditional `{{variable}}` substitution.
+ *    Maintained for backward compatibility.
+ *
+ * Resolution order for each email type:
+ * 1. Developer HTML template (if exists in emailTemplateDir)
+ * 2. Package Astro template (via Container API)
+ * 3. Package HTML template (fallback)
+ * 4. Code-based default template (last resort)
  *
  * @since 0.4.0
  */
@@ -161,4 +169,78 @@ export function renderEmailTemplate(
   const text = htmlToPlainText(html);
 
   return { subject, html, text };
+}
+
+/**
+ * Maps email type names to their Astro component subject lines.
+ * @internal
+ * @since 0.5.0
+ */
+const ASTRO_EMAIL_SUBJECTS: Record<string, (data: Record<string, string>) => string> = {
+  'sign-in': (data) => `Sign in to ${data.appName ?? 'Community RSS'}`,
+  'welcome': (data) => `Welcome to ${data.appName ?? 'Community RSS'}! Verify your account`,
+  'email-change': (data) => `Confirm your new email address — ${data.appName ?? 'Community RSS'}`,
+};
+
+/**
+ * Maps email type names to their Astro component file names.
+ * @internal
+ * @since 0.5.0
+ */
+const ASTRO_EMAIL_COMPONENTS: Record<string, string> = {
+  'sign-in': 'SignInEmail.astro',
+  'welcome': 'WelcomeEmail.astro',
+  'email-change': 'EmailChangeEmail.astro',
+};
+
+/**
+ * Renders an Astro email template via the Container API with `juice`
+ * CSS inlining.
+ *
+ * This function dynamically imports the Container API and the template
+ * component, renders to HTML, then inlines all styles using `juice`.
+ *
+ * @param name - Email type name (e.g., 'sign-in')
+ * @param props - Props to pass to the Astro component
+ * @returns Rendered email content, or null if the template is unavailable
+ * @since 0.5.0
+ */
+export async function renderAstroEmail(
+  name: string,
+  props: Record<string, string>,
+): Promise<EmailContent | null> {
+  const componentFile = ASTRO_EMAIL_COMPONENTS[name];
+  if (!componentFile) {
+    return null;
+  }
+
+  try {
+    const { experimental_AstroContainer: AstroContainer } = await import('astro/container');
+    const juice = (await import('juice')).default;
+
+    // Dynamic import of the Astro component
+    const componentPath = `../../templates/email/${componentFile}`;
+    const mod = await import(/* @vite-ignore */ componentPath);
+    const Component = mod.default;
+
+    if (!Component) {
+      return null;
+    }
+
+    const container = await AstroContainer.create();
+    const rawHtml = await container.renderToString(Component, { props });
+
+    // Inline CSS for email client compatibility
+    const html = juice(rawHtml);
+    const text = htmlToPlainText(html);
+
+    const subjectFn = ASTRO_EMAIL_SUBJECTS[name];
+    const subject = subjectFn ? subjectFn(props) : name;
+
+    return { subject, html, text };
+  } catch (err) {
+    // Container API not available or rendering failed — fall through
+    console.warn(`[community-rss] Astro email rendering failed for "${name}":`, err);
+    return null;
+  }
 }
