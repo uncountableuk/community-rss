@@ -29,6 +29,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      '@actions': path.resolve(__dirname, 'src/actions'),
       '@utils': path.resolve(__dirname, 'src/utils'),
       '@components': path.resolve(__dirname, 'src/components'),
       '@routes': path.resolve(__dirname, 'src/routes'),

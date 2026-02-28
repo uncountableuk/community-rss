@@ -88,3 +88,29 @@ export { createDatabase, closeDatabase } from './src/db/connection';
 
 // Scheduler exports
 export { startScheduler, stopScheduler, isSchedulerRunning } from './src/utils/build/scheduler';
+
+// Action handlers (for use with Astro Actions via defineAction)
+export {
+  fetchArticlesHandler,
+  checkEmailHandler,
+  submitSignupHandler,
+  updateProfileHandler,
+  changeEmailHandler,
+  confirmEmailChangeHandler,
+} from './src/actions/index';
+
+// Action handler types
+export type {
+  FetchArticlesInput,
+  FetchArticlesOutput,
+  CheckEmailInput,
+  CheckEmailOutput,
+  SubmitSignupInput,
+  SubmitSignupOutput,
+  UpdateProfileInput,
+  UpdateProfileOutput,
+  ChangeEmailInput,
+  ChangeEmailOutput,
+  ConfirmEmailChangeInput,
+  ConfirmEmailChangeOutput,
+} from './src/actions/index';

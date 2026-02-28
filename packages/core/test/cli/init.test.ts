@@ -39,10 +39,21 @@ describe('CLI scaffold', () => {
       expect(existsSync(join(tempDir, 'src/styles/theme.css'))).toBe(true);
     });
 
-    it('should create all 15 expected files', () => {
+    it('should create all 16 expected files', () => {
       const { created } = scaffold({ cwd: tempDir });
 
-      expect(created).toHaveLength(15);
+      expect(created).toHaveLength(16);
+    });
+
+    it('should create actions scaffold with handler imports', () => {
+      scaffold({ cwd: tempDir });
+
+      const actionsFile = readFileSync(
+        join(tempDir, 'src/actions/index.ts'),
+        'utf-8',
+      );
+      expect(actionsFile).toContain('@community-rss/core');
+      expect(actionsFile).toContain('defineAction');
     });
 
     it('should create page files with correct imports', () => {

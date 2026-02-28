@@ -50,6 +50,9 @@ const FILE_MAP = [
         target: 'src/email-templates/email-change.html',
     },
 
+    // Actions
+    { template: 'actions/index.ts', target: 'src/actions/index.ts' },
+
     // Config files
     { template: 'astro.config.mjs', target: 'astro.config.mjs' },
     { template: 'env.example', target: '.env.example' },

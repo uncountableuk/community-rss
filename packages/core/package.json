@@ -10,6 +10,7 @@
   },
   "exports": {
     ".": "./index.ts",
+    "./actions": "./src/actions/index.ts",
     "./layouts/*": "./src/layouts/*",
     "./components/*": "./src/components/*",
     "./styles/*": "./src/styles/*"
