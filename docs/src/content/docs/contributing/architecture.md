@@ -102,7 +102,55 @@ Components follow a strict pattern:
 2. **Props-driven copy** — All user-facing strings come from `messages`
    and `labels` props
 3. **CSS tokens** — All visual values use `--crss-` custom properties
+   organised in a three-tier hierarchy (Reference → System → Component)
 4. **Slot-based extension** — Layouts use named slots for customisation
+
+### Design Token System
+
+| Tier | Prefix | Purpose |
+|------|--------|---------|
+| Reference | `--crss-ref-*` | Raw palette values |
+| System | `--crss-sys-*` | Semantic roles |
+| Component | `--crss-comp-*` | Component-scoped overrides |
+
+Token files live in `src/styles/tokens/`. All tokens are defined inside
+`@layer crss-tokens`.
+
+### CSS Cascade Layers
+
+Framework styles use `@layer` declarations. Layer order:
+```
+crss-reset → crss-tokens → crss-base → crss-components → crss-utilities
+```
+
+Consumer `theme.css` is un-layered and always wins.
+
+### Astro Actions
+
+Action handlers in `src/actions/` are pure functions with signature
+`(input, app: AppContext) => Promise<Result>`. The core package exports
+them from `@community-rss/core/actions`. Consumers register via
+`defineAction` + Zod validation. The core package cannot import
+`astro:actions`.
+
+### Server Islands
+
+Auth-dependent UI uses `server:defer` to stream content after initial
+page load. Components check auth via `createAuth(app).api.getSession()`
+server-side. Always provide `slot="fallback"` for loading skeletons.
+
+### Container API Email Pipeline
+
+Email rendering uses a 5-step resolution chain: custom code → developer
+HTML → Astro Container → package HTML → code defaults. Astro email
+components in `src/templates/email/` are rendered via Container API +
+juice for CSS inlining.
+
+### Proxy Component Pattern
+
+Scaffolded wrappers in developer `src/components/` import core components
+and own the `<style>` block. Core owns logic; developer owns styling.
+No business logic, API calls, or data transformation in wrappers.
 
 ## Execution Contexts
 
@@ -147,11 +195,13 @@ FreshRSS. It is seeded during database initialisation.
 
 ## Email Template Resolution
 
-Templates are resolved in priority order:
+Templates are resolved in a 5-step priority chain:
 
-1. Developer's `emailTemplateDir` directory
-2. Package default templates (`src/templates/`)
-3. Code-based fallback HTML
+1. Custom code templates (developer-registered functions)
+2. Developer's `emailTemplateDir` directory (HTML with `{{variable}}`)
+3. Astro Container API (`.astro` components in `src/templates/email/`)
+4. Package default templates (`src/templates/email-templates/`)
+5. Code-based fallback HTML
 
 ## Background Processing
 
@@ -169,6 +219,8 @@ server. The schedule is configurable via `syncSchedule` option or
 | `@db/` | `src/db/` |
 | `@core-types/` | `src/types/` |
 | `@cli/` | `src/cli/` |
+| `@actions/` | `src/actions/` |
+| `@layouts/` | `src/layouts/` |
 | `@fixtures/` | `test/fixtures/` |
 | `@test/` | `test/` |
 

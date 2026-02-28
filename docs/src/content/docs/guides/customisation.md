@@ -111,7 +111,58 @@ template variables and examples.
 ## Theming
 
 Override CSS design tokens to change colours, typography, and spacing.
-See the [Theming](/guides/theming/) guide for the full token reference.
+The framework uses a **three-tier token system** — see the
+[Styling Guide](/guides/styling/) for an overview and the
+[CSS Tokens Reference](/api-reference/css-tokens/) for the full token list.
+
+Your `theme.css` is un-layered, so it always overrides framework defaults
+without needing `!important`.
+
+## Astro Actions
+
+Server communication uses Astro Actions instead of raw `fetch()`. The
+CLI scaffolds `src/actions/index.ts` with all available handlers
+pre-registered. You can customise input validation or add your own
+actions alongside the framework's.
+
+See the [Actions Reference](/api-reference/actions/) for the full API.
+
+## Server Islands
+
+Auth-dependent UI (sign-in button, CTA) uses `server:defer` to stream
+content after the initial page loads. Provide a `slot="fallback"` element
+for loading skeletons:
+
+```astro
+<AuthButton server:defer>
+  <div slot="fallback" class="auth-skeleton" />
+</AuthButton>
+```
+
+## Proxy Component Wrappers
+
+Scaffolded components in `src/components/` are thin wrappers around
+framework components. They import from `@community-rss/core/components/*`
+and own the `<style>` block:
+
+```astro
+---
+import CoreFeedCard from '@community-rss/core/components/FeedCard.astro';
+---
+<div class="my-feed-card">
+  <CoreFeedCard {...Astro.props} />
+</div>
+<style>
+  .my-feed-card :global(.crss-feed-card) {
+    --crss-comp-card-bg: #1e293b;
+  }
+</style>
+```
+
+Rules:
+- Pass all props through via `{...Astro.props}`
+- No business logic, API calls, or data transformation
+- Only: styling overrides, slot content, surrounding markup
 
 ## Configuration Files
 

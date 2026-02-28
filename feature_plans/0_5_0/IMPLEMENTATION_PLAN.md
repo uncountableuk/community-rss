@@ -651,40 +651,40 @@ must never suggest modifying:
 
 **Goal:** Update Starlight docs to reflect all new architectural patterns.
 
-- [ ] Rewrite `docs/src/content/docs/api-reference/css-tokens.md`
+- [x] Rewrite `docs/src/content/docs/api-reference/css-tokens.md`
   - Document three-tier token hierarchy
   - Provide complete token reference tables (Reference, System, Component)
   - Show override examples at each tier
-- [ ] Create `docs/src/content/docs/guides/styling.md`
+- [x] Create `docs/src/content/docs/guides/styling.md`
   - Token tier overview with examples
   - `@layer` cascade explanation
   - How consumer `theme.css` overrides work
   - Common theming recipes (dark mode, brand colours, typography)
-- [ ] Create `docs/src/content/docs/guides/architecture.md`
+- [x] Create `docs/src/content/docs/guides/architecture.md`
   - Summary of adopted principles (table from Spec §8.1)
   - Deferred principles with reasoning
   - Architecture decision records (ADRs) for major decisions
-- [ ] Create `docs/src/content/docs/api-reference/actions.md`
+- [x] Create `docs/src/content/docs/api-reference/actions.md`
   - List all exported action handlers
   - Show scaffolded `src/actions/index.ts` usage
   - Document input/output types
   - Show migration from raw `fetch()` to Actions
-- [ ] Update `docs/src/content/docs/guides/customisation.md`
+- [x] Update `docs/src/content/docs/guides/customisation.md`
   - Update token override examples for three-tier system
   - Add Action customisation section
   - Add Server Island explanation
-- [ ] Update `docs/src/content/docs/guides/email-setup.md`
+- [x] Update `docs/src/content/docs/guides/email-setup.md`
   - Add Container API email authoring section
   - Document resolution chain (`.astro` → `.html` → fallback)
   - Show how to create custom `.astro` email templates
-- [ ] Update `docs/src/content/docs/contributing/testing.md`
+- [x] Update `docs/src/content/docs/contributing/testing.md`
   - Add Playwright section: setup, writing tests, running
   - Add E2E vs unit test guidance
   - Add fixture documentation
-- [ ] Update `docs/src/content/docs/contributing/architecture.md`
+- [x] Update `docs/src/content/docs/contributing/architecture.md`
   - Add new patterns: tokens, layers, Actions, Server Islands, Container API
   - Update AppContext section
-- [ ] Update `docs/src/content/docs/contributing/coding-standards.md`
+- [x] Update `docs/src/content/docs/contributing/coding-standards.md`
   - Add token naming conventions
   - Add `@layer` rules
   - Add Action handler patterns
@@ -738,7 +738,7 @@ problems.*
 | 6. Proxy Component Refinement | ✅ Completed | Audit, token migration, proxy wrappers, TabBar props |
 | 7. E2E Testing (Playwright) | ✅ Completed | Config, fixtures, 7 page specs, 3 flow specs, CI scripts |
 | 8. AI Guidance Updates | ✅ Completed | All instruction files + consumer scaffolds + dual-target AI guidance |
-| 9. Documentation Updates | Not Started | |
+| 9. Documentation Updates | ✅ Completed | Starlight docs: 4 new pages, 5 updated, theming rewrite |
 | 10. Test Migration & Verification | Not Started | |
 
 ### Decisions Log
@@ -848,6 +848,18 @@ problems.*
 - **Phase 8:** FILE_MAP in `init.mjs` increased from 19 to 21 entries with
   the two new AI guidance files. Init test updated to verify count and
   content (Protected Areas, `--crss-` tokens, `globs:` frontmatter).
+- **Phase 9:** Created 4 new Starlight docs: `css-tokens.md` (complete
+  3-tier token reference), `styling.md` (cascade layers + theming recipes),
+  `architecture.md` (adopted/deferred principles + all new patterns),
+  `actions.md` (full API reference with migration guide).
+- **Phase 9:** Updated 5 existing docs: `customisation.md` (Actions, Server
+  Islands, proxy wrappers), `email-setup.md` (5-step resolution chain,
+  Container API section), `contributing/testing.md` (Playwright E2E),
+  `contributing/architecture.md` (all new patterns, 5-step email chain,
+  `@actions/` alias), `theming.md` (three-tier tokens, system token format).
+- **Phase 9:** Created `coding-standards.md` contributor doc covering token
+  naming, `@layer` rules, Action handler pattern, Server Island conventions,
+  import standards, and JSDoc requirements.
 
 ### Problems Log
 
