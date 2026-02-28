@@ -11,8 +11,8 @@
  * @since 0.5.0
  */
 declare module 'virtual:crss-email-templates' {
-  /** Developer-owned Astro email templates, keyed by email type name (kebab-case). */
-  export const devTemplates: Record<string, any>;
-  /** Package built-in Astro email templates, keyed by email type name (kebab-case). */
-  export const packageTemplates: Record<string, any>;
+    /** Developer-owned Astro email templates, keyed by email type name (kebab-case). */
+    export const devTemplates: Record<string, any>;
+    /** Package built-in Astro email templates, keyed by email type name (kebab-case). */
+    export const packageTemplates: Record<string, any>;
 }

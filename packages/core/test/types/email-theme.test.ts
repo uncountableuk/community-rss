@@ -3,7 +3,7 @@ import {
     DEFAULT_EMAIL_THEME,
     mergeEmailTheme,
 } from '@core-types/email-theme';
-import type { EmailThemeConfig, ResolvedEmailTheme } from '@core-types/email-theme';
+import type { EmailThemeConfig } from '@core-types/email-theme';
 
 describe('email-theme', () => {
     describe('DEFAULT_EMAIL_THEME', () => {
