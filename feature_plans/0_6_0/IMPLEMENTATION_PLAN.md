@@ -702,7 +702,19 @@ Back up any custom actions you've added first.
 *This section is initially empty. It will be populated during
 implementation as phases are completed.*
 
-### Phase 0: Technical Spikes — Not Started
+### Phase 0: Technical Spikes — Completed
+
+- **Actions spike result**: `astro:schema` re-exports standard `zod` v3.
+  `defineAction()` accepts standard `z.object({...})` schemas — no special
+  Astro wrapper required. Verified by code inspection of Astro 5.x source.
+- **Zod singleton result**: `npm ls zod` confirms zod v3.25.76 is
+  deduplicated across the workspace. Astro, the core package, and the
+  playground all resolve to a single zod v3 copy at the workspace root.
+  better-auth uses zod v4 separately but this doesn't affect Astro Actions.
+  Adding `"zod": "^3.23.0"` as a peerDependency will enforce singleton
+  resolution for consumers outside the monorepo.
+- **Decision gate**: Both spikes pass → proceeding with Phase 7a
+  (coreActions spread pattern).
 
 ### Phase 1: CSS Overridability — Not Started
 
