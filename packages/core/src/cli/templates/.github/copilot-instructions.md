@@ -58,19 +58,20 @@ Rules for proxy wrappers:
 
 ## Email Templates
 Customise emails by editing the `.astro` files in `src/email-templates/`:
+- `EmailLayout.astro` — Shared table-based layout (header, content slot, footer)
 - `SignInEmail.astro` — Magic link email
 - `WelcomeEmail.astro` — Sent after registration
 - `EmailChangeEmail.astro` — Email change verification
 
-These are full Astro components that import the shared `EmailLayout`
-from the core package. Edit the markup, styles, or structure freely.
-Theme values are available via the `theme` prop.
+All templates import `EmailLayout` from the same directory (`./EmailLayout.astro`).
+Edit the layout to change the shared structure; edit individual templates to
+change per-type content. Theme values are available via the `theme` prop.
 
 Alternatively, drop in a plain `.html` file (e.g., `sign-in.html`) with
 `{{variable}}` placeholders — the framework will use it as an override.
 
-Subject lines are set in the email service configuration or default
-to sensible values per email type (e.g., "Sign in to {appName}").
+Subject lines default to sensible values (e.g., "Sign in to {appName}").
+Override them in `astro.config.mjs` under `email.subjects`.
 
 ## Protected Areas — DO NOT MODIFY
 - **`node_modules/@community-rss/core/`** — Never fork or patch
@@ -87,7 +88,8 @@ Instead, use:
 These files are yours to modify freely:
 - `src/pages/*.astro` — Page routes
 - `src/styles/theme.css` — Token overrides
-- `src/email-templates/*.astro` — Astro email templates
+- `src/email-templates/EmailLayout.astro` — Shared email layout
+- `src/email-templates/*Email.astro` — Per-type email templates
 - `src/components/*.astro` — Proxy wrapper components
 - `src/actions/index.ts` — Action registration
 - `astro.config.mjs` — Integration configuration

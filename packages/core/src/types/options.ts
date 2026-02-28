@@ -136,6 +136,27 @@ export interface EmailConfig {
    * ```
    */
   theme?: import('./email-theme').EmailThemeConfig;
+
+  /**
+   * Override default email subject lines by type.
+   *
+   * Each key is an email type name (e.g., `'sign-in'`, `'welcome'`,
+   * `'email-change'`). The value is either a static string or a function
+   * that receives `{ appName }` and returns a string.
+   *
+   * Unspecified types fall back to `DEFAULT_EMAIL_SUBJECTS`.
+   *
+   * @since 0.5.0
+   *
+   * @example
+   * ```typescript
+   * subjects: {
+   *   'sign-in': ({ appName }) => `Log in to ${appName}`,
+   *   'welcome': 'Welcome aboard!',
+   * }
+   * ```
+   */
+  subjects?: Record<string, string | ((data: { appName: string }) => string)>;
 }
 
 import type { ResolvedEmailTheme } from './email-theme';
@@ -154,6 +175,7 @@ export type ResolvedCommunityRssOptions = Required<Pick<CommunityRssOptions, 'ma
     templates: import('./email').EmailTemplateMap | undefined;
     templateDir: string;
     theme: ResolvedEmailTheme;
+    subjects: Record<string, string | ((data: { appName: string }) => string)>;
   };
 };
 
@@ -180,6 +202,7 @@ export function resolveOptions(options: CommunityRssOptions = {}): ResolvedCommu
       templates: options.email?.templates,
       templateDir: options.email?.templateDir ?? './src/email-templates',
       theme: mergeEmailTheme(options.email?.theme, appName),
+      subjects: options.email?.subjects ?? {},
     },
   };
 }

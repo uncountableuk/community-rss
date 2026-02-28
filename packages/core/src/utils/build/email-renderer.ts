@@ -182,6 +182,42 @@ export const DEFAULT_EMAIL_SUBJECTS: Record<string, (data: Record<string, string
 };
 
 /**
+ * Resolves the subject line for an email type.
+ *
+ * Checks config overrides first (`EmailConfig.subjects`), then falls back
+ * to `DEFAULT_EMAIL_SUBJECTS`, then to the raw template name.
+ *
+ * @param name - Email type name (e.g., 'sign-in')
+ * @param data - Template variables (must include `appName`)
+ * @param subjects - Optional subject overrides from EmailConfig
+ * @returns Resolved subject string
+ * @since 0.5.0
+ */
+export function resolveSubject(
+  name: string,
+  data: Record<string, string>,
+  subjects?: Record<string, string | ((data: { appName: string }) => string)>,
+): string {
+  // 1. Config override
+  const override = subjects?.[name];
+  if (override !== undefined) {
+    if (typeof override === 'function') {
+      return override({ appName: data.appName ?? 'Community RSS' });
+    }
+    return override;
+  }
+
+  // 2. Built-in default
+  const defaultFn = DEFAULT_EMAIL_SUBJECTS[name];
+  if (defaultFn) {
+    return defaultFn(data);
+  }
+
+  // 3. Fallback to raw name
+  return name;
+}
+
+/**
  * Renders an Astro email template via the Container API with `juice`
  * CSS inlining.
  *
@@ -195,6 +231,7 @@ export const DEFAULT_EMAIL_SUBJECTS: Record<string, (data: Record<string, string
  * @param theme - Optional resolved email theme (colours, typography, spacing, branding)
  * @param _developerDir - Deprecated: developer directory is now resolved via the virtual module.
  *                         Parameter retained for backward compatibility.
+ * @param subjects - Optional subject line overrides from `EmailConfig.subjects`
  * @returns Rendered email content, or null if the template is unavailable
  * @since 0.5.0
  */
@@ -203,6 +240,7 @@ export async function renderAstroEmail(
   props: Record<string, string>,
   theme?: ResolvedEmailTheme,
   _developerDir?: string,
+  subjects?: Record<string, string | ((data: { appName: string }) => string)>,
 ): Promise<EmailContent | null> {
   // Quick bail-out for unknown template types (avoids pointless import attempts)
   if (!DEFAULT_EMAIL_SUBJECTS[name]) {
@@ -237,8 +275,8 @@ export async function renderAstroEmail(
     const html = juice(rawHtml);
     const text = htmlToPlainText(html);
 
-    const subjectFn = DEFAULT_EMAIL_SUBJECTS[name];
-    const subject = subjectFn ? subjectFn(props) : name;
+    // Subject resolution: config override → DEFAULT_EMAIL_SUBJECTS → fallback to name
+    const subject = resolveSubject(name, props, subjects);
 
     return { subject, html, text };
   } catch (err) {

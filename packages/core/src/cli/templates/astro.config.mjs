@@ -40,6 +40,11 @@ export default defineConfig({
                 //         logoWidth: '120px',
                 //     },
                 // },
+                // subjects: {
+                //     'sign-in': ({ appName }) => `Log in to ${appName}`,
+                //     'welcome': 'Welcome aboard!',
+                //     'email-change': 'Please confirm your new email',
+                // },
             },
         }),
     ],

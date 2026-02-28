@@ -90,7 +90,7 @@ export {
 export { createEmailService } from './src/utils/build/email-service';
 
 // Email template renderer
-export { renderEmailTemplate, renderAstroEmail, DEFAULT_EMAIL_SUBJECTS } from './src/utils/build/email-renderer';
+export { renderEmailTemplate, renderAstroEmail, resolveSubject, DEFAULT_EMAIL_SUBJECTS } from './src/utils/build/email-renderer';
 
 // Database exports
 export { createDatabase, closeDatabase } from './src/db/connection';

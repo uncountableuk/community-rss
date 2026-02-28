@@ -82,5 +82,22 @@ describe('CommunityRssOptions', () => {
       });
       expect(resolved.email.theme.branding.logoAlt).toBe('My Feeds');
     });
+
+    it('should resolve email.subjects to empty object by default', () => {
+      const resolved = resolveOptions();
+      expect(resolved.email.subjects).toEqual({});
+    });
+
+    it('should pass through email.subjects overrides', () => {
+      const subjects = {
+        'sign-in': 'Custom subject',
+        'welcome': ({ appName }: { appName: string }) => `Welcome to ${appName}`,
+      };
+      const resolved = resolveOptions({
+        email: { subjects },
+      });
+      expect(resolved.email.subjects['sign-in']).toBe('Custom subject');
+      expect(typeof resolved.email.subjects['welcome']).toBe('function');
+    });
   });
 });

@@ -39,10 +39,10 @@ describe('CLI scaffold', () => {
       expect(existsSync(join(tempDir, 'src/styles/theme.css'))).toBe(true);
     });
 
-    it('should create all 21 expected files', () => {
+    it('should create all 22 expected files', () => {
       const { created } = scaffold({ cwd: tempDir });
 
-      expect(created).toHaveLength(21);
+      expect(created).toHaveLength(22);
     });
 
     it('should create actions scaffold with handler imports', () => {
@@ -99,18 +99,30 @@ describe('CLI scaffold', () => {
       expect(indexPage).toContain('@community-rss/core');
     });
 
-    it('should create Astro email templates with core layout import', () => {
+    it('should create Astro email templates with local layout import', () => {
       scaffold({ cwd: tempDir });
 
       const signIn = readFileSync(
         join(tempDir, 'src/email-templates/SignInEmail.astro'),
         'utf-8',
       );
-      expect(signIn).toContain('@community-rss/core/templates/email/EmailLayout.astro');
+      expect(signIn).toContain('./EmailLayout.astro');
       expect(signIn).toContain('theme');
 
       expect(existsSync(join(tempDir, 'src/email-templates/WelcomeEmail.astro'))).toBe(true);
       expect(existsSync(join(tempDir, 'src/email-templates/EmailChangeEmail.astro'))).toBe(true);
+    });
+
+    it('should scaffold EmailLayout.astro into email-templates', () => {
+      scaffold({ cwd: tempDir });
+
+      const layout = readFileSync(
+        join(tempDir, 'src/email-templates/EmailLayout.astro'),
+        'utf-8',
+      );
+      expect(layout).toContain('appName');
+      expect(layout).toContain('theme');
+      expect(layout).toContain('<slot />');
     });
 
     it('should create astro.config.mjs with node adapter and email theme comments', () => {

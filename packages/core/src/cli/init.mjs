@@ -42,7 +42,8 @@ const FILE_MAP = [
     { template: 'pages/profile.astro', target: 'src/pages/profile.astro' },
     { template: 'pages/terms.astro', target: 'src/pages/terms.astro' },
 
-    // Email templates (Astro — developer-owned, imports core EmailLayout)
+    // Email templates (Astro — developer-owned, including shared layout)
+    { template: 'email-templates/EmailLayout.astro', target: 'src/email-templates/EmailLayout.astro' },
     { template: 'email-templates/SignInEmail.astro', target: 'src/email-templates/SignInEmail.astro' },
     { template: 'email-templates/WelcomeEmail.astro', target: 'src/email-templates/WelcomeEmail.astro' },
     {

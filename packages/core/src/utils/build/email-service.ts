@@ -166,7 +166,8 @@ export function createEmailService(
             // 2. Try Astro templates (virtual module handles dev → package priority)
             try {
                 const theme = emailConfig?.theme;
-                const astroContent = await renderAstroEmail(type, templateVars, theme);
+                const subjects = emailConfig?.subjects;
+                const astroContent = await renderAstroEmail(type, templateVars, theme, undefined, subjects);
                 if (astroContent) {
                     await transport.send({ from, to, subject: astroContent.subject, text: astroContent.text, html: astroContent.html });
                     return;

@@ -1,0 +1,118 @@
+---
+/**
+ * Email layout — table-based wrapper for email client compatibility
+ * (developer-owned).
+ *
+ * This file was scaffolded by `@community-rss/core init`.
+ * You can customise the header, footer, table structure, and
+ * styles freely — it will not be overwritten by future scaffolds.
+ *
+ * Theme values (colours, typography, spacing, branding) are
+ * configured in `astro.config.mjs` under `email.theme` and
+ * passed as the `theme` prop. Edit the config to rebrand;
+ * edit this file to change the shared email structure.
+ *
+ * @see https://community-rss.dev/docs/email-templates
+ */
+
+interface Props {
+  /** Application/community name */
+  appName?: string;
+  /** Resolved email theme (colours, typography, spacing, branding) */
+  theme?: Record<string, any>;
+}
+
+const { appName = 'Community RSS', theme = {} } = Astro.props;
+
+// Destructure with defaults matching DEFAULT_EMAIL_THEME
+const colors = theme.colors ?? {};
+const typography = theme.typography ?? {};
+const spacing = theme.spacing ?? {};
+const branding = theme.branding ?? {};
+
+const bgColor = colors.background ?? '#f9fafb';
+const surfaceColor = colors.surface ?? '#ffffff';
+const borderColor = colors.border ?? '#e5e7eb';
+const primaryColor = colors.primary ?? '#4f46e5';
+const textColor = colors.text ?? '#374151';
+const mutedColor = colors.mutedText ?? '#9ca3af';
+const fontFamily =
+  typography.fontFamily ?? "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+const fontSize = typography.fontSize ?? '16px';
+const headingSize = typography.headingSize ?? '20px';
+const contentPadding = spacing.contentPadding ?? '32px';
+const borderRadius = spacing.borderRadius ?? '8px';
+
+const logoUrl = branding.logoUrl;
+const logoAlt = branding.logoAlt ?? appName;
+const logoWidth = branding.logoWidth ?? '120px';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{appName}</title>
+  </head>
+  <body
+    style={`margin: 0; padding: 0; background-color: ${bgColor}; font-family: ${fontFamily}; -webkit-font-smoothing: antialiased;`}
+  >
+    <table
+      role="presentation"
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      style={`background-color: ${bgColor};`}
+    >
+      <tr>
+        <td align="center" style="padding: 40px 20px;">
+          <table
+            role="presentation"
+            width="600"
+            cellpadding="0"
+            cellspacing="0"
+            style={`max-width: 600px; width: 100%; background-color: ${surfaceColor}; border-radius: ${borderRadius}; border: 1px solid ${borderColor};`}
+          >
+            <!-- Header -->
+            <tr>
+              <td style={`padding: ${contentPadding} ${contentPadding} 0 ${contentPadding};`}>
+                {
+                  logoUrl && (
+                    <img
+                      src={logoUrl}
+                      alt={logoAlt}
+                      width={logoWidth}
+                      style={`display: block; margin: 0 0 16px 0; max-width: ${logoWidth};`}
+                    />
+                  )
+                }
+                <h1
+                  style={`margin: 0 0 24px 0; font-size: ${headingSize}; font-weight: 700; color: ${primaryColor};`}
+                >
+                  {appName}
+                </h1>
+              </td>
+            </tr>
+            <!-- Content -->
+            <tr>
+              <td
+                style={`padding: 0 ${contentPadding} ${contentPadding} ${contentPadding}; font-size: ${fontSize}; line-height: 1.6; color: ${textColor};`}
+              >
+                <slot />
+              </td>
+            </tr>
+            <!-- Footer -->
+            <tr>
+              <td
+                style={`padding: 24px ${contentPadding}; border-top: 1px solid ${borderColor}; font-size: 12px; color: ${mutedColor}; text-align: center;`}
+              >
+                <p style="margin: 0;">Sent by {appName}</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

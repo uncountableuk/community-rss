@@ -128,21 +128,28 @@ in the template directory.
 ### Subject Lines
 
 Subject lines are managed by the email service, not inside the templates
-themselves.  They come from `DEFAULT_EMAIL_SUBJECTS` which you can import
-and override via the `email.templates` configuration option:
+themselves. Override them via the `email.subjects` configuration:
 
 ```js
-import { DEFAULT_EMAIL_SUBJECTS } from '@community-rss/core';
+communityRss({
+  email: {
+    subjects: {
+      'sign-in': ({ appName }) => `Log in to ${appName}`,
+      'welcome': 'Welcome aboard!',
+      'email-change': 'Please confirm your new email',
+    },
+  },
+});
 ```
 
 | Template | Default Subject |
 |----------|----------------|
 | `sign-in` | `Sign in to {appName}` |
-| `welcome` | `Welcome to {appName}!` |
-| `email-change` | `Verify your new email address` |
+| `welcome` | `Welcome to {appName}! Verify your account` |
+| `email-change` | `Confirm your new email address — {appName}` |
 
-For HTML templates, embed a comment at the top of the file to set the
-subject: `<!-- subject: My Custom Subject -->`
+For HTML templates, you can also embed a subject as an HTML comment at the
+top of the file: `<!-- subject: My Custom Subject -->`
 
 ### Template Directory Configuration
 

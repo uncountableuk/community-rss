@@ -9,6 +9,7 @@ import {
   htmlToPlainText,
   renderEmailTemplate,
   renderAstroEmail,
+  resolveSubject,
   DEFAULT_EMAIL_SUBJECTS,
 } from '@utils/build/email-renderer';
 
@@ -336,6 +337,41 @@ describe('Email Renderer', () => {
       expect(DEFAULT_EMAIL_SUBJECTS['sign-in'](data)).toContain('Community RSS');
       expect(DEFAULT_EMAIL_SUBJECTS['welcome'](data)).toContain('Community RSS');
       expect(DEFAULT_EMAIL_SUBJECTS['email-change'](data)).toContain('Community RSS');
+    });
+  });
+
+  describe('resolveSubject', () => {
+    it('should use config override string when provided', () => {
+      const subjects = { 'sign-in': 'Custom Sign In Subject' };
+      const result = resolveSubject('sign-in', { appName: 'Test' }, subjects);
+      expect(result).toBe('Custom Sign In Subject');
+    });
+
+    it('should use config override function when provided', () => {
+      const subjects = {
+        'sign-in': (data: { appName: string }) => `Log in to ${data.appName}`,
+      };
+      const result = resolveSubject('sign-in', { appName: 'My App' }, subjects);
+      expect(result).toBe('Log in to My App');
+    });
+
+    it('should fall back to DEFAULT_EMAIL_SUBJECTS when no override', () => {
+      const result = resolveSubject('sign-in', { appName: 'Test App' });
+      expect(result).toContain('Test App');
+      expect(result).toBe(DEFAULT_EMAIL_SUBJECTS['sign-in']({ appName: 'Test App' }));
+    });
+
+    it('should fall back to raw name for unknown types', () => {
+      const result = resolveSubject('custom-type', { appName: 'Test' });
+      expect(result).toBe('custom-type');
+    });
+
+    it('should use Community RSS as default appName in override functions', () => {
+      const subjects = {
+        'sign-in': (data: { appName: string }) => `Sign in: ${data.appName}`,
+      };
+      const result = resolveSubject('sign-in', {}, subjects);
+      expect(result).toBe('Sign in: Community RSS');
     });
   });
 });

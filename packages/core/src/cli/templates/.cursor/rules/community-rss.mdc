@@ -22,11 +22,13 @@ globs: src/**/*.astro, src/**/*.ts, src/**/*.css
 - No business logic, API calls, or data transformation in wrappers
 
 ## Email Templates
-- Edit `.astro` files in `src/email-templates/` — full Astro components with `EmailLayout`
+- Edit `.astro` files in `src/email-templates/` — full Astro components
+- `EmailLayout.astro` — shared table-based layout (header, content slot, footer)
 - `SignInEmail.astro`, `WelcomeEmail.astro`, `EmailChangeEmail.astro` are developer-owned
+- All templates import `EmailLayout` from the same directory (`./EmailLayout.astro`)
 - Theme values available via the `theme` prop (colours, typography, spacing, branding)
 - Alternatively, drop in a `.html` file (e.g., `sign-in.html`) with `{{variable}}` placeholders
-- Subject lines set via email service config or auto-generated defaults
+- Subject lines override via `email.subjects` config or auto-generated defaults
 
 ## Protected Areas — DO NOT MODIFY
 - `node_modules/@community-rss/core/` — never fork or patch
@@ -36,7 +38,8 @@ globs: src/**/*.astro, src/**/*.ts, src/**/*.css
 ## Developer-Owned Files (safe to edit)
 - `src/pages/*.astro` — Page routes
 - `src/styles/theme.css` — Token overrides
-- `src/email-templates/*.astro` — Astro email templates
+- `src/email-templates/EmailLayout.astro` — Shared email layout
+- `src/email-templates/*Email.astro` — Per-type email templates
 - `src/components/*.astro` — Proxy wrapper components
 - `src/actions/index.ts` — Action registration
 - `astro.config.mjs` — Integration configuration
