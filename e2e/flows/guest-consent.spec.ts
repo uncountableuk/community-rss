@@ -30,10 +30,9 @@ test.describe('Guest Consent Flow', () => {
             return;
         }
 
-        // Force-show the modal for inspection
+        // Show the modal via the framework's API (attaches handlers)
         await page.evaluate(() => {
-            const el = document.getElementById('crss-consent-overlay');
-            if (el) el.style.display = 'flex';
+            (window as any).__crssShowConsentModal();
         });
 
         await expect(page.locator('#crss-consent-accept')).toBeVisible();
@@ -47,16 +46,16 @@ test.describe('Guest Consent Flow', () => {
             return;
         }
 
-        // Force-show the modal
+        // Use the framework's showConsentModal to properly attach handlers
         await page.evaluate(() => {
-            const el = document.getElementById('crss-consent-overlay');
-            if (el) el.style.display = 'flex';
+            (window as any).__crssShowConsentModal();
         });
 
+        await expect(overlay).toBeVisible({ timeout: 2_000 });
         await page.click('#crss-consent-accept');
 
-        // Wait for cookie to be set
-        await page.waitForTimeout(1_000);
+        // Wait for the async accept handler (imports guest module + sets cookie)
+        await page.waitForTimeout(2_000);
 
         const cookies = await page.context().cookies();
         const guestCookie = cookies.find((c) => c.name === 'crss_guest');
@@ -71,12 +70,12 @@ test.describe('Guest Consent Flow', () => {
             return;
         }
 
-        // Force-show the modal
+        // Use the framework's showConsentModal to properly attach handlers
         await page.evaluate(() => {
-            const el = document.getElementById('crss-consent-overlay');
-            if (el) el.style.display = 'flex';
+            (window as any).__crssShowConsentModal();
         });
 
+        await expect(overlay).toBeVisible({ timeout: 2_000 });
         await page.click('#crss-consent-decline');
         await page.waitForTimeout(500);
 

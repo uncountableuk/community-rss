@@ -34,7 +34,7 @@ test.describe('Homepage', () => {
     test('guest CTA is visible for unauthenticated users', async ({ page }) => {
         // The HomepageCTA component renders for unauthenticated users
         // It uses server:defer so may take a moment to appear
-        const cta = page.locator('.crss-cta');
+        const cta = page.locator('#crss-homepage-cta');
         await expect(cta).toBeVisible({ timeout: 10_000 });
     });
 
@@ -46,9 +46,7 @@ test.describe('Homepage', () => {
 
     test('infinite scroll shows sentinel element', async ({ page }) => {
         // The infinite scroll sentinel should be present at bottom of feed
-        const sentinel = page.locator('#feed-sentinel');
-        // Sentinel may not exist if there aren't enough articles
-        const count = await sentinel.count();
-        expect(count).toBeLessThanOrEqual(1);
+        const sentinel = page.locator('#infinite-scroll-sentinel');
+        await expect(sentinel).toBeAttached();
     });
 });

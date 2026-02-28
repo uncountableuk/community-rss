@@ -13,9 +13,9 @@ test.describe('Terms Page', () => {
         await page.goto('/terms');
         await expect(page.locator('body')).toBeVisible();
 
-        // Should have some text content
-        const bodyText = await page.locator('main, [role="main"], body').textContent();
-        expect(bodyText?.length).toBeGreaterThan(0);
+        // Should have some text content in the main area
+        const mainText = await page.locator('main').textContent();
+        expect(mainText?.length).toBeGreaterThan(0);
     });
 
     test('accessible from sign-up form link', async ({ page }) => {

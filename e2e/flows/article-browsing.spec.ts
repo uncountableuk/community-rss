@@ -18,25 +18,19 @@ test.describe('Article Browsing Flow', () => {
         const firstCard = page.locator('.crss-feed-card').first();
         await expect(firstCard).toBeVisible({ timeout: 10_000 });
 
-        // 3. Click first article to open modal
+        // 3. Click first article — navigates to /article/[id]
         const firstLink = page.locator('.crss-feed-card__link').first();
         await firstLink.click();
 
-        // 4. Modal should open
-        const modal = page.locator('#article-modal');
-        await expect(modal).toBeVisible({ timeout: 5_000 });
-
-        // 5. URL should update
+        // 4. URL should update to article page
         await expect(page).toHaveURL(/\/article\//, { timeout: 5_000 });
 
-        // 6. Modal title should be visible
-        const modalTitle = page.locator('#modal-title');
-        await expect(modalTitle).toBeVisible();
+        // 5. Navigate back to homepage
+        await page.goBack();
+        await expect(page).toHaveURL('/', { timeout: 5_000 });
 
-        // 7. Close modal
-        const closeBtn = page.locator('[data-modal-close]');
-        await closeBtn.click();
-        await expect(modal).not.toBeVisible({ timeout: 5_000 });
+        // 6. Feed grid should still be visible
+        await expect(page.locator('#feed-grid')).toBeVisible();
     });
 
     test('tab bar shows correct default tabs', async ({ page }) => {
