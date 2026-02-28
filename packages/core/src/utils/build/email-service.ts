@@ -139,9 +139,10 @@ export function createEmailService(
 
             // Resolution order:
             // 1. Code-based custom templates (emailConfig.templates) — highest priority
-            // 2. File-based HTML templates (developer dir → package defaults)
-            // 3. Astro Container API templates (developer .astro → package defaults)
-            // 4. Code-based default templates (built-in)
+            // 2. Developer Astro templates (.astro in emailTemplateDir)
+            // 3. Developer HTML templates (.html in emailTemplateDir → package .html)
+            // 4. Package Astro templates (built-in defaults)
+            // 5. Code-based default templates (built-in)
 
             // 1. Check code-based custom templates first
             const customTemplate = emailConfig?.templates?.[type];
@@ -154,7 +155,6 @@ export function createEmailService(
                 return;
             }
 
-            // 2. Try file-based HTML template (developer overrides)
             const greetingText = profile?.name ? `Hi ${profile.name},` : 'Hi there,';
             const templateVars: Record<string, string> = {
                 appName,
@@ -163,22 +163,24 @@ export function createEmailService(
                 ...(data as Record<string, unknown>) as Record<string, string>,
             };
             const templateDir = emailConfig?.templateDir ?? app.config.emailTemplateDir;
-            const fileContent = renderEmailTemplate(type, templateVars, templateDir);
-            if (fileContent) {
-                await transport.send({ from, to, subject: fileContent.subject, text: fileContent.text, html: fileContent.html });
-                return;
-            }
 
-            // 3. Try Astro Container API template (developer .astro → package defaults)
+            // 2. Try developer Astro template (.astro in emailTemplateDir)
             try {
                 const theme = emailConfig?.theme;
-                const astroContent = await renderAstroEmail(type, templateVars, theme, templateDir);
-                if (astroContent) {
-                    await transport.send({ from, to, subject: astroContent.subject, text: astroContent.text, html: astroContent.html });
+                const devAstroContent = await renderAstroEmail(type, templateVars, theme, templateDir);
+                if (devAstroContent) {
+                    await transport.send({ from, to, subject: devAstroContent.subject, text: devAstroContent.text, html: devAstroContent.html });
                     return;
                 }
             } catch {
                 // Astro Container not available — fall through
+            }
+
+            // 3. Try file-based HTML template (developer dir → package .html)
+            const fileContent = renderEmailTemplate(type, templateVars, templateDir);
+            if (fileContent) {
+                await transport.send({ from, to, subject: fileContent.subject, text: fileContent.text, html: fileContent.html });
+                return;
             }
 
             // 4. Fall back to code-based default template
