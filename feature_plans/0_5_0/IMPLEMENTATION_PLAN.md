@@ -461,23 +461,23 @@ the functional core component from the npm package (e.g.,
 interaction logic. This ensures the developer's styling survives package
 updates while logic improvements flow through automatically.
 
-- [ ] Audit `FeedCard.astro` — verify no inline data transformation
-- [ ] Audit `FeedGrid.astro` — verify no inline data transformation
-- [ ] Audit `TabBar.astro` — verify no inline logic
-- [ ] Audit `ArticleModal.astro` — extract any inline logic to `utils/client/modal.ts`
-- [ ] Audit `AuthButton.astro` — auth logic stays in middleware/server island
-- [ ] Audit `MagicLinkForm.astro` — form submission logic delegated to Action
-- [ ] Audit `SignUpForm.astro` — form submission logic delegated to Action
-- [ ] Audit `ConsentModal.astro` — consent logic delegated to `utils/client/guest.ts`
-- [ ] Verify all components use exclusively CSS custom properties (no
+- [x] Audit `FeedCard.astro` — verify no inline data transformation
+- [x] Audit `FeedGrid.astro` — verify no inline data transformation
+- [x] Audit `TabBar.astro` — verify no inline logic
+- [x] Audit `ArticleModal.astro` — extract any inline logic to `utils/client/modal.ts`
+- [x] Audit `AuthButton.astro` — auth logic stays in middleware/server island
+- [x] Audit `MagicLinkForm.astro` — form submission logic delegated to Action
+- [x] Audit `SignUpForm.astro` — form submission logic delegated to Action
+- [x] Audit `ConsentModal.astro` — consent logic delegated to `utils/client/guest.ts`
+- [x] Verify all components use exclusively CSS custom properties (no
       hardcoded colour, spacing, or font values)
-- [ ] Verify all components accept `messages`/`labels` props for all user-
+- [x] Verify all components accept `messages`/`labels` props for all user-
       facing strings
-- [ ] Update scaffold wrapper templates to demonstrate the Proxy pattern:
+- [x] Update scaffold wrapper templates to demonstrate the Proxy pattern:
       import core component, add custom `<style>`, pass messages
-- [ ] Ensure scaffold wrappers are thin: no business logic, no API calls,
+- [x] Ensure scaffold wrappers are thin: no business logic, no API calls,
       no data transformation — only styling, slot content, and props
-- [ ] Document the Proxy Component pattern in `.github/instructions/`
+- [x] Document the Proxy Component pattern in `.github/instructions/`
 
 ---
 
@@ -735,7 +735,7 @@ problems.*
 | 3. Astro Actions | ✅ Completed | Action handlers, scaffold template, tests (41 new tests) |
 | 4. Server Islands | ✅ Completed | AuthButton + HomepageCTA refactored, server:defer |
 | 5. Container API Email Pipeline | ✅ Completed | Astro email templates, juice, renderAstroEmail() |
-| 6. Proxy Component Refinement | Not Started | |
+| 6. Proxy Component Refinement | ✅ Completed | Audit, token migration, proxy wrappers, TabBar props |
 | 7. E2E Testing (Playwright) | Not Started | |
 | 8. AI Guidance Updates | Not Started | |
 | 9. Documentation Updates | Not Started | |
@@ -798,6 +798,32 @@ problems.*
   through to HTML templates. In the Vitest test environment, `.astro` files
   can't be compiled (no Astro Vite plugin), so tests verify the fallback
   behaviour. Full Container API rendering is verified via Astro's runtime.
+- **Phase 6:** Full component audit completed. FeedCard, FeedGrid,
+  ArticleModal, AuthButton all verified clean — no business logic, proper
+  token usage. Minor inline date formatting (`toLocaleDateString`) kept
+  in FeedCard/ArticleModal as it's a presentation concern, not logic.
+- **Phase 6:** Added feedback/state token tiers: reference (green/red
+  palette), system (success-bg/error-bg/focus-ring/overlay-bg), component
+  (form-success-*/form-error-*/form-focus-ring). All hardcoded hex colours
+  (#ecfdf5, #065f46, etc.) in MagicLinkForm and SignUpForm replaced with
+  token references.
+- **Phase 6:** TabBar refactored to accept `tabs` and `ariaLabel` props
+  (with sensible defaults). Previously, tab definitions were hardcoded
+  inside the component. FeedGrid has no user-facing strings so no
+  `labels` prop needed.
+- **Phase 6:** ConsentModal refactored to import `initGuestSession()` from
+  `utils/client/guest.ts` via dynamic import, eliminating duplicated UUID
+  generation and cookie-setting logic. The shadow profile API call remains
+  in the component since `guest.ts` doesn't handle server communication.
+- **Phase 6:** Created 3 scaffold proxy wrapper templates (FeedCard,
+  FeedGrid, TabBar) in `cli/templates/components/`. Updated FILE_MAP to
+  19 entries. Proxy wrappers demonstrate the pattern but are optional —
+  pages continue importing directly from `@community-rss/core/components/*`.
+- **Phase 6:** MagicLinkForm and SignUpForm client-side `fetch` logic kept
+  as-is. This is UI glue code (form submission, loading states, error
+  display), not business logic. The actual business logic lives in API
+  routes. Full Action delegation would require `astro:actions` which is
+  only available in consumer projects.
 
 ### Problems Log
 

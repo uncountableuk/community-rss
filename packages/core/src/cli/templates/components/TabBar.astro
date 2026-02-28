@@ -1,0 +1,48 @@
+---
+/**
+ * TabBar proxy wrapper — developer-owned styling wrapper around
+ * the core TabBar component.
+ *
+ * Edit the <style> block below to customise tab appearance.
+ * Pass custom `tabs` to override the default feed view tabs.
+ *
+ * @see https://community-rss.dev/guides/proxy-pattern
+ * @since 0.5.0
+ */
+import CoreTabBar from '@community-rss/core/components/TabBar.astro';
+
+interface Tab {
+  id: string;
+  label: string;
+  active: boolean;
+  disabled: boolean;
+}
+
+interface Props {
+  tabs?: Tab[];
+  ariaLabel?: string;
+}
+
+const props = Astro.props;
+---
+
+<div class="my-tab-bar">
+  <CoreTabBar {...props} />
+</div>
+
+<style>
+  /* === Developer Customisations ===
+   *
+   * Override component tokens here.
+   *
+   * Available tokens:
+   *   --crss-comp-tab-gap
+   *   --crss-comp-tab-padding-x
+   *   --crss-comp-tab-padding-y
+   *   --crss-comp-tab-font-size
+   *   --crss-comp-tab-color
+   *   --crss-comp-tab-active-color
+   *   --crss-comp-tab-border-color
+   *   --crss-comp-tab-disabled-opacity
+   */
+</style>

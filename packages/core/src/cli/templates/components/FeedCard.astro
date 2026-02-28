@@ -1,0 +1,63 @@
+---
+/**
+ * FeedCard proxy wrapper — developer-owned styling wrapper around
+ * the core FeedCard component.
+ *
+ * Edit the <style> block below to customise card appearance.
+ * The core component handles all data display and interaction logic.
+ *
+ * @example Changing card colours:
+ * ```css
+ * .my-feed-card :global(.crss-feed-card) {
+ *   --crss-comp-card-bg: #1e293b;
+ *   --crss-comp-card-border: #334155;
+ * }
+ * ```
+ *
+ * @see https://community-rss.dev/guides/proxy-pattern
+ * @since 0.5.0
+ */
+import CoreFeedCard from '@community-rss/core/components/FeedCard.astro';
+
+// Re-export the interface so page imports just need this file
+interface Props {
+  id: string;
+  title: string;
+  summary?: string;
+  authorName?: string;
+  publishedAt?: Date;
+  originalLink?: string;
+  feedTitle?: string;
+  heartCount?: number;
+  starCount?: number;
+  labels?: {
+    hearts?: string;
+    stars?: string;
+  };
+}
+
+const props = Astro.props;
+---
+
+<div class="my-feed-card">
+  <CoreFeedCard {...props} />
+</div>
+
+<style>
+  /* === Developer Customisations ===
+   *
+   * Override component tokens here. These take precedence over
+   * theme.css because scoped styles have higher specificity.
+   *
+   * Available tokens:
+   *   --crss-comp-card-bg
+   *   --crss-comp-card-border
+   *   --crss-comp-card-radius
+   *   --crss-comp-card-padding
+   *   --crss-comp-card-hover-shadow
+   *   --crss-comp-card-hover-lift
+   *   --crss-comp-card-title-size
+   *   --crss-comp-card-meta-size
+   *   --crss-comp-card-summary-size
+   */
+</style>

@@ -88,8 +88,8 @@ const formattedDate = publishedAt
   }
 
   .crss-feed-card:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    transform: translateY(-2px);
+    box-shadow: var(--crss-comp-card-hover-shadow);
+    transform: translateY(var(--crss-comp-card-hover-lift, -2px));
   }
 
   .crss-feed-card__link {
@@ -171,8 +171,8 @@ const formattedDate = publishedAt
   }
 
   :global(.crss-feed-card:hover) {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    transform: translateY(-2px);
+    box-shadow: var(--crss-comp-card-hover-shadow);
+    transform: translateY(var(--crss-comp-card-hover-lift, -2px));
   }
 
   :global(.crss-feed-card__link) {

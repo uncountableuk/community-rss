@@ -15,22 +15,26 @@ interface Props {
   greeting?: string;
 }
 
-const {
-  url,
-  appName = 'Community RSS',
-  greeting = 'Hi there,',
-} = Astro.props;
+const { url, appName = 'Community RSS', greeting = 'Hi there,' } = Astro.props;
 ---
 
 <EmailLayout appName={appName}>
   <p style="margin: 0 0 16px 0;">{greeting}</p>
-  <p style="margin: 0 0 16px 0;">Your account is almost ready. Click the button below to verify your email and get started:</p>
+  <p style="margin: 0 0 16px 0;">
+    Your account is almost ready. Click the button below to verify your email and get started:
+  </p>
   <p style="margin: 24px 0;">
-    <a href={url}
-       style="background-color: #4f46e5; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600;">
+    <a
+      href={url}
+      style="background-color: #4f46e5; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600;"
+    >
       Verify &amp; Get Started
     </a>
   </p>
-  <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 14px;">This link expires in 60 minutes.</p>
-  <p style="margin: 0; color: #6b7280; font-size: 14px;">If you didn't create this account, you can safely ignore this email.</p>
+  <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 14px;">
+    This link expires in 60 minutes.
+  </p>
+  <p style="margin: 0; color: #6b7280; font-size: 14px;">
+    If you didn't create this account, you can safely ignore this email.
+  </p>
 </EmailLayout>

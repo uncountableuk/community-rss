@@ -164,7 +164,7 @@ const {
   .crss-form-input:focus {
     outline: none;
     border-color: var(--crss-brand-primary);
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    box-shadow: var(--crss-comp-form-focus-ring, 0 0 0 3px var(--crss-focus-ring));
   }
 
   .crss-form-input--readonly {
@@ -227,15 +227,15 @@ const {
   }
 
   .crss-form-message--success {
-    background-color: #ecfdf5;
-    color: #065f46;
-    border: 1px solid #a7f3d0;
+    background-color: var(--crss-comp-form-success-bg, var(--crss-success-bg));
+    color: var(--crss-comp-form-success-text, var(--crss-success-text));
+    border: 1px solid var(--crss-comp-form-success-border, var(--crss-success-border));
   }
 
   .crss-form-message--error {
-    background-color: #fef2f2;
-    color: #991b1b;
-    border: 1px solid #fecaca;
+    background-color: var(--crss-comp-form-error-bg, var(--crss-error-bg));
+    color: var(--crss-comp-form-error-text, var(--crss-error-text));
+    border: 1px solid var(--crss-comp-form-error-border, var(--crss-error-border));
   }
 
   .crss-form-footer {

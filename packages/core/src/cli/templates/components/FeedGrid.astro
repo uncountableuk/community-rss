@@ -1,0 +1,47 @@
+---
+/**
+ * FeedGrid proxy wrapper — developer-owned styling wrapper around
+ * the core FeedGrid component.
+ *
+ * Edit the <style> block below to customise grid layout.
+ * The core component handles article rendering and layout logic.
+ *
+ * @see https://community-rss.dev/guides/proxy-pattern
+ * @since 0.5.0
+ */
+import CoreFeedGrid from '@community-rss/core/components/FeedGrid.astro';
+
+interface Article {
+  id: string;
+  title: string;
+  summary?: string;
+  authorName?: string;
+  publishedAt?: Date;
+  originalLink?: string;
+  feedTitle?: string;
+  heartCount?: number;
+  starCount?: number;
+}
+
+interface Props {
+  articles: Article[];
+}
+
+const props = Astro.props;
+---
+
+<div class="my-feed-grid">
+  <CoreFeedGrid {...props} />
+</div>
+
+<style>
+  /* === Developer Customisations ===
+   *
+   * Override component tokens here.
+   *
+   * Available tokens:
+   *   --crss-comp-grid-gap
+   *   --crss-comp-grid-min-col
+   *   --crss-comp-grid-padding
+   */
+</style>

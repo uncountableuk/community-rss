@@ -68,6 +68,13 @@
         --crss-comp-form-input-padding: var(--crss-sys-space-sm) var(--crss-sys-space-md);
         --crss-comp-form-label-size: var(--crss-sys-font-size-sm);
         --crss-comp-form-label-color: var(--crss-sys-color-text-secondary);
+        --crss-comp-form-focus-ring: 0 0 0 3px var(--crss-sys-color-focus-ring);
+        --crss-comp-form-success-bg: var(--crss-sys-color-success-bg);
+        --crss-comp-form-success-text: var(--crss-sys-color-success-text);
+        --crss-comp-form-success-border: var(--crss-sys-color-success-border);
+        --crss-comp-form-error-bg: var(--crss-sys-color-error-bg);
+        --crss-comp-form-error-text: var(--crss-sys-color-error-text);
+        --crss-comp-form-error-border: var(--crss-sys-color-error-border);
 
         /* ─── Consent Modal Tokens ────────────────────────── */
         --crss-comp-consent-overlay-bg: var(--crss-sys-color-overlay);

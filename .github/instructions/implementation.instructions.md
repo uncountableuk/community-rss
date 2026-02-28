@@ -143,6 +143,43 @@ Before creating a new utility:
 - Prefix all framework tokens with `--crss-` to avoid consumer namespace collisions
 - Framework ships sensible defaults; consumers remap tokens via `theme.css`
   or integration config
+- Three-tier token system: Reference (`--crss-ref-*`), System (`--crss-sys-*`),
+  Component (`--crss-comp-*`). Backward-compatible flat aliases (`--crss-*`)
+  map to system tokens.
+- No hardcoded colour, spacing, or font values in components — always use
+  CSS custom properties
+
+## Proxy Component Pattern
+Components in the core package own logic and default styling. When scaffolded
+into a developer's project, **Proxy Wrappers** import the core component
+and add a local `<style>` block for customisation.
+
+**Why:** Developers own their styling (survives package updates) while the
+package owns logic (improvements flow through automatically).
+
+```astro
+---
+// Developer's src/components/FeedCard.astro (scaffolded proxy wrapper)
+import CoreFeedCard from '@community-rss/core/components/FeedCard.astro';
+const props = Astro.props;
+---
+<div class="my-feed-card">
+  <CoreFeedCard {...props} />
+</div>
+<style>
+  /* Custom styles scoped to this wrapper */
+  .my-feed-card :global(.crss-feed-card) {
+    --crss-comp-card-bg: #1e293b;
+  }
+</style>
+```
+
+**Rules for proxy wrappers:**
+- Import the core component from `@community-rss/core/components/*`
+- Pass all props through via `{...props}` or `{...Astro.props}`
+- No business logic, no API calls, no data transformation
+- Only: styling overrides, slot content, surrounding markup, token overrides
+- Override component tokens (`--crss-comp-*`) in the `<style>` block
 
 ## Example Pattern
 ```typescript

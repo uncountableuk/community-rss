@@ -158,9 +158,9 @@ const {
       };
 
       const onAccept = async () => {
-        // Generate guest UUID and set cookie
-        const guestId = crypto.randomUUID();
-        document.cookie = `crss_guest=${guestId}; path=/; max-age=${60 * 60 * 24 * 365}; samesite=lax`;
+        // Delegate UUID generation and cookie setting to guest utility
+        const { initGuestSession } = await import('../utils/client/guest');
+        const guestId = initGuestSession();
 
         // Create shadow profile server-side
         try {

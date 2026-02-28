@@ -39,10 +39,10 @@ describe('CLI scaffold', () => {
       expect(existsSync(join(tempDir, 'src/styles/theme.css'))).toBe(true);
     });
 
-    it('should create all 16 expected files', () => {
+    it('should create all 19 expected files', () => {
       const { created } = scaffold({ cwd: tempDir });
 
-      expect(created).toHaveLength(16);
+      expect(created).toHaveLength(19);
     });
 
     it('should create actions scaffold with handler imports', () => {
@@ -54,6 +54,20 @@ describe('CLI scaffold', () => {
       );
       expect(actionsFile).toContain('@community-rss/core');
       expect(actionsFile).toContain('defineAction');
+    });
+
+    it('should create component proxy wrappers', () => {
+      scaffold({ cwd: tempDir });
+
+      const feedCard = readFileSync(
+        join(tempDir, 'src/components/FeedCard.astro'),
+        'utf-8',
+      );
+      expect(feedCard).toContain('@community-rss/core/components/FeedCard.astro');
+      expect(feedCard).toContain('CoreFeedCard');
+
+      expect(existsSync(join(tempDir, 'src/components/FeedGrid.astro'))).toBe(true);
+      expect(existsSync(join(tempDir, 'src/components/TabBar.astro'))).toBe(true);
     });
 
     it('should create page files with correct imports', () => {

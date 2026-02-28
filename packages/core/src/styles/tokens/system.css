@@ -36,6 +36,21 @@
         --crss-sys-color-success: var(--crss-ref-green-500);
         --crss-sys-color-error: var(--crss-ref-red-500);
 
+        /* Feedback surface colours (success/error message backgrounds) */
+        --crss-sys-color-success-bg: var(--crss-ref-green-50);
+        --crss-sys-color-success-text: var(--crss-ref-green-800);
+        --crss-sys-color-success-border: var(--crss-ref-green-300);
+        --crss-sys-color-error-bg: var(--crss-ref-red-50);
+        --crss-sys-color-error-text: var(--crss-ref-red-800);
+        --crss-sys-color-error-border: var(--crss-ref-red-200);
+
+        /* Focus ring for interactive elements */
+        --crss-sys-color-focus-ring: color-mix(
+            in srgb,
+            var(--crss-sys-color-primary) 15%,
+            transparent
+        );
+
         --crss-sys-color-overlay: rgba(0, 0, 0, 0.5);
 
         /* ─── Typography Roles ────────────────────────────── */
@@ -143,6 +158,16 @@
         /* Missing aliases used in BaseLayout/components */
         --crss-border: var(--crss-sys-color-border);
         --crss-primary: var(--crss-sys-color-primary);
+
+        /* Feedback aliases */
+        --crss-success-bg: var(--crss-sys-color-success-bg);
+        --crss-success-text: var(--crss-sys-color-success-text);
+        --crss-success-border: var(--crss-sys-color-success-border);
+        --crss-error-bg: var(--crss-sys-color-error-bg);
+        --crss-error-text: var(--crss-sys-color-error-text);
+        --crss-error-border: var(--crss-sys-color-error-border);
+        --crss-focus-ring: var(--crss-sys-color-focus-ring);
+        --crss-overlay-bg: var(--crss-sys-color-overlay);
     }
 }
 

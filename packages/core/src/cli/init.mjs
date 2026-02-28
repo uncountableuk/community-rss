@@ -53,6 +53,11 @@ const FILE_MAP = [
     // Actions
     { template: 'actions/index.ts', target: 'src/actions/index.ts' },
 
+    // Component proxy wrappers (Proxy Pattern)
+    { template: 'components/FeedCard.astro', target: 'src/components/FeedCard.astro' },
+    { template: 'components/FeedGrid.astro', target: 'src/components/FeedGrid.astro' },
+    { template: 'components/TabBar.astro', target: 'src/components/TabBar.astro' },
+
     // Config files
     { template: 'astro.config.mjs', target: 'astro.config.mjs' },
     { template: 'env.example', target: '.env.example' },

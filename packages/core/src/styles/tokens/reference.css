@@ -34,7 +34,10 @@
         --crss-ref-violet-600: #7c3aed;
 
         /* ─── Colour Palette: Red ─────────────────────────── */
+        --crss-ref-red-50: #fef2f2;
+        --crss-ref-red-200: #fecaca;
         --crss-ref-red-500: #ef4444;
+        --crss-ref-red-800: #991b1b;
 
         /* ─── Colour Palette: Amber ───────────────────────── */
         --crss-ref-amber-500: #f59e0b;
@@ -43,7 +46,10 @@
         --crss-ref-blue-500: #3b82f6;
 
         /* ─── Colour Palette: Green ───────────────────────── */
+        --crss-ref-green-50: #ecfdf5;
+        --crss-ref-green-300: #a7f3d0;
         --crss-ref-green-500: #22c55e;
+        --crss-ref-green-800: #065f46;
 
         /* ─── Colour Palette: White/Black ─────────────────── */
         --crss-ref-white: #ffffff;
