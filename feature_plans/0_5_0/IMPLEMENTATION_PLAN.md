@@ -90,6 +90,16 @@ behaviour is unchanged.
 | `packages/core/src/templates/email/EmailChangeEmail.astro` | Email change verification component |
 | `packages/core/src/templates/email/EmailLayout.astro` | Shared email layout component (table-based) |
 
+#### Email Theming & Developer Templates (Phase 11)
+| File | Purpose |
+|------|---------|
+| `packages/core/src/types/email-theme.ts` | `EmailThemeConfig` interface, default values, token map builder |
+| `packages/core/src/utils/build/email-token-resolver.ts` | `resolveEmailTokens()` post-processor for `var(--crss-email-*)` |
+| `packages/core/src/cli/templates/email-templates/SignInEmail.astro` | Scaffolded sign-in email (developer-owned) |
+| `packages/core/src/cli/templates/email-templates/WelcomeEmail.astro` | Scaffolded welcome email (developer-owned) |
+| `packages/core/src/cli/templates/email-templates/EmailChangeEmail.astro` | Scaffolded email-change email (developer-owned) |
+| `packages/core/test/utils/build/email-token-resolver.test.ts` | Token resolver tests |
+
 #### AI Guidance (Scaffolded for Consumers)
 | File | Purpose |
 |------|---------|
@@ -149,6 +159,24 @@ behaviour is unchanged.
 | `src/utils/build/email-service.ts` | Update resolution chain to check `.astro` templates first |
 | `src/types/email.ts` | Add Container API types (if needed) |
 
+#### Email Theming & Developer Templates (Phase 11)
+| File | Change |
+|------|--------|
+| `src/types/options.ts` | Add `theme?: EmailThemeConfig` to `EmailConfig` |
+| `src/utils/build/email-renderer.ts` | Add `resolveEmailTokens()` post-processing step; developer Astro template discovery via virtual module |
+| `src/utils/build/email-service.ts` | Merge theme defaults, pass theme to renderer, update resolution order |
+| `src/templates/email/EmailLayout.astro` | Replace hardcoded colours with `var(--crss-email-*)` tokens; add optional logo/branding |
+| `src/templates/email/SignInEmail.astro` | Replace hardcoded colours with `var(--crss-email-*)` tokens |
+| `src/templates/email/WelcomeEmail.astro` | Replace hardcoded colours with `var(--crss-email-*)` tokens |
+| `src/templates/email/EmailChangeEmail.astro` | Replace hardcoded colours with `var(--crss-email-*)` tokens |
+| `src/integration.ts` | Add Vite plugin for `virtual:crss-email-templates` developer template discovery |
+| `src/cli/init.mjs` | Replace `.html` email scaffolds with `.astro` scaffolds in FILE_MAP |
+| `packages/core/package.json` | Add `./templates/email/*` to `exports` for layout import |
+| `packages/core/index.ts` | Export `EmailThemeConfig` type |
+| `test/utils/build/email-renderer.test.ts` | Add tests for token resolution and developer template discovery |
+| `test/utils/build/email-service.test.ts` | Add tests for theme merging and prop passing |
+| `test/cli/init.test.ts` | Update scaffold assertions for `.astro` email templates |
+
 #### Integration
 | File | Change |
 |------|--------|
@@ -160,7 +188,7 @@ behaviour is unchanged.
 | `src/cli/init.ts` | Add `actions/index.ts` to scaffold file map; add `.github/copilot-instructions.md` and `.cursor/rules/community-rss.mdc` |
 | `src/cli/templates/pages/*.astro` | Update scaffold pages to use Actions instead of raw fetch |
 | `src/cli/templates/theme.css` | Update with three-tier token override examples |
-| `src/cli/templates/email-templates/*.html` | Keep as developer-level HTML fallbacks |
+| `src/cli/templates/email-templates/*.html` | Remove — replaced by `.astro` scaffolds in Phase 11 |
 
 #### Client Utils (Action Wiring)
 | File | Change |
@@ -725,6 +753,305 @@ tests are green.
 
 ---
 
+### Phase 11: Email Template Theming & Developer Customization
+
+**Goal:** Enable developers to customise email appearance through (a) a
+theme configuration object, (b) CSS custom properties in Astro email
+templates that resolve to concrete values, and (c) scaffolded `.astro`
+email templates that developers own and edit.
+
+**Design Overview:**
+
+#### A. Email Theme Configuration
+
+New `EmailThemeConfig` interface provides a structured way to brand emails
+without editing templates. All properties are optional with sensible
+defaults matching the current hardcoded values.
+
+```typescript
+interface EmailThemeConfig {
+  colors?: {
+    primary?: string;        // default: '#4f46e5'
+    background?: string;     // default: '#f9fafb'
+    surface?: string;        // default: '#ffffff'
+    text?: string;           // default: '#374151'
+    mutedText?: string;      // default: '#6b7280'
+    border?: string;         // default: '#e5e7eb'
+    buttonText?: string;     // default: '#ffffff'
+  };
+  typography?: {
+    fontFamily?: string;     // default: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+    fontSize?: string;       // default: '16px'
+    headingSize?: string;    // default: '20px'
+  };
+  spacing?: {
+    contentPadding?: string; // default: '32px'
+    borderRadius?: string;   // default: '8px'
+    buttonRadius?: string;   // default: '8px'
+    buttonPadding?: string;  // default: '12px 24px'
+  };
+  branding?: {
+    logoUrl?: string;        // optional — URL to header logo image
+    logoAlt?: string;        // default: appName
+    logoWidth?: string;      // default: '120px'
+  };
+}
+```
+
+Added to `EmailConfig` as `theme?: EmailThemeConfig`. Consumers configure
+it in their `astro.config.mjs`:
+
+```javascript
+communityRss({
+  email: {
+    theme: {
+      colors: { primary: '#e11d48', background: '#0f172a' },
+      branding: { logoUrl: 'https://example.com/logo.png' },
+    },
+  },
+})
+```
+
+#### B. CSS Custom Property Resolution Pipeline
+
+Astro email templates use `var(--crss-email-*)` tokens in inline styles
+for readability. A post-processing step resolves them to concrete values.
+
+**Token naming convention:** `--crss-email-{category}-{name}`
+
+| Token | Default | Maps to |
+|-------|---------|---------|
+| `--crss-email-color-primary` | `#4f46e5` | `colors.primary` |
+| `--crss-email-color-bg` | `#f9fafb` | `colors.background` |
+| `--crss-email-color-surface` | `#ffffff` | `colors.surface` |
+| `--crss-email-color-text` | `#374151` | `colors.text` |
+| `--crss-email-color-muted` | `#6b7280` | `colors.mutedText` |
+| `--crss-email-color-border` | `#e5e7eb` | `colors.border` |
+| `--crss-email-color-button-text` | `#ffffff` | `colors.buttonText` |
+| `--crss-email-font-family` | `system-ui, ...` | `typography.fontFamily` |
+| `--crss-email-font-size` | `16px` | `typography.fontSize` |
+| `--crss-email-font-heading` | `20px` | `typography.headingSize` |
+| `--crss-email-spacing-content` | `32px` | `spacing.contentPadding` |
+| `--crss-email-radius` | `8px` | `spacing.borderRadius` |
+| `--crss-email-radius-button` | `8px` | `spacing.buttonRadius` |
+| `--crss-email-spacing-button` | `12px 24px` | `spacing.buttonPadding` |
+
+**Rendering pipeline:**
+
+1. **Render:** Astro Container API renders the template to HTML.
+   Templates use `var(--crss-email-color-primary)` etc. in inline
+   `style=""` attributes.
+2. **Inline:** `juice` processes `<style>` blocks (if any) into
+   `style=""` attributes. `var()` references pass through unchanged.
+3. **Resolve:** `resolveEmailTokens(html, tokenMap)` does a regex pass
+   over all `style=""` attributes, replacing every
+   `var(--crss-email-*)` with the concrete value from the token map.
+   Handles `var(--token, fallback)` syntax too.
+
+**New utility:** `resolveEmailTokens()` in
+`src/utils/build/email-token-resolver.ts`:
+
+```typescript
+export function resolveEmailTokens(
+  html: string,
+  tokenMap: Record<string, string>,
+): string {
+  return html.replace(
+    /var\(\s*(--crss-email-[\w-]+)(?:\s*,\s*([^)]+))?\s*\)/g,
+    (_match, token, fallback) => tokenMap[token] ?? fallback?.trim() ?? _match,
+  );
+}
+
+export function buildEmailTokenMap(
+  theme: EmailThemeConfig,
+): Record<string, string> {
+  // Merges user config with defaults; returns flat --crss-email-* → value map
+}
+```
+
+#### C. Developer Astro Email Templates
+
+**Scaffold change:** The CLI replaces `.html` email templates with `.astro`
+templates. Developers get rich, editable Astro components that import the
+shared layout from the package.
+
+**Scaffolded file example** (`src/email-templates/SignInEmail.astro`):
+
+```astro
+---
+import EmailLayout from '@community-rss/core/templates/email/EmailLayout.astro';
+
+interface Props {
+  url: string;
+  appName?: string;
+  greeting?: string;
+}
+
+const { url, appName = 'Community RSS', greeting = 'Hi there,' } = Astro.props;
+---
+
+<EmailLayout appName={appName}>
+  <p style="margin: 0 0 16px 0; color: var(--crss-email-color-text);">{greeting}</p>
+  <p style="margin: 0 0 16px 0; color: var(--crss-email-color-text);">Click the button below to sign in:</p>
+  <p style="margin: 24px 0;">
+    <a
+      href={url}
+      style="background-color: var(--crss-email-color-primary); color: var(--crss-email-color-button-text); padding: var(--crss-email-spacing-button); border-radius: var(--crss-email-radius-button); text-decoration: none; font-weight: 600; display: inline-block;"
+    >
+      Sign In
+    </a>
+  </p>
+  <p style="margin: 0 0 8px 0; color: var(--crss-email-color-muted); font-size: 14px;">
+    This link expires in 60 minutes.
+  </p>
+</EmailLayout>
+```
+
+The `var(--crss-email-*)` tokens are resolved to concrete values by the
+post-processor — the developer never needs to define the CSS variables.
+They can also use hardcoded values if preferred.
+
+**Discovery mechanism — Virtual module:**
+
+The integration injects a Vite plugin during `astro:config:setup` that
+creates a virtual module `virtual:crss-email-templates`. This module uses
+`import.meta.glob('/src/email-templates/*.astro', { eager: true })` to
+auto-discover developer email templates at build time.
+
+**Naming convention:** `{PascalCaseName}Email.astro` → email type
+`{kebab-case-name}`. E.g., `SignInEmail.astro` → `sign-in`,
+`WelcomeEmail.astro` → `welcome`, `EmailChangeEmail.astro` →
+`email-change`. Custom developer types follow the same pattern:
+`CommentNotificationEmail.astro` → `comment-notification`.
+
+`renderAstroEmail()` imports the virtual module and checks for developer
+templates first, falling back to package defaults.
+
+**Updated resolution order:**
+
+1. Code-based custom templates (`emailConfig.templates`) — highest priority
+2. **Developer Astro templates** (`src/email-templates/*.astro`) — via
+   virtual module (NEW)
+3. Developer HTML templates (`src/email-templates/*.html`) — backward compat
+4. Package Astro templates — built-in defaults
+5. Code-based default templates — last resort
+
+**Package export:** Add `"./templates/email/*": "./src/templates/email/*"`
+to `package.json` exports so developer templates can import
+`@community-rss/core/templates/email/EmailLayout.astro`.
+
+#### Implementation Checklist
+
+**Sub-phase 11a: Email Theme Types & Token Resolver**
+- [ ] Create `src/types/email-theme.ts`
+  - `EmailThemeConfig` interface (colors, typography, spacing, branding)
+  - `DEFAULT_EMAIL_THEME` constant with all defaults
+  - `mergeEmailTheme()` function for deep-merging user overrides
+- [ ] Add `theme?: EmailThemeConfig` to `EmailConfig` in `src/types/options.ts`
+- [ ] Export `EmailThemeConfig` from `packages/core/index.ts`
+- [ ] Create `src/utils/build/email-token-resolver.ts`
+  - `buildEmailTokenMap(theme: EmailThemeConfig): Record<string, string>`
+  - `resolveEmailTokens(html: string, tokenMap: Record<string, string>): string`
+  - Handles `var(--crss-email-*, fallback)` syntax
+- [ ] Test: `test/utils/build/email-token-resolver.test.ts`
+  - Token map generation from defaults
+  - Token map with partial overrides
+  - Resolution of `var()` in inline styles
+  - Fallback value handling
+  - Unmatched tokens preserved
+  - Nested `var()` edge cases
+
+**Sub-phase 11b: Astro Template Token Migration**
+- [ ] Update `src/templates/email/EmailLayout.astro`
+  - Replace hardcoded colours with `var(--crss-email-color-*)` tokens
+  - Replace hardcoded typography with `var(--crss-email-font-*)` tokens
+  - Replace hardcoded spacing with `var(--crss-email-spacing-*)` tokens
+  - Add optional logo support: render `<img>` in header when
+    `branding.logoUrl` is passed as prop
+- [ ] Update `src/templates/email/SignInEmail.astro` — use tokens
+- [ ] Update `src/templates/email/WelcomeEmail.astro` — use tokens
+- [ ] Update `src/templates/email/EmailChangeEmail.astro` — use tokens
+- [ ] Update `renderAstroEmail()` in `src/utils/build/email-renderer.ts`
+  - Accept `theme` parameter
+  - Call `resolveEmailTokens()` after `juice` processing
+  - Pass branding props to layout component
+- [ ] Update email-service.ts
+  - Merge theme from `emailConfig.theme` with defaults
+  - Build token map via `buildEmailTokenMap()`
+  - Pass theme/tokenMap to `renderAstroEmail()`
+
+**Sub-phase 11c: Developer Template Discovery**
+- [ ] Add Vite plugin to `src/integration.ts` for
+      `virtual:crss-email-templates` module
+  - `import.meta.glob('/src/email-templates/*.astro', { eager: true })`
+  - PascalCase-to-kebab name mapping (strip `Email` suffix)
+  - Handles zero developer templates gracefully (empty object)
+- [ ] Update `renderAstroEmail()` to check virtual module first
+  - `import('virtual:crss-email-templates')` → check `devTemplates[type]`
+  - Fall back to package template if not found
+- [ ] Add TypeScript declaration for the virtual module
+  (`src/types/virtual-email-templates.d.ts`)
+
+**Sub-phase 11d: CLI Scaffold Migration**
+- [ ] Create `.astro` scaffold templates:
+  - `src/cli/templates/email-templates/SignInEmail.astro`
+  - `src/cli/templates/email-templates/WelcomeEmail.astro`
+  - `src/cli/templates/email-templates/EmailChangeEmail.astro`
+  - Each imports `EmailLayout` from
+    `@community-rss/core/templates/email/EmailLayout.astro`
+  - Uses `var(--crss-email-*)` tokens in inline styles
+- [ ] Remove old `.html` scaffold templates:
+  - `src/cli/templates/email-templates/sign-in.html`
+  - `src/cli/templates/email-templates/welcome.html`
+  - `src/cli/templates/email-templates/email-change.html`
+- [ ] Update `FILE_MAP` in `src/cli/init.mjs`
+  - Replace `.html` → `.astro` entries
+  - Target: `src/email-templates/SignInEmail.astro` etc.
+- [ ] Add `"./templates/email/*"` to `package.json` exports
+- [ ] Update `test/cli/init.test.ts`
+  - Assert `.astro` email templates are scaffolded
+  - Assert file count reflects the change
+
+**Sub-phase 11e: Documentation & Verification**
+- [ ] Update `docs/src/content/docs/guides/email-setup.md`
+  - Document `EmailThemeConfig` options
+  - Document `var(--crss-email-*)` authoring pattern
+  - Document developer Astro email template customization
+  - Document resolution order change
+- [ ] Update `docs/src/content/docs/guides/customisation.md`
+  - Add email theming section
+- [ ] Update consumer AI scaffolds (copilot-instructions.md,
+      community-rss.mdc) with email theming patterns
+- [ ] Verify in Mailpit: all 3 email types render with themed HTML
+- [ ] Verify: developer template overrides are discovered and used
+- [ ] Verify: plain text fallback still correct after token resolution
+- [ ] Verify: backward compat — existing `.html` templates still work
+      (lower priority in resolution chain)
+
+**Backward Compatibility:**
+- Developers with existing `.html` email templates keep them working
+  (resolution step 3 in the new order)
+- The `EmailThemeConfig` is entirely optional — all defaults match today's
+  hardcoded values, so a zero-config upgrade produces identical output
+- The code-based `emailConfig.templates` override remains highest priority
+- New scaffolds produce `.astro` files; `npm run reset:playground` must
+  be run after this phase to pick up the new scaffold templates
+
+**Risks & Mitigations:**
+- **Virtual module in production SSR:** `import.meta.glob` is resolved at
+  build time by Vite, so it works in both dev and production SSR builds.
+  If the developer's email template directory is empty, the glob returns
+  an empty object and package defaults are used.
+- **Container API availability:** If the Container API is unavailable
+  (e.g., running outside Astro), the pipeline falls through to HTML
+  templates and code-based defaults — same as today.
+- **juice + var() interaction:** `juice` does not resolve CSS custom
+  properties — it inlines them literally. The post-processing
+  `resolveEmailTokens()` step handles this as a pure string replacement.
+  This is validated by unit tests.
+
+---
+
 ## Implementation Notes
 
 *Updated during implementation. Check off tasks, note decisions, log
@@ -744,6 +1071,7 @@ problems.*
 | 8. AI Guidance Updates | ✅ Completed | All instruction files + consumer scaffolds + dual-target AI guidance |
 | 9. Documentation Updates | ✅ Completed | Starlight docs: 4 new pages, 5 updated, theming rewrite |
 | 10. Test Migration & Verification | ✅ Completed | 407 tests, 87.58% coverage, E2E deferred to playground |
+| 11. Email Theming & Dev Templates | 📋 Planned | EmailThemeConfig, var() resolution, scaffolded .astro templates, virtual module discovery |
 
 ### Decisions Log
 
@@ -955,3 +1283,8 @@ problems.*
   `npm run test:run` from root or run from `packages/core/` directly.
 - **Phase 3:** Scaffold page template updates and client util refactoring
   deferred — see Decisions Log.
+- **Mailpit HTML fix:** `createSmtpTransport()` in `email-transports.ts`
+  was only sending the `Text` field to Mailpit's `/api/v1/send` endpoint,
+  omitting the `HTML` field. This caused Mailpit to display only raw text.
+  Added `HTML: message.html` to the payload. The Resend transport already
+  sent both fields correctly. Committed as `d203cf3`.
