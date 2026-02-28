@@ -8,10 +8,11 @@
  *    Maintained for backward compatibility.
  *
  * Resolution order for each email type:
- * 1. Developer HTML template (if exists in emailTemplateDir)
- * 2. Package Astro template (via Container API)
- * 3. Package HTML template (fallback)
- * 4. Code-based default template (last resort)
+ * 1. Developer Astro template (if exists in emailTemplateDir)
+ * 2. Developer HTML template (if exists in emailTemplateDir)
+ * 3. Package Astro template (via Container API)
+ * 4. Package HTML template (fallback)
+ * 5. Code-based default template (last resort)
  *
  * @since 0.4.0
  */
@@ -195,15 +196,48 @@ const ASTRO_EMAIL_COMPONENTS: Record<string, string> = {
 };
 
 /**
+ * Resolves the path to a developer's Astro email template, if it exists.
+ *
+ * Uses the `ASTRO_EMAIL_COMPONENTS` naming convention: email type
+ * `sign-in` → file `SignInEmail.astro`.
+ *
+ * @param name - Email type name (e.g., 'sign-in')
+ * @param developerDir - Developer's email template directory
+ * @returns Absolute path to the developer's `.astro` template, or null
+ * @since 0.5.0
+ */
+export function resolveDeveloperAstroTemplatePath(
+  name: string,
+  developerDir?: string,
+): string | null {
+  if (!developerDir) {
+    return null;
+  }
+
+  const componentFile = ASTRO_EMAIL_COMPONENTS[name];
+  if (!componentFile) {
+    return null;
+  }
+
+  const devPath = path.resolve(developerDir, componentFile);
+  if (fs.existsSync(devPath)) {
+    return devPath;
+  }
+
+  return null;
+}
+
+/**
  * Renders an Astro email template via the Container API with `juice`
  * CSS inlining.
  *
- * This function dynamically imports the Container API and the template
- * component, renders to HTML, then inlines all styles using `juice`.
+ * Checks for a developer-owned `.astro` template in `developerDir` first,
+ * then falls back to the package's built-in Astro template.
  *
  * @param name - Email type name (e.g., 'sign-in')
  * @param props - Props to pass to the Astro component
  * @param theme - Optional resolved email theme (colours, typography, spacing, branding)
+ * @param developerDir - Optional developer email template directory
  * @returns Rendered email content, or null if the template is unavailable
  * @since 0.5.0
  */
@@ -211,6 +245,7 @@ export async function renderAstroEmail(
   name: string,
   props: Record<string, string>,
   theme?: ResolvedEmailTheme,
+  developerDir?: string,
 ): Promise<EmailContent | null> {
   const componentFile = ASTRO_EMAIL_COMPONENTS[name];
   if (!componentFile) {
@@ -221,10 +256,25 @@ export async function renderAstroEmail(
     const { experimental_AstroContainer: AstroContainer } = await import('astro/container');
     const juice = (await import('juice')).default;
 
-    // Dynamic import of the Astro component
-    const componentPath = `../../templates/email/${componentFile}`;
-    const mod = await import(/* @vite-ignore */ componentPath);
-    const Component = mod.default;
+    // Check developer directory for a custom .astro template first
+    const devTemplatePath = resolveDeveloperAstroTemplatePath(name, developerDir);
+    let Component: any = null;
+
+    if (devTemplatePath) {
+      try {
+        const devMod = await import(/* @vite-ignore */ devTemplatePath);
+        Component = devMod.default;
+      } catch (devErr) {
+        console.warn(`[community-rss] Developer Astro email template failed to load for "${name}":`, devErr);
+      }
+    }
+
+    // Fall back to package built-in template
+    if (!Component) {
+      const componentPath = `../../templates/email/${componentFile}`;
+      const mod = await import(/* @vite-ignore */ componentPath);
+      Component = mod.default;
+    }
 
     if (!Component) {
       return null;

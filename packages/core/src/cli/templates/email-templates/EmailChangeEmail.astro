@@ -22,7 +22,12 @@ interface Props {
   theme?: Record<string, any>;
 }
 
-const { verificationUrl, appName = 'Community RSS', greeting = 'Hi there,', theme = {} } = Astro.props;
+const {
+  verificationUrl,
+  appName = 'Community RSS',
+  greeting = 'Hi there,',
+  theme = {},
+} = Astro.props;
 const colors = theme.colors ?? {};
 const spacing = theme.spacing ?? {};
 ---

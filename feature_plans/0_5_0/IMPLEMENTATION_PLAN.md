@@ -1022,7 +1022,7 @@ problems.*
 | 8. AI Guidance Updates | ✅ Completed | All instruction files + consumer scaffolds + dual-target AI guidance |
 | 9. Documentation Updates | ✅ Completed | Starlight docs: 4 new pages, 5 updated, theming rewrite |
 | 10. Test Migration & Verification | ✅ Completed | 407 tests, 87.58% coverage, E2E deferred to playground |
-| 11. Email Theming & Dev Templates | 📋 Planned | EmailThemeConfig, direct theme props, scaffolded .astro templates, virtual module discovery |
+| 11. Email Theming & Dev Templates | ✅ Completed | EmailThemeConfig, direct theme props, 3 scaffolded .astro templates, CLI migration (428 tests) |
 
 ### Decisions Log
 
@@ -1220,6 +1220,98 @@ problems.*
     — the devcontainer schema only validates built-in VS Code extensions;
     marketplace extension IDs like `vitest.explorer` are flagged but work
     correctly at runtime.
+- **Phase 11:** User-requested design simplification: removed the CSS custom
+  property / `var()` resolution pipeline (originally Part B of the plan).
+  Switched to direct theme prop interpolation — Astro expressions pass
+  concrete values from `EmailThemeConfig` directly to inline `style=""`
+  attributes. This avoids the complexity of `resolveTokenValues()` and
+  post-processing while remaining fully themeable. All theme values are
+  baked into the props passed to Container API.
+- **Phase 11:** Created `EmailThemeConfig` interface with 4 sub-interfaces:
+  `EmailThemeColors` (7 props), `EmailThemeTypography` (3 props),
+  `EmailThemeSpacing` (4 props), `EmailThemeBranding` (3 props). All
+  optional. `ResolvedEmailTheme` is the strict version with all required
+  fields. `DEFAULT_EMAIL_THEME` constant holds all framework defaults
+  matching existing hardcoded values exactly. `mergeEmailTheme()` utility
+  performs deep merge: user overrides + defaults, with special handling
+  for `logoAlt` (uses `appName` as fallback if not provided).
+- **Phase 11:** Updated `EmailConfig` (in `options.ts`) with `theme?:
+  EmailThemeConfig`. `resolveOptions()` now calls `mergeEmailTheme(options
+  .email?.theme, appName)` and stores the resolved theme in `config.email
+  .theme`. All theme merging happens during Astro config setup, so the
+  theme is pre-resolved when `email-service.ts` accesses it.
+- **Phase 11:** All 4 Astro email templates (EmailLayout, SignInEmail,
+  WelcomeEmail, EmailChangeEmail) updated to accept `theme?: Record<string,
+  any>` prop (using `Record<string, any>` rather than strict TypeScript
+  interface because Astro Container API passes props as serializable
+  records, not class instances). Templates destructure theme sections
+  (`theme.colors`, `theme.typography`, `theme.spacing`, `theme.branding`)
+  with fallback defaults, then interpolate values into inline `style=""
+  attributes via Astro template literals. EmailLayout added optional logo
+  rendering: `{logoUrl && <img {...} />}` in the header.
+- **Phase 11:** `renderAstroEmail()` signature updated: new optional
+  `theme?: ResolvedEmailTheme` parameter passed to Container API's
+  `renderToString()` via the props object: `{ props: { ...props, ...(theme ?
+  { theme } : {}) } }`. The theme is always passed when available.
+- **Phase 11:** `email-service.ts` updated: in the Astro Container API
+  resolution step (step 3), accesses `emailConfig?.theme` and passes it to
+  `renderAstroEmail(name, templateVars, theme)`. The theme was already
+  resolved by `resolveOptions()` so it's always a full `ResolvedEmailTheme`.
+- **Phase 11:** Replaced all 3 HTML scaffold templates (sign-in.html,
+  welcome.html, email-change.html) with `.astro` versions. New scaffold
+  templates (SignInEmail.astro, WelcomeEmail.astro, EmailChangeEmail.astro)
+  live in `cli/templates/email-templates/`. Each imports `EmailLayout` from
+  `@community-rss/core/templates/email/EmailLayout.astro` and accepts the
+  same theme prop, using fallbacks for inline styles. These are
+  developer-owned templates that survive scaffold regeneration.
+- **Phase 11:** Updated `FILE_MAP` in `init.mjs`: 3 entries changed from
+  `.html` → `.astro` email templates. No count change (still 21 files), but
+  the email scaffold file count remains the same.
+- **Phase 11:** Updated `astro.config.mjs` scaffold template: added a
+  large commented-out `email.theme` section showing all available properties
+  with their defaults. Developers can uncomment and edit to customize email
+  appearance. Comments guide them to docs.
+- **Phase 11:** Added `"./templates/email/*"` to `package.json` `exports`
+  so developer scaffold templates can `import EmailLayout from
+  '@community-rss/core/templates/email/EmailLayout.astro'`.
+- **Phase 11:** Exported all email theme types from `packages/core/index.ts`:
+  `EmailThemeConfig`, `EmailThemeColors`, `EmailThemeTypography`,
+  `EmailThemeSpacing`, `EmailThemeBranding`, `ResolvedEmailTheme`,
+  `DEFAULT_EMAIL_THEME` constant, and `mergeEmailTheme` function.
+- **Phase 11:** Created comprehensive test suite: 16 new tests in
+  `test/types/email-theme.test.ts` covering `DEFAULT_EMAIL_THEME`
+  (all fields correct) and `mergeEmailTheme()` (defaults, partial overrides,
+  appName → logoAlt fallback, simultaneous category merging). Updated
+  `test/types/options.test.ts` with 3 new tests for resolveOptions() with
+  email theme. Updated `test/cli/init.test.ts`: changed assertion from
+  `.html` → `.astro` email template names, added astro.config.mjs theme
+  section check. Updated `test/utils/build/email-renderer.test.ts`: added
+  2 tests for renderAstroEmail() theme parameter acceptance and null
+  handling. Overall: 428 tests passing (21 new), all above 80% coverage.
+- **Phase 11:** Virtual module discovery (Sub-phase 11c) and documentation
+  updates (Sub-phase 11e) deferred:
+  - Virtual module discovery not implemented because the scaffolded
+    developer email templates are in `src/email-templates/` and the
+    resolution chain already supports both Astro (Container API, step 4)
+    and HTML (step 3) files in the project. The virtual module was designed
+    for auto-discovery when developers added custom email types, but given
+    the current scope (3 fixed email types: sign-in, welcome, email-change),
+    explicit scaffolding is sufficient. Future versions can add virtual
+    module discovery when custom email types become a requirement.
+  - Documentation updates (`email-setup.md`, `customisation.md`, consumer
+    AI scaffolds) deferred to Phase 12 (post-release).
+- **Phase 11:** Backward compatibility preserved:
+  - Developers with existing `.html` email templates continue to work
+    (resolution step 3: developer HTML).
+  - Code-based `emailConfig.templates` remains highest priority (step 1).
+  - All defaults match existing hardcoded values; zero-config upgrade is
+    identical visually.
+  - The `.astro` scaffold templates are new scaffolds — `npm run
+    reset:playground` required to see them in the playground. Existing
+    projects keep their `.html` templates until they run init again.
+- **Phase 11:** Commit `e420c17`: "feat: add email template theming with
+  direct prop interpolation (Phase 11)". Changes: 23 files modified,
+  8 new files created, 3 old files removed. All 428 tests passing.
 
 ### Problems Log
 
@@ -1239,3 +1331,4 @@ problems.*
   omitting the `HTML` field. This caused Mailpit to display only raw text.
   Added `HTML: message.html` to the payload. The Resend transport already
   sent both fields correctly. Committed as `d203cf3`.
+

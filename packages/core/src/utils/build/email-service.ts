@@ -140,7 +140,7 @@ export function createEmailService(
             // Resolution order:
             // 1. Code-based custom templates (emailConfig.templates) — highest priority
             // 2. File-based HTML templates (developer dir → package defaults)
-            // 3. Astro Container API templates (package defaults)
+            // 3. Astro Container API templates (developer .astro → package defaults)
             // 4. Code-based default templates (built-in)
 
             // 1. Check code-based custom templates first
@@ -169,10 +169,10 @@ export function createEmailService(
                 return;
             }
 
-            // 3. Try Astro Container API template (package defaults)
+            // 3. Try Astro Container API template (developer .astro → package defaults)
             try {
                 const theme = emailConfig?.theme;
-                const astroContent = await renderAstroEmail(type, templateVars, theme);
+                const astroContent = await renderAstroEmail(type, templateVars, theme, templateDir);
                 if (astroContent) {
                     await transport.send({ from, to, subject: astroContent.subject, text: astroContent.text, html: astroContent.html });
                     return;

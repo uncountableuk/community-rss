@@ -4,6 +4,7 @@ import * as path from 'node:path';
 
 import {
   resolveTemplatePath,
+  resolveDeveloperAstroTemplatePath,
   extractSubject,
   substituteVariables,
   htmlToPlainText,
@@ -261,6 +262,67 @@ describe('Email Renderer', () => {
     it('should return null for unknown type even when theme is provided', async () => {
       const result = await renderAstroEmail('nonexistent', { appName: 'Test' }, {} as any);
       expect(result).toBeNull();
+    });
+
+    it('should accept an optional developerDir parameter without throwing', async () => {
+      const result = await renderAstroEmail('sign-in', {
+        url: 'https://example.com',
+        appName: 'Test',
+      }, undefined, '/nonexistent/dir');
+      // Should still fall back to package template (or null if Container API unavailable)
+      expect(result === null || typeof result?.html === 'string').toBe(true);
+    });
+  });
+
+  describe('resolveDeveloperAstroTemplatePath', () => {
+    it('should return null when no developer dir is provided', () => {
+      expect(resolveDeveloperAstroTemplatePath('sign-in')).toBeNull();
+      expect(resolveDeveloperAstroTemplatePath('sign-in', undefined)).toBeNull();
+    });
+
+    it('should return null for unknown email type', () => {
+      expect(resolveDeveloperAstroTemplatePath('nonexistent', '/some/dir')).toBeNull();
+    });
+
+    it('should return null when developer dir does not contain the template', () => {
+      const tmpDir = path.join(process.cwd(), '.tmp-test-astro-resolve-empty');
+      fs.mkdirSync(tmpDir, { recursive: true });
+
+      try {
+        expect(resolveDeveloperAstroTemplatePath('sign-in', tmpDir)).toBeNull();
+      } finally {
+        fs.rmSync(tmpDir, { recursive: true });
+      }
+    });
+
+    it('should return path when developer dir contains the .astro template', () => {
+      const tmpDir = path.join(process.cwd(), '.tmp-test-astro-resolve');
+      fs.mkdirSync(tmpDir, { recursive: true });
+      const astroFile = path.join(tmpDir, 'SignInEmail.astro');
+      fs.writeFileSync(astroFile, '---\n---\n<p>Dev template</p>');
+
+      try {
+        const result = resolveDeveloperAstroTemplatePath('sign-in', tmpDir);
+        expect(result).toBe(astroFile);
+      } finally {
+        fs.rmSync(tmpDir, { recursive: true });
+      }
+    });
+
+    it('should resolve all three known email types', () => {
+      const tmpDir = path.join(process.cwd(), '.tmp-test-astro-resolve-all');
+      fs.mkdirSync(tmpDir, { recursive: true });
+      fs.writeFileSync(path.join(tmpDir, 'SignInEmail.astro'), '<p>sign-in</p>');
+      fs.writeFileSync(path.join(tmpDir, 'WelcomeEmail.astro'), '<p>welcome</p>');
+      fs.writeFileSync(path.join(tmpDir, 'EmailChangeEmail.astro'), '<p>email-change</p>');
+
+      try {
+        expect(resolveDeveloperAstroTemplatePath('sign-in', tmpDir)).toContain('SignInEmail.astro');
+        expect(resolveDeveloperAstroTemplatePath('welcome', tmpDir)).toContain('WelcomeEmail.astro');
+        expect(resolveDeveloperAstroTemplatePath('email-change', tmpDir)).toContain('EmailChangeEmail.astro');
+      } finally {
+        fs.rmSync(tmpDir, { recursive: true });
+      }
     });
   });
 });

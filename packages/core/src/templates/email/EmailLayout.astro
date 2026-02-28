@@ -33,7 +33,8 @@ const borderColor = colors.border ?? '#e5e7eb';
 const primaryColor = colors.primary ?? '#4f46e5';
 const textColor = colors.text ?? '#374151';
 const mutedColor = colors.mutedText ?? '#9ca3af';
-const fontFamily = typography.fontFamily ?? "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+const fontFamily =
+  typography.fontFamily ?? "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 const fontSize = typography.fontSize ?? '16px';
 const headingSize = typography.headingSize ?? '20px';
 const contentPadding = spacing.contentPadding ?? '32px';
@@ -73,15 +74,19 @@ const logoWidth = branding.logoWidth ?? '120px';
             <!-- Header -->
             <tr>
               <td style={`padding: ${contentPadding} ${contentPadding} 0 ${contentPadding};`}>
-                {logoUrl && (
-                  <img
-                    src={logoUrl}
-                    alt={logoAlt}
-                    width={logoWidth}
-                    style={`display: block; margin: 0 0 16px 0; max-width: ${logoWidth};`}
-                  />
-                )}
-                <h1 style={`margin: 0 0 24px 0; font-size: ${headingSize}; font-weight: 700; color: ${primaryColor};`}>
+                {
+                  logoUrl && (
+                    <img
+                      src={logoUrl}
+                      alt={logoAlt}
+                      width={logoWidth}
+                      style={`display: block; margin: 0 0 16px 0; max-width: ${logoWidth};`}
+                    />
+                  )
+                }
+                <h1
+                  style={`margin: 0 0 24px 0; font-size: ${headingSize}; font-weight: 700; color: ${primaryColor};`}
+                >
                   {appName}
                 </h1>
               </td>
