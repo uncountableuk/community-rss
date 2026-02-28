@@ -917,7 +917,27 @@ confirmed Zod singleton deduplication works across the workspace.
 - Coverage: 87.81% statements, 88.46% branches, 89.16% functions — all above 80%
 - All 480 tests pass (466 existing + 14 new).
 
-### Phase 10: Documentation — Not Started
+### Phase 10: Documentation — Completed
+
+- Rewrote `docs/src/content/docs/guides/customisation.md` — now documents
+  the 4-level progressive customisation hierarchy (Token Overrides,
+  Class-Level CSS, Eject & Edit, Custom Actions) with code examples,
+  available classes table, ejection workflow, and component proxy pattern.
+  Updated page table to match current 8 routes. Removed outdated proxy
+  component and configuration file sections.
+- Updated `docs/src/content/docs/guides/styling.md` — replaced proxy
+  wrapper pattern with class-level overrides section and eject command
+  reference. Removed `:global()` examples.
+- Rewrote `docs/src/content/docs/api-reference/cli.md` — documented
+  `npx crss eject` command with all targets (pages, components, layouts,
+  actions), options, auto-ejection behaviour, and import rewriting.
+  Updated `init` section to reflect minimal scaffold (no pages, READMEs
+  instead). Added programmatic API examples for both commands.
+- Updated `docs/src/content/docs/api-reference/css-tokens.md` — added
+  Level 2 class-level override section, Token ↔ Component mapping table
+  showing all 10 token groups and their consuming components.
+- Updated all 3 signpost README templates to use `npx crss` shorthand.
+- All 480 tests pass.
 
 ### Phase 11: `.github` Instruction Updates — Not Started
 

@@ -28,7 +28,7 @@ version is skipped.
 To customize a specific page, use the eject command:
 
 ```bash
-npx @community-rss/core eject pages/profile
+npx crss eject pages/profile
 ```
 
 This copies the framework's page to your project with correct imports.

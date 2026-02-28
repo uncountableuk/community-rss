@@ -27,7 +27,7 @@ custom styles or modify markup without touching the framework source.
 ## Ejecting a Component
 
 ```bash
-npx @community-rss/core eject components/FeedCard
+npx crss eject components/FeedCard
 ```
 
 This creates a proxy wrapper that you can customize:

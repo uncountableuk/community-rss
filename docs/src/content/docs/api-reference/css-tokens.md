@@ -158,7 +158,7 @@ Override individual component visuals without affecting the system palette.
 
 ## Overriding Tokens
 
-### In `theme.css`
+### In `theme.css` (Level 1)
 
 The simplest way to apply your brand:
 
@@ -180,24 +180,44 @@ Your `theme.css` is un-layered, so it always wins over framework defaults.
 You don't need `!important`.
 </Aside>
 
-### In Proxy Component Wrappers
+### Class-Level Overrides (Level 2)
 
-Override component tokens within a scoped `<style>` block:
+Target framework CSS classes directly in `theme.css`:
 
-```astro
----
-import CoreFeedCard from '@community-rss/core/components/FeedCard.astro';
----
-<div class="my-card">
-  <CoreFeedCard {...Astro.props} />
-</div>
-<style>
-  .my-card :global(.crss-feed-card) {
-    --crss-comp-card-bg: #1e293b;
-    --crss-comp-card-radius: 1rem;
-  }
-</style>
+```css
+/* Override rulesets without !important */
+.crss-feed-card {
+  border-radius: 0;
+  box-shadow: none;
+  border-bottom: 1px solid var(--crss-sys-color-border);
+}
+
+.crss-header {
+  position: sticky;
+  top: 0;
+}
 ```
+
+See the [Customisation Guide](/guides/customisation/#level-2--class-level-overrides)
+for the full list of available classes.
+
+## Token ↔ Component Mapping
+
+Every Tier 3 token is consumed by at least one component. This table
+shows which components use which token groups:
+
+| Token Group | Components |
+|-------------|-----------|
+| `--crss-comp-btn-*` | AuthButton (`.crss-btn` base class) |
+| `--crss-comp-card-*` | FeedCard |
+| `--crss-comp-grid-*` | FeedGrid |
+| `--crss-comp-tab-*` | TabBar |
+| `--crss-comp-modal-*` | ArticleModal |
+| `--crss-comp-form-*` | MagicLinkForm, SignUpForm |
+| `--crss-comp-consent-*` | ConsentModal |
+| `--crss-comp-auth-*` | AuthButton |
+| `--crss-comp-cta-*` | HomepageCTA |
+| `--crss-comp-header-*` | BaseLayout |
 
 ## CSS Cascade Layers
 

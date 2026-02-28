@@ -18,7 +18,7 @@ to customize the page shell (header, footer, global styles).
 ## Ejecting a Layout
 
 ```bash
-npx @community-rss/core eject layouts/BaseLayout
+npx crss eject layouts/BaseLayout
 ```
 
 This creates a proxy wrapper with named slot passthrough:

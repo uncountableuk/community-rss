@@ -93,22 +93,29 @@ Override tokens inside a `prefers-color-scheme` media query:
 
 ### Component-Level Overrides
 
-Override tokens for specific components using proxy wrappers:
+Target component tokens directly in `theme.css`:
 
-```astro
----
-import CoreFeedCard from '@community-rss/core/components/FeedCard.astro';
----
-<div class="featured-card">
-  <CoreFeedCard {...Astro.props} />
-</div>
-<style>
-  .featured-card :global(.crss-feed-card) {
-    --crss-comp-card-bg: #eff6ff;
-    --crss-comp-card-border: #3b82f6;
-  }
-</style>
+```css
+:root {
+  --crss-comp-card-bg: #eff6ff;
+  --crss-comp-card-border: #3b82f6;
+  --crss-comp-card-radius: 1rem;
+}
 ```
+
+Or use class-level overrides for richer control:
+
+```css
+.crss-feed-card {
+  border-bottom: 2px solid var(--crss-sys-color-primary);
+  box-shadow: none;
+}
+```
+
+Because `theme.css` is un-layered, both approaches work without
+`!important`. See the
+[Customisation Guide](/guides/customisation/) for the full 4-level
+hierarchy.
 
 ## Common Theming Recipes
 
@@ -142,14 +149,17 @@ import CoreFeedCard from '@community-rss/core/components/FeedCard.astro';
 }
 ```
 
-## Proxy Component Pattern
+## Component Customisation
 
-Scaffolded component wrappers (`src/components/`) import core components
-and own the `<style>` block. This separation means:
+For deeper control, eject a component and edit it locally:
 
-- **Your styles survive package updates** — they live in your project
-- **Logic improvements flow through** — core updates apply automatically
-- **No business logic in wrappers** — only styling, slots, and markup
+```bash
+npx crss eject components/FeedCard
+```
 
-See the [Customisation](/guides/customisation/) guide for the full
-component customisation API.
+This creates a proxy wrapper in `src/components/FeedCard.astro` that
+imports the core component. Add your `<style>` block to the proxy —
+it survives package updates while logic improvements flow through.
+
+See the [Customisation Guide](/guides/customisation/) for the full
+progressive customisation hierarchy.
