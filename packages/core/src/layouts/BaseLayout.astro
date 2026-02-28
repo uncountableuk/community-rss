@@ -57,7 +57,9 @@ const hasFooterSlot = Astro.slots.has('footer');
 </html>
 
 <style is:global>
-  @import '../styles/tokens.css';
+  @import '../styles/tokens/reference.css';
+  @import '../styles/tokens/system.css';
+  @import '../styles/tokens/components.css';
 
   *,
   *::before,

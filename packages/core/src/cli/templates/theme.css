@@ -2,21 +2,43 @@
  * Community RSS — Theme Overrides
  *
  * Override the framework's default design tokens here.
- * See the full token list at:
- *   node_modules/@community-rss/core/src/styles/tokens.css
+ * The framework uses a three-tier token hierarchy:
  *
- * Convention: --crss-{category}-{name}
+ *   Tier 1 (Reference): --crss-ref-*   → Raw colour/size values
+ *   Tier 2 (System):    --crss-sys-*   → Semantic role mappings
+ *   Tier 3 (Component): --crss-comp-*  → Component-specific tokens
+ *
+ * Override at the level that makes sense:
+ *   - Change a colour everywhere → override the reference token
+ *   - Change the primary brand colour → override the system token
+ *   - Change just button styling → override the component token
+ *
+ * Backward-compatible flat names (--crss-brand-primary, etc.) still work.
+ *
+ * See the full token list at:
+ *   node_modules/@community-rss/core/src/styles/tokens/
  */
 
 :root {
-    /* ─── Brand Colours ───────────────────────────────── */
+    /* ─── Reference Overrides (Tier 1: raw values) ──── */
+    /* --crss-ref-indigo-600: #4f46e5; */
+    /* --crss-ref-violet-600: #7c3aed; */
+
+    /* ─── System Overrides (Tier 2: semantic roles) ─── */
+    /* --crss-sys-color-primary: var(--crss-ref-indigo-600); */
+    /* --crss-sys-color-accent: var(--crss-ref-violet-600); */
+    /* --crss-sys-color-surface-0: #ffffff; */
+    /* --crss-sys-font-family: system-ui, -apple-system, sans-serif; */
+
+    /* ─── Component Overrides (Tier 3: per-component) ─ */
+    /* --crss-comp-btn-bg: var(--crss-sys-color-primary); */
+    /* --crss-comp-card-radius: var(--crss-sys-radius-lg); */
+    /* --crss-comp-tab-active-color: var(--crss-sys-color-accent); */
+
+    /* ─── Backward-Compatible Aliases ────────────────── */
     /* --crss-brand-primary: #4f46e5; */
     /* --crss-brand-accent: #7c3aed; */
-
-    /* ─── Surface Colours ─────────────────────────────── */
     /* --crss-surface-0: #ffffff; */
     /* --crss-surface-1: #f3f4f6; */
-
-    /* ─── Typography ──────────────────────────────────── */
     /* --crss-font-family: system-ui, -apple-system, sans-serif; */
 }

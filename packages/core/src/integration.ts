@@ -40,7 +40,7 @@ export function createIntegration(options: CommunityRssOptions = {}): AstroInteg
   return {
     name: 'community-rss',
     hooks: {
-      'astro:config:setup': ({ injectRoute, addMiddleware: registerMiddleware }) => {
+      'astro:config:setup': ({ injectRoute, addMiddleware: registerMiddleware, injectScript }) => {
         // Share resolved config with middleware via globalThis bridge
         setGlobalConfig(config);
 
@@ -49,6 +49,15 @@ export function createIntegration(options: CommunityRssOptions = {}): AstroInteg
           entrypoint: new URL('./middleware.ts', import.meta.url).pathname,
           order: 'pre',
         });
+
+        // Inject design token CSS into every page via SSR script.
+        // Developers no longer need to manually import token files.
+        const tokenImport = [
+          `import '${new URL('./styles/tokens/reference.css', import.meta.url).pathname}';`,
+          `import '${new URL('./styles/tokens/system.css', import.meta.url).pathname}';`,
+          `import '${new URL('./styles/tokens/components.css', import.meta.url).pathname}';`,
+        ].join('\n');
+        injectScript('page-ssr', tokenImport);
 
         // --- API Routes (injected — update automatically with package) ---
 

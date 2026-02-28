@@ -59,13 +59,15 @@ describe('Integration Factory', () => {
         injectedRoutes.push(route);
       };
       const mockAddMiddleware = vi.fn();
+      const mockInjectScript = vi.fn();
 
-      // Call the hook with a mock injectRoute and addMiddleware
+      // Call the hook with a mock injectRoute, addMiddleware and injectScript
       const setupHook = integration.hooks['astro:config:setup'] as (params: {
         injectRoute: typeof mockInjectRoute;
         addMiddleware: typeof mockAddMiddleware;
+        injectScript: typeof mockInjectScript;
       }) => void;
-      setupHook({ injectRoute: mockInjectRoute, addMiddleware: mockAddMiddleware });
+      setupHook({ injectRoute: mockInjectRoute, addMiddleware: mockAddMiddleware, injectScript: mockInjectScript });
 
       expect(injectedRoutes).toHaveLength(11);
 
@@ -85,6 +87,12 @@ describe('Integration Factory', () => {
       // Verify middleware was registered
       expect(mockAddMiddleware).toHaveBeenCalledWith(
         expect.objectContaining({ order: 'pre' }),
+      );
+
+      // Verify design tokens are injected via injectScript
+      expect(mockInjectScript).toHaveBeenCalledWith(
+        'page-ssr',
+        expect.stringContaining('reference.css'),
       );
 
       const healthRoute = injectedRoutes.find((r) => r.pattern === '/api/v1/health');
