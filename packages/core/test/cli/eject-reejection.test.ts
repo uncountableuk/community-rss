@@ -207,9 +207,9 @@ const props = Astro.props;
                 styleContent: '',
                 extraImports: [],
             };
-            const merged = mergeSlotContent(fresh, parsed, 'layouts/BaseLayout');
+            const merged = mergeSlotContent(fresh, parsed);
 
-            // AuthButton import should be uncommented
+            // AuthButton import should be present (always live in annotation-driven system)
             expect(merged).toContain('import AuthButton from \'@community-rss/core/components/AuthButton.astro\';');
             // Should not have the commented version
             expect(merged).not.toContain('// import AuthButton from \'@community-rss/core/components/AuthButton.astro\';');
@@ -218,8 +218,9 @@ const props = Astro.props;
             expect(merged).toContain('<AuthButton />');
         });
 
-        it('should not uncomment imports if their slots are not active', () => {
-            // Test BaseLayout without active header slot
+        it('should always include additional imports (unconditional in annotation-driven system)', () => {
+            // In the new annotation-driven system, all additional imports
+            // are always included live — they are never commented out.
             const fresh = generateLayoutProxy('BaseLayout');
             const parsed = {
                 activeSlots: new Map([
@@ -231,10 +232,10 @@ const props = Astro.props;
                 styleContent: '',
                 extraImports: [],
             };
-            const merged = mergeSlotContent(fresh, parsed, 'layouts/BaseLayout');
+            const merged = mergeSlotContent(fresh, parsed);
 
-            // AuthButton import should remain commented since header is not active
-            expect(merged).toContain('// import AuthButton from \'@community-rss/core/components/AuthButton.astro\';');
+            // AuthButton import should always be present (unconditional)
+            expect(merged).toContain('import AuthButton from \'@community-rss/core/components/AuthButton.astro\';');
             // Footer should be preserved
             expect(merged).toContain('<Fragment slot="footer">');
         });

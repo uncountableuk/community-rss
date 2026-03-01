@@ -48,8 +48,10 @@ const pageDescription = article.summary || `Article by ${article.authorName || '
 ---
 
 <BaseLayout title={pageTitle} description={pageDescription}>
-  {/* @eject-slot
-      @description Replace the entire page content. The core page's default <main> block will be hidden. */}
+  {
+    /* @eject-slot
+      @description Replace the entire page content. The core page's default <main> block will be hidden. */
+  }
   <slot name="content">
     <main class="crss-article-page">
       <article class="crss-article">
@@ -81,12 +83,16 @@ const pageDescription = article.summary || `Article by ${article.authorName || '
       </article>
     </main>
   </slot>
-  {/* @eject-slot
-      @description Content injected before the page's main area. */}
+  {
+    /* @eject-slot
+      @description Content injected before the page's main area. */
+  }
   <slot name="before-unnamed-slot" />
   <slot />
-  {/* @eject-slot
-      @description Content injected after the page's main area. */}
+  {
+    /* @eject-slot
+      @description Content injected after the page's main area. */
+  }
   <slot name="after-unnamed-slot" />
 </BaseLayout>
 

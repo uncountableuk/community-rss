@@ -34,28 +34,32 @@ const { articles } = Astro.props;
 import FeedCard from './FeedCard.astro';
 ---
 
-{/* @eject-slot
-    @description Content injected before the feed grid. */}
+{
+  /* @eject-slot
+    @description Content injected before the feed grid. */
+}
 <slot name="before-unnamed-slot" /> id="feed-grid">
-  {
-    articles.map((article) => (
-      <FeedCard
-        id={article.id}
-        title={article.title}
-        summary={article.summary}
-        authorName={article.authorName}
-        publishedAt={article.publishedAt}
-        originalLink={article.originalLink}
-        feedTitle={article.feedTitle}
-        heartCount={article.heartCount}
-        starCount={article.starCount}
-      />
-    ))
-  }
-</div>
+{
+  articles.map((article) => (
+    <FeedCard
+      id={article.id}
+      title={article.title}
+      summary={article.summary}
+      authorName={article.authorName}
+      publishedAt={article.publishedAt}
+      originalLink={article.originalLink}
+      feedTitle={article.feedTitle}
+      heartCount={article.heartCount}
+      starCount={article.starCount}
+    />
+  ))
+}
+
 <slot />
-{/* @eject-slot
-    @description Content injected after the feed grid. */}
+{
+  /* @eject-slot
+    @description Content injected after the feed grid. */
+}
 <slot name="after-unnamed-slot" />
 
 <style is:global>

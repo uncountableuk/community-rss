@@ -41,15 +41,19 @@ const { title, description = 'Community RSS' } = Astro.props;
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
     <title>{title}</title>
-    {/* @eject-slot
-        @description Add custom <meta>, <link>, or <script> tags to <head>. */}
+    {
+      /* @eject-slot
+        @description Add custom <meta>, <link>, or <script> tags to <head>. */
+    }
     <slot name="head" />
   </head>
   <body>
-    {/* @eject-slot
+    {
+      /* @eject-slot
         @description Replace the default header/nav bar.
         @additionalimport1 AuthButton
-        @importfrom1 @community-rss/core/components/AuthButton.astro */}
+        @importfrom1 @community-rss/core/components/AuthButton.astro */
+    }
     <slot name="header">
       <header class="crss-header">
         <nav class="crss-nav">
@@ -60,18 +64,26 @@ const { title, description = 'Community RSS' } = Astro.props;
         </nav>
       </header>
     </slot>
-    {/* @eject-slot
-        @description Inject content between the header and the main page content. Useful for banners, announcements, or breadcrumbs. */}
+    {
+      /* @eject-slot
+        @description Inject content between the header and the main page content. Useful for banners, announcements, or breadcrumbs. */
+    }
     <slot name="below-header" />
-    {/* @eject-slot
-        @description Content injected before the main content area. */}
+    {
+      /* @eject-slot
+        @description Content injected before the main content area. */
+    }
     <slot name="before-unnamed-slot" />
     <slot />
-    {/* @eject-slot
-        @description Content injected after the main content area. */}
+    {
+      /* @eject-slot
+        @description Content injected after the main content area. */
+    }
     <slot name="after-unnamed-slot" />
-    {/* @eject-slot
-        @description Replace the default footer. */}
+    {
+      /* @eject-slot
+        @description Replace the default footer. */
+    }
     <slot name="footer" />
     <ConsentModal />
   </body>

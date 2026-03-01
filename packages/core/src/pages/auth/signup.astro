@@ -22,10 +22,12 @@ import SignUpForm from '../../components/SignUpForm.astro';
 ---
 
 <BaseLayout title="Sign Up" description="Create your Community RSS account">
-  {/* @eject-slot
+  {
+    /* @eject-slot
       @description Replace the entire page content. The core page's default <main> block will be hidden.
       @additionalimport1 SignUpForm
-      @importfrom1 @community-rss/core/components/SignUpForm.astro */}
+      @importfrom1 @community-rss/core/components/SignUpForm.astro */
+  }
   <slot name="content">
     <main class="crss-signup-page">
       <div class="crss-signup-container">
@@ -37,12 +39,16 @@ import SignUpForm from '../../components/SignUpForm.astro';
       </div>
     </main>
   </slot>
-  {/* @eject-slot
-      @description Content injected before the page's main area. */}
+  {
+    /* @eject-slot
+      @description Content injected before the page's main area. */
+  }
   <slot name="before-unnamed-slot" />
   <slot />
-  {/* @eject-slot
-      @description Content injected after the page's main area. */}
+  {
+    /* @eject-slot
+      @description Content injected after the page's main area. */
+  }
   <slot name="after-unnamed-slot" />
 </BaseLayout>
 

@@ -65,90 +65,96 @@ const {
 } = Astro.props;
 ---
 
-{/* @eject-slot
-    @description Replace the sign-up form. Warning: The <script> block relies on specific element IDs. If you replace this slot, re-implement the same IDs or provide your own script. */}
+{
+  /* @eject-slot
+    @description Replace the sign-up form. Warning: The <script> block relies on specific element IDs. If you replace this slot, re-implement the same IDs or provide your own script. */
+}
 <slot name="form">
-    class="crss-signup-form"
-    id="crss-signup-form"
-    data-error-create={createFailed}
-    data-error-network={networkError}
+  class="crss-signup-form" id="crss-signup-form" data-error-create={createFailed}
+  data-error-network={networkError}
   >
-    <div class="crss-form-group">
-      <label for="crss-signup-email" class="crss-form-label">{emailLabel}</label>
+  <div class="crss-form-group">
+    <label for="crss-signup-email" class="crss-form-label">{emailLabel}</label>
+    <input
+      type="email"
+      id="crss-signup-email"
+      name="email"
+      class="crss-form-input"
+      placeholder="your@email.com"
+      required
+      autocomplete="email"
+    />
+  </div>
+
+  <div class="crss-form-group">
+    <label for="crss-signup-name" class="crss-form-label">{nameLabel}</label>
+    <input
+      type="text"
+      id="crss-signup-name"
+      name="name"
+      class="crss-form-input"
+      placeholder={namePlaceholder}
+      required
+      maxlength="100"
+      autocomplete="name"
+    />
+  </div>
+
+  <div class="crss-form-group crss-form-group--checkbox">
+    <label class="crss-form-checkbox-label">
       <input
-        type="email"
-        id="crss-signup-email"
-        name="email"
-        class="crss-form-input"
-        placeholder="your@email.com"
+        type="checkbox"
+        id="crss-signup-terms"
+        name="terms"
+        class="crss-form-checkbox"
         required
-        autocomplete="email"
       />
-    </div>
+      <span
+        >{termsPrefix}
+        <a href="/terms" target="_blank" class="crss-form-link">{termsLinkText}</a></span
+      >
+    </label>
+  </div>
 
-    <div class="crss-form-group">
-      <label for="crss-signup-name" class="crss-form-label">{nameLabel}</label>
-      <input
-        type="text"
-        id="crss-signup-name"
-        name="name"
-        class="crss-form-input"
-        placeholder={namePlaceholder}
-        required
-        maxlength="100"
-        autocomplete="name"
-      />
-    </div>
+  <button
+    type="submit"
+    class="crss-btn crss-btn--primary"
+    id="crss-signup-btn"
+    data-default-text={submitLabel}
+  >
+    {submitLabel}
+  </button>
 
-    <div class="crss-form-group crss-form-group--checkbox">
-      <label class="crss-form-checkbox-label">
-        <input
-          type="checkbox"
-          id="crss-signup-terms"
-          name="terms"
-          class="crss-form-checkbox"
-          required
-        />
-        <span
-          >{termsPrefix}
-          <a href="/terms" target="_blank" class="crss-form-link">{termsLinkText}</a></span
-        >
-      </label>
-    </div>
+  <div
+    class="crss-form-message crss-form-message--error"
+    id="crss-signup-error"
+    style="display: none;"
+  >
+  </div>
 
-    <button
-      type="submit"
-      class="crss-btn crss-btn--primary"
-      id="crss-signup-btn"
-      data-default-text={submitLabel}
-    >
-      {submitLabel}
-    </button>
-
-    <div
-      class="crss-form-message crss-form-message--error"
-      id="crss-signup-error"
-      style="display: none;"
-    >
-    </div>
-
-    <p class="crss-form-footer">
-      {footerText}
-      <a href="/auth/signin" class="crss-form-link">{footerLinkText}</a>
-    </p>
-  </form>
+  <p class="crss-form-footer">
+    {footerText}
+    <a href="/auth/signin" class="crss-form-link">{footerLinkText}</a>
+  </p>
 </slot>
 
-{/* @eject-slot
-    @description Content injected before the default slot. */}
+
+{
+  /* @eject-slot
+    @description Content injected before the default slot. */
+}
 <slot name="before-unnamed-slot" />
 <slot />
-{/* @eject-slot
-    @description Content injected after the default slot. */}
+{
+  /* @eject-slot
+    @description Content injected after the default slot. */
+}
 <slot name="after-unnamed-slot" />
 
-{/* @eject-slot
-    @description Replace the post-submission confirmation panel. Warning: The <script> block relies on specific element IDs. If you replace this slot, re-implement the same IDs or provide your own script. */}
+{
+  /* @eject-slot
+    @description Replace the post-submission confirmation panel. Warning: The <script> block relies on specific element IDs. If you replace this slot, re-implement the same IDs or provide your own script. */
+}
 <slot name="confirmation">
   <div class="crss-signup-confirm" id="crss-signup-confirm" style="display: none;" role="status">
     <div class="crss-signup-confirm__icon" aria-hidden="true">

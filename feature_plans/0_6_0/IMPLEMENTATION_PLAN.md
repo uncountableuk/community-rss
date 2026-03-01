@@ -1811,7 +1811,7 @@ bugs above. Further acceptance testing is planned to verify:
 ### Phase 15: Annotation-Driven Ejection System — In Progress
 
 - [x] Phase 15a: Annotate source files
-- [ ] Phase 15b: Rewrite `eject.mjs` — annotation parser
+- [x] Phase 15b: Rewrite `eject.mjs` — annotation parser
 - [ ] Phase 15c: New re-eject algorithm
 - [ ] Phase 15d: Purge old registry code
 - [ ] Phase 15e: AI instructions (framework + consumer)
@@ -1838,6 +1838,37 @@ bugs above. Further acceptance testing is planned to verify:
   component/page behaviour.
 - Issue: initial replacement accidentally consumed `<main>` opening tags
   from page files; fixed immediately in a follow-up edit batch.
+
+**Phase 15b Implementation Notes:**
+- Fully rewrote `src/cli/eject.mjs` (~580 lines) — annotation-driven,
+  no dependency on `slot-registry.mjs`.
+- New `parseAnnotations(filePath)` reads `.astro` files and extracts:
+  `alias`, `dependencies`, `propsDefinition`, `slots[]`, `hasUnnamedSlot`,
+  `corePath`. Returns `null` for non-annotated files.
+- New `discoverComponents()`, `discoverLayouts()`, `discoverPages()` walk
+  the filesystem and filter by `@eject-module` presence — replaces
+  `KNOWN_COMPONENTS`, `KNOWN_LAYOUTS` and `PAGE_REGISTRY` exports.
+- `generateProxy()` signature changed to `(annotations, registryKey)` —
+  builds proxy from annotation data with `@start-eject-import` /
+  `@end-eject-import` markers. All additional imports are unconditionally
+  live (never commented out).
+- `generateSlotBlock()` uses annotation `name`, `description`,
+  `defaultContent` — identical format to old output but sourced from
+  annotation data rather than the registry.
+- `eject()` resolves dependencies via `@eject-dependency` annotation
+  instead of `PAGE_REGISTRY.imports`. Page dependencies auto-eject with
+  `↳ Auto-created` messages (matching Phase 6 spec).
+- `ejectAll()` uses `discoverLayouts()` → `discoverComponents()` →
+  `discoverPages()` → `actions` instead of `KNOWN_*` constants.
+- `runEject()` CLI help text now shows dynamically discovered targets.
+- Retained `parseEjectedFile()` and `mergeSlotContent()` — updated to
+  work without `SLOT_REGISTRY` dependency; `mergeSlotContent()` lost the
+  third `registryKey` parameter.
+- Updated 1 test in `eject-reejection.test.ts` that tested old conditional
+  import commenting behaviour; new assertion verifies imports are always
+  live. Removed stale `registryKey` third argument from `mergeSlotContent`
+  calls.
+- All 544 tests pass. No regression.
 
 ---
 
