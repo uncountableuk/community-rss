@@ -1808,15 +1808,36 @@ bugs above. Further acceptance testing is planned to verify:
 - All thresholds (≥80%) met
 - New test file: `test/pages/article.test.ts` (20 tests)
 
-### Phase 15: Annotation-Driven Ejection System — Not Started
+### Phase 15: Annotation-Driven Ejection System — In Progress
 
-- [ ] Phase 15a: Annotate source files
+- [x] Phase 15a: Annotate source files
 - [ ] Phase 15b: Rewrite `eject.mjs` — annotation parser
 - [ ] Phase 15c: New re-eject algorithm
 - [ ] Phase 15d: Purge old registry code
 - [ ] Phase 15e: AI instructions (framework + consumer)
 - [ ] Phase 15f: Testing
 - [ ] Phase 15g: Documentation
+
+**Phase 15a Implementation Notes:**
+- Added `@eject-module`, `@alias`, and `@eject-dependency` annotation blocks
+  to all 9 component `.astro` files, `layouts/BaseLayout.astro`, and all 8
+  page `.astro` files (18 files total).
+- Added `@eject-slot` + `@description` annotations above every ejectable
+  named slot across all annotated files.
+- Added `@additionalimportN` / `@importfromN` pairs to slots requiring
+  additional imports: BaseLayout header (AuthButton), index content (TabBar,
+  FeedGrid, HomepageCTA), auth/signin content (MagicLinkForm), auth/signup
+  content (SignUpForm).
+- Self-closing slots (`before-unnamed-slot`, `after-unnamed-slot`,
+  `below-header`, `head`, `footer`) kept as-is — parser will produce
+  empty-placeholder `<Fragment>` blocks per Decision 3.
+- Block-form slots with default content (header, body, footer on
+  ArticleModal; form, confirmation on SignUpForm; header on BaseLayout;
+  content on all pages) already use the required block form.
+- All 544 tests pass after annotation. No functional changes to
+  component/page behaviour.
+- Issue: initial replacement accidentally consumed `<main>` opening tags
+  from page files; fixed immediately in a follow-up edit batch.
 
 ---
 

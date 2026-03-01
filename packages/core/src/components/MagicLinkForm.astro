@@ -9,6 +9,11 @@
  * @since 0.3.0
  */
 
+/*
+ * @eject-module
+ * @alias CoreMagicLinkForm
+ */
+
 interface Props {
   /** Configurable message strings. @since 0.4.0 */
   messages?: {
@@ -33,8 +38,9 @@ const {
 } = Astro.props;
 ---
 
+{/* @eject-slot
+    @description Content injected before the magic link form. */}
 <slot name="before-unnamed-slot" />
-<form
   class="crss-magic-link-form"
   id="crss-magic-link-form"
   data-error-text={errorText}
@@ -78,6 +84,8 @@ const {
   </div>
 </form>
 <slot />
+{/* @eject-slot
+    @description Content injected after the magic link form. */}
 <slot name="after-unnamed-slot" />
 
 <style is:global>

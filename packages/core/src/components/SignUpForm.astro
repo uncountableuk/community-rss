@@ -19,6 +19,11 @@
  * @since 0.3.0
  */
 
+/*
+ * @eject-module
+ * @alias CoreSignUpForm
+ */
+
 interface Props {
   /** Configurable message strings. @since 0.4.0 */
   messages?: {
@@ -60,8 +65,9 @@ const {
 } = Astro.props;
 ---
 
+{/* @eject-slot
+    @description Replace the sign-up form. Warning: The <script> block relies on specific element IDs. If you replace this slot, re-implement the same IDs or provide your own script. */}
 <slot name="form">
-  <form
     class="crss-signup-form"
     id="crss-signup-form"
     data-error-create={createFailed}
@@ -133,11 +139,16 @@ const {
   </form>
 </slot>
 
+{/* @eject-slot
+    @description Content injected before the default slot. */}
 <slot name="before-unnamed-slot" />
 <slot />
+{/* @eject-slot
+    @description Content injected after the default slot. */}
 <slot name="after-unnamed-slot" />
 
-<!-- Confirmation panel — replaces the form after successful submission -->
+{/* @eject-slot
+    @description Replace the post-submission confirmation panel. Warning: The <script> block relies on specific element IDs. If you replace this slot, re-implement the same IDs or provide your own script. */}
 <slot name="confirmation">
   <div class="crss-signup-confirm" id="crss-signup-confirm" style="display: none;" role="status">
     <div class="crss-signup-confirm__icon" aria-hidden="true">

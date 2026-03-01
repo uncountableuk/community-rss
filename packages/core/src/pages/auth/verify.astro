@@ -7,10 +7,19 @@
  *
  * @route /auth/verify
  */
+
+/*
+ * @eject-module
+ * @alias CoreVerify
+ * @eject-dependency layouts/BaseLayout
+ */
+
 import BaseLayout from '../../layouts/BaseLayout.astro';
 ---
 
 <BaseLayout title="Verifying…" description="Verifying your magic link">
+  {/* @eject-slot
+      @description Replace the entire page content. The core page's default <main> block will be hidden. */}
   <slot name="content">
     <main class="crss-verify-page">
       <div class="crss-verify-container">
@@ -30,8 +39,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       </div>
     </main>
   </slot>
+  {/* @eject-slot
+      @description Content injected before the page's main area. */}
   <slot name="before-unnamed-slot" />
   <slot />
+  {/* @eject-slot
+      @description Content injected after the page's main area. */}
   <slot name="after-unnamed-slot" />
 </BaseLayout>
 

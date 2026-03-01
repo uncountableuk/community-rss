@@ -6,10 +6,19 @@
  *
  * @route /terms
  */
+
+/*
+ * @eject-module
+ * @alias CoreTerms
+ * @eject-dependency layouts/BaseLayout
+ */
+
 import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
 <BaseLayout title="Terms of Service" description="Terms of Service">
+  {/* @eject-slot
+      @description Replace the entire page content. The core page's default <main> block will be hidden. */}
   <slot name="content">
     <main class="crss-terms-page">
       <div class="crss-terms-container">
@@ -62,8 +71,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       </div>
     </main>
   </slot>
+  {/* @eject-slot
+      @description Content injected before the page's main area. */}
   <slot name="before-unnamed-slot" />
   <slot />
+  {/* @eject-slot
+      @description Content injected after the page's main area. */}
   <slot name="after-unnamed-slot" />
 </BaseLayout>
 
