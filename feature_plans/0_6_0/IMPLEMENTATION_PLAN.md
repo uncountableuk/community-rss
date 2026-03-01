@@ -643,17 +643,17 @@ as the override mechanism.
       `PAGE_REGISTRY` from the registry (migrate from eject.mjs)
 
 #### Phase 13d: Rewrite Proxy Generators
-- [ ] Rewrite `generateComponentProxy()` to read from `SLOT_REGISTRY`
+- [x] Rewrite `generateComponentProxy()` to read from `SLOT_REGISTRY`
       and produce commented slot blocks for all named + generic slots
-- [ ] Rewrite `generateLayoutProxy()` to produce commented slot blocks
+- [x] Rewrite `generateLayoutProxy()` to produce commented slot blocks
       for head, header, below-header, before/after-unnamed-slot, footer
-- [ ] Create `generatePageProxy()` to produce proxy that imports core
+- [x] Create `generatePageProxy()` to produce proxy that imports core
       page; includes commented `content` slot + generic wrapper slots;
       includes commented-out imports for components used by that page
-- [ ] Update page eject path to use `generatePageProxy()` instead of
+- [x] Update page eject path to use `generatePageProxy()` instead of
       file-copy + import rewriting
-- [ ] Remove `rewritePageImports()` function (no longer needed)
-- [ ] **Validation**: `eject pages/profile`, `eject components/FeedCard`,
+- [x] Remove `rewritePageImports()` function (no longer needed)
+- [x] **Validation**: `eject pages/profile`, `eject components/FeedCard`,
       `eject layouts/BaseLayout` all produce correct proxy format
 
 #### Phase 13e: Re-eject Parser & Merge Logic
@@ -1315,6 +1315,33 @@ in their proxy.
 > needed by the existing eject logic for auto-ejecting dependencies. The
 > `additionalImports` field on registry entries captures the same info from
 > a different angle (slot-centric vs page-centric).
+
+### Phase 13d: Rewrite Proxy Generators — ✅ Completed
+
+- [x] Rewrote `eject.mjs` — complete overhaul (~280 lines → ~280 lines)
+- [x] All three proxy generators (`generateComponentProxy`,
+      `generateLayoutProxy`, `generatePageProxy`) now delegate to a
+      single `generateProxy(registryKey)` function that reads from
+      `SLOT_REGISTRY`
+- [x] Removed inline `PAGE_REGISTRY`, `KNOWN_COMPONENTS`, `KNOWN_LAYOUTS`,
+      `CORE_SRC`, and `rewritePageImports()` — all replaced by imports
+      from `slot-registry.mjs`
+- [x] Page eject path now produces proxy wrappers (same pattern as
+      components/layouts) instead of copying the core page file
+- [x] Each ejected file contains: frontmatter with core import +
+      commented additional imports, commented `{/* SLOT: <name> */}`
+      blocks with `<Fragment slot="name">` placeholders, `<slot />`
+      passthrough for default slot, empty `<style>` block
+
+> **Notes:** Introduced a shared `generateSlotBlock()` helper that produces
+> a standardised comment-wrapped `<Fragment>` block for each slot. The old
+> `rewritePageImports()` regex-based import rewriting is fully eliminated —
+> page proxies now import directly from `@community-rss/core/pages/...`
+> just like component/layout proxies. Three existing tests fail as expected:
+> (1) page eject test expected relative imports to local layouts instead of
+> core import; (2) nested page test expected `../../layouts/` depth-relative
+> import; (3) layout proxy test expected `slot name="head"` string and no
+> header/footer slots. All will be updated in Phase 13g.
 
 ---
 
