@@ -32,6 +32,7 @@ const defaultTabs: Tab[] = [
 const { tabs = defaultTabs, ariaLabel = 'Feed views' } = Astro.props;
 ---
 
+<slot name="before-unnamed-slot" />
 <nav class="crss-tab-bar" role="tablist" aria-label={ariaLabel}>
   {
     tabs.map((tab) => (
@@ -52,6 +53,8 @@ const { tabs = defaultTabs, ariaLabel = 'Feed views' } = Astro.props;
     ))
   }
 </nav>
+<slot />
+<slot name="after-unnamed-slot" />
 
 <style is:global>
   @layer crss-components {

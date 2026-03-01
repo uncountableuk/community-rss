@@ -601,25 +601,25 @@ around the core version using Astro named slots with fallback content
 as the override mechanism.
 
 #### Phase 13a: Core Component & Layout Slot Architecture
-- [ ] `BaseLayout.astro`: Remove `hasHeaderSlot` / `hasFooterSlot` checks;
+- [x] `BaseLayout.astro`: Remove `hasHeaderSlot` / `hasFooterSlot` checks;
       wrap default header in `<slot name="header">...</slot>` with
       existing nav+AuthButton as fallback; wrap footer in
       `<slot name="footer">...</slot>`; add empty `<slot name="below-header" />`
       between header and main content; add
       `<slot name="before-unnamed-slot" />` and
       `<slot name="after-unnamed-slot" />` around `<slot />`
-- [ ] `ArticleModal.astro`: Wrap header section in
+- [x] `ArticleModal.astro`: Wrap header section in
       `<slot name="header">`, body (title + content) in
       `<slot name="body">`, footer in `<slot name="footer">`;
       add generic wrapper slots
-- [ ] `SignUpForm.astro`: Wrap `<form>` in `<slot name="form">`,
+- [x] `SignUpForm.astro`: Wrap `<form>` in `<slot name="form">`,
       confirmation panel in `<slot name="confirmation">`; add generic
       wrapper slots
-- [ ] Add generic wrapper slots (`before-unnamed-slot`,
+- [x] Add generic wrapper slots (`before-unnamed-slot`,
       `after-unnamed-slot`) to all remaining components:
       AuthButton, FeedCard, FeedGrid, TabBar, MagicLinkForm,
       ConsentModal, HomepageCTA
-- [ ] **Validation**: All pages render identically with no visual changes.
+- [x] **Validation**: All pages render identically with no visual changes.
       All existing tests pass.
 
 #### Phase 13b: Core Page Slot Architecture
@@ -1249,6 +1249,40 @@ in their proxy.
 **Files Modified:** `src/cli/eject.mjs` (`generateLayoutProxy` function)
 **Tests Updated:** `test/cli/eject.test.ts` — changed assertions from
 `toContain('slot name="header"')` to `not.toContain(...)`.
+
+---
+
+### Phase 13a: Core Component & Layout Slot Architecture — ✅ Completed
+
+- [x] `BaseLayout.astro`: Removed `hasHeaderSlot` / `hasFooterSlot` checks;
+      wrapped default header in `<slot name="header">...</slot>` with
+      existing nav+AuthButton as fallback; added `<slot name="footer" />`
+      (empty default — renders nothing unless developer provides content);
+      added `<slot name="below-header" />`, `<slot name="before-unnamed-slot" />`,
+      `<slot name="after-unnamed-slot" />` around `<slot />`
+- [x] `ArticleModal.astro`: Wrapped header section in `<slot name="header">`,
+      body (title + content) in `<slot name="body">`, footer in
+      `<slot name="footer">`; added generic wrapper slots
+- [x] `SignUpForm.astro`: Wrapped `<form>` in `<slot name="form">`,
+      confirmation panel in `<slot name="confirmation">`; added generic
+      wrapper slots (`before-unnamed-slot`, `after-unnamed-slot`) between
+      form and confirmation; added JSDoc warning about script element IDs
+- [x] Added generic wrapper slots (`before-unnamed-slot`,
+      `after-unnamed-slot`) to: AuthButton, FeedCard, FeedGrid, TabBar,
+      MagicLinkForm, ConsentModal, HomepageCTA
+- [x] **Validation**: All 481 tests pass. No visual changes.
+
+> **Notes:** The footer slot in BaseLayout changed from conditional
+> rendering (`hasFooterSlot && <footer>...`) to an empty `<slot name="footer" />`
+> — this means the footer element is no longer auto-wrapped in a `<footer>` tag.
+> Developers providing footer content should include their own `<footer>` element.
+> This simplifies the slot pattern and is consistent with the header approach.
+
+> For SignUpForm, the generic wrapper slots are placed between the form
+> and confirmation slots, allowing developers to inject content between
+> the two panels. The `<script>` block warning was added to the JSDoc
+> because the form slot replacement would break client-side event wiring
+> if element IDs change.
 
 ---
 

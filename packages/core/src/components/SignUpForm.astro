@@ -6,6 +6,16 @@
  * and Terms of Service consent. Submits to `/api/v1/auth/signup`
  * which stores pending data and sends a welcome magic link.
  *
+ * Provides named slots for customisation:
+ * - `form` — replaces the entire sign-up form
+ * - `confirmation` — replaces the post-submission confirmation panel
+ * - `before-unnamed-slot` / `after-unnamed-slot` — generic wrapper slots
+ *
+ * **Warning:** The `<script>` block relies on specific element IDs
+ * (`crss-signup-form`, `crss-signup-btn`, etc.). If you replace the
+ * `form` slot, you must either keep those IDs or provide your own
+ * client-side logic.
+ *
  * @since 0.3.0
  */
 
@@ -50,6 +60,7 @@ const {
 } = Astro.props;
 ---
 
+<slot name="form">
 <form
   class="crss-signup-form"
   id="crss-signup-form"
@@ -120,8 +131,14 @@ const {
     <a href="/auth/signin" class="crss-form-link">{footerLinkText}</a>
   </p>
 </form>
+</slot>
+
+<slot name="before-unnamed-slot" />
+<slot />
+<slot name="after-unnamed-slot" />
 
 <!-- Confirmation panel — replaces the form after successful submission -->
+<slot name="confirmation">
 <div class="crss-signup-confirm" id="crss-signup-confirm" style="display: none;" role="status">
   <div class="crss-signup-confirm__icon" aria-hidden="true">
     <svg
@@ -152,6 +169,7 @@ const {
     <a href="/auth/signup" class="crss-form-link">start over</a>.
   </p>
 </div>
+</slot>
 
 <style is:global>
   @layer crss-components {

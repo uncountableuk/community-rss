@@ -32,6 +32,7 @@ const {
 } = Astro.props;
 ---
 
+<slot name="before-unnamed-slot" />
 <div
   class="crss-consent-overlay"
   id="crss-consent-overlay"
@@ -58,6 +59,8 @@ const {
     </div>
   </div>
 </div>
+<slot />
+<slot name="after-unnamed-slot" />
 
 <style is:global>
   @layer crss-components {

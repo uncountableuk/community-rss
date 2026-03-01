@@ -29,6 +29,7 @@ const { articles } = Astro.props;
 import FeedCard from './FeedCard.astro';
 ---
 
+<slot name="before-unnamed-slot" />
 <div class="crss-feed-grid" id="feed-grid">
   {
     articles.map((article) => (
@@ -46,6 +47,8 @@ import FeedCard from './FeedCard.astro';
     ))
   }
 </div>
+<slot />
+<slot name="after-unnamed-slot" />
 
 <style is:global>
   @layer crss-components {

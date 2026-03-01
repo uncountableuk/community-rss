@@ -5,6 +5,12 @@
  * Supports deep linking via pushState, next/previous navigation,
  * and close via button or overlay click.
  *
+ * Provides named slots for customisation:
+ * - `header` — replaces the modal header (meta + close button)
+ * - `body` — replaces the title + content area
+ * - `footer` — replaces the modal footer (original link + nav)
+ * - `before-unnamed-slot` / `after-unnamed-slot` — generic wrapper slots
+ *
  * @since 0.2.0
  */
 
@@ -59,55 +65,65 @@ const formattedDate = publishedAt
   aria-labelledby="modal-title"
 >
   <div class="crss-modal">
-    <header class="crss-modal__header">
-      <div class="crss-modal__meta">
-        {feedTitle && <span class="crss-modal__source">{feedTitle}</span>}
-        {formattedDate && <time class="crss-modal__date">{formattedDate}</time>}
-        <span class="crss-modal__author">by {authorName}</span>
-      </div>
-      <button class="crss-modal__close" aria-label={closeLabel} data-modal-close>
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          ><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"
-          ></line></svg
-        >
-      </button>
-    </header>
-
-    <h1 class="crss-modal__title" id="modal-title">{title}</h1>
-
-    <div class="crss-modal__content" set:html={content} />
-
-    <footer class="crss-modal__footer">
-      {
-        originalLink && (
-          <a
-            href={originalLink}
-            class="crss-modal__original-link"
-            target="_blank"
-            rel="noopener noreferrer"
+    <slot name="header">
+      <header class="crss-modal__header">
+        <div class="crss-modal__meta">
+          {feedTitle && <span class="crss-modal__source">{feedTitle}</span>}
+          {formattedDate && <time class="crss-modal__date">{formattedDate}</time>}
+          <span class="crss-modal__author">by {authorName}</span>
+        </div>
+        <button class="crss-modal__close" aria-label={closeLabel} data-modal-close>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            ><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"
+            ></line></svg
           >
-            {readOriginalLabel}
-          </a>
-        )
-      }
-      <nav class="crss-modal__nav" aria-label="Article navigation">
-        <button class="crss-modal__nav-btn" data-modal-prev aria-label={previousLabel}
-          >{previousLabel}</button
-        >
-        <button class="crss-modal__nav-btn" data-modal-next aria-label={nextLabel}
-          >{nextLabel}</button
-        >
-      </nav>
-    </footer>
+        </button>
+      </header>
+    </slot>
+
+    <slot name="body">
+      <h1 class="crss-modal__title" id="modal-title">{title}</h1>
+
+      <div class="crss-modal__content" set:html={content} />
+    </slot>
+
+    <slot name="before-unnamed-slot" />
+    <slot />
+    <slot name="after-unnamed-slot" />
+
+    <slot name="footer">
+      <footer class="crss-modal__footer">
+        {
+          originalLink && (
+            <a
+              href={originalLink}
+              class="crss-modal__original-link"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {readOriginalLabel}
+            </a>
+          )
+        }
+        <nav class="crss-modal__nav" aria-label="Article navigation">
+          <button class="crss-modal__nav-btn" data-modal-prev aria-label={previousLabel}
+            >{previousLabel}</button
+          >
+          <button class="crss-modal__nav-btn" data-modal-next aria-label={nextLabel}
+            >{nextLabel}</button
+          >
+        </nav>
+      </footer>
+    </slot>
   </div>
 </div>
 

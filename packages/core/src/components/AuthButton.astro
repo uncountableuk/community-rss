@@ -58,6 +58,7 @@ if (app) {
 }
 ---
 
+<slot name="before-unnamed-slot" />
 <div class="crss-auth-button" id="crss-auth-button">
   {
     isAuthenticated ? (
@@ -76,6 +77,8 @@ if (app) {
     )
   }
 </div>
+<slot />
+<slot name="after-unnamed-slot" />
 
 <style is:global>
   @layer crss-components {

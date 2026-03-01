@@ -33,6 +33,7 @@ const {
 } = Astro.props;
 ---
 
+<slot name="before-unnamed-slot" />
 <form
   class="crss-magic-link-form"
   id="crss-magic-link-form"
@@ -76,6 +77,8 @@ const {
   >
   </div>
 </form>
+<slot />
+<slot name="after-unnamed-slot" />
 
 <style is:global>
   @layer crss-components {

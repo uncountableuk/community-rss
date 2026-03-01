@@ -7,8 +7,12 @@
  *
  * Provides named slots for customisation:
  * - `head` — additional `<head>` content (meta tags, scripts)
- * - `header` — replaces the default header/nav
- * - `footer` — adds a footer section
+ * - `header` — replaces the default header/nav (uses fallback content)
+ * - `below-header` — extension slot between header and main content
+ * - `before-unnamed-slot` — content injected before the default slot
+ * - (default) — page content
+ * - `after-unnamed-slot` — content injected after the default slot
+ * - `footer` — footer section (uses fallback content, empty by default)
  *
  * @since 0.1.0
  */
@@ -22,8 +26,6 @@ interface Props {
 }
 
 const { title, description = 'Community RSS' } = Astro.props;
-const hasHeaderSlot = Astro.slots.has('header');
-const hasFooterSlot = Astro.slots.has('footer');
 ---
 
 <!doctype html>
@@ -36,30 +38,23 @@ const hasFooterSlot = Astro.slots.has('footer');
     <slot name="head" />
   </head>
   <body>
-    {
-      hasHeaderSlot ? (
-        <slot name="header" />
-      ) : (
-        <header class="crss-header">
-          <nav class="crss-nav">
-            <a href="/" class="crss-nav-brand">
-              Community RSS
-            </a>
-            <AuthButton server:defer>
-              <div slot="fallback" class="crss-auth-skeleton" aria-hidden="true" />
-            </AuthButton>
-          </nav>
-        </header>
-      )
-    }
+    <slot name="header">
+      <header class="crss-header">
+        <nav class="crss-nav">
+          <a href="/" class="crss-nav-brand">
+            Community RSS
+          </a>
+          <AuthButton server:defer>
+            <div slot="fallback" class="crss-auth-skeleton" aria-hidden="true" />
+          </AuthButton>
+        </nav>
+      </header>
+    </slot>
+    <slot name="below-header" />
+    <slot name="before-unnamed-slot" />
     <slot />
-    {
-      hasFooterSlot && (
-        <footer class="crss-footer">
-          <slot name="footer" />
-        </footer>
-      )
-    }
+    <slot name="after-unnamed-slot" />
+    <slot name="footer" />
     <ConsentModal />
   </body>
 </html>

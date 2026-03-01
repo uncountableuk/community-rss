@@ -47,6 +47,7 @@ const formattedDate = publishedAt
   : '';
 ---
 
+<slot name="before-unnamed-slot" />
 <article class="crss-feed-card" data-article-id={id}>
   <a href={`/article/${id}`} class="crss-feed-card__link" data-article-link>
     <header class="crss-feed-card__header">
@@ -105,6 +106,8 @@ const formattedDate = publishedAt
     </footer>
   </a>
 </article>
+<slot />
+<slot name="after-unnamed-slot" />
 
 <style is:global>
   @layer crss-components {
