@@ -623,15 +623,15 @@ as the override mechanism.
       All existing tests pass.
 
 #### Phase 13b: Core Page Slot Architecture
-- [ ] Wrap `<main>` content of each core page in
+- [x] Wrap `<main>` content of each core page in
       `<slot name="content">...</slot>` with existing markup as fallback:
       `index.astro`, `profile.astro`, `terms.astro`, `article/[id].astro`,
       `auth/signin.astro`, `auth/signup.astro`, `auth/verify.astro`,
       `auth/verify-email-change.astro`
-- [ ] Add `<slot name="before-unnamed-slot" />` and
+- [x] Add `<slot name="before-unnamed-slot" />` and
       `<slot name="after-unnamed-slot" />` to each page (inside
       BaseLayout, around the content slot)
-- [ ] **Validation**: All pages still render correctly. Existing tests pass.
+- [x] **Validation**: All pages still render correctly. Existing tests pass.
 
 #### Phase 13c: Create Slot Registry
 - [ ] Create `src/cli/slot-registry.mjs` with entries for all ejectable
@@ -1283,6 +1283,21 @@ in their proxy.
 > the two panels. The `<script>` block warning was added to the JSDoc
 > because the form slot replacement would break client-side event wiring
 > if element IDs change.
+
+### Phase 13b: Core Page Slot Architecture — ✅ Completed
+
+- [x] All 8 core pages wrapped with `<slot name="content">` super-slot
+      around their `<main>` block
+- [x] Generic wrapper slots (`before-unnamed-slot`, `after-unnamed-slot`)
+      added to each page inside BaseLayout, after the content slot
+- [x] **Validation**: All 481 tests pass. No visual changes.
+
+> **Notes:** The pattern places `<slot name="content">` immediately inside
+> `<BaseLayout>` wrapping `<main>...</main>`, then generic wrapper slots
+> after `</slot>` for the content, but still inside `<BaseLayout>`. Style
+> and script blocks remain inside `<BaseLayout>` and outside the slots.
+> The `article/[id].astro` page required an additional replacement since
+> its `</main>` closing tag was not adjacent to `</BaseLayout>`.
 
 ---
 

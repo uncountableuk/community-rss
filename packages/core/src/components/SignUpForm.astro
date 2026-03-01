@@ -61,76 +61,76 @@ const {
 ---
 
 <slot name="form">
-<form
-  class="crss-signup-form"
-  id="crss-signup-form"
-  data-error-create={createFailed}
-  data-error-network={networkError}
->
-  <div class="crss-form-group">
-    <label for="crss-signup-email" class="crss-form-label">{emailLabel}</label>
-    <input
-      type="email"
-      id="crss-signup-email"
-      name="email"
-      class="crss-form-input"
-      placeholder="your@email.com"
-      required
-      autocomplete="email"
-    />
-  </div>
-
-  <div class="crss-form-group">
-    <label for="crss-signup-name" class="crss-form-label">{nameLabel}</label>
-    <input
-      type="text"
-      id="crss-signup-name"
-      name="name"
-      class="crss-form-input"
-      placeholder={namePlaceholder}
-      required
-      maxlength="100"
-      autocomplete="name"
-    />
-  </div>
-
-  <div class="crss-form-group crss-form-group--checkbox">
-    <label class="crss-form-checkbox-label">
+  <form
+    class="crss-signup-form"
+    id="crss-signup-form"
+    data-error-create={createFailed}
+    data-error-network={networkError}
+  >
+    <div class="crss-form-group">
+      <label for="crss-signup-email" class="crss-form-label">{emailLabel}</label>
       <input
-        type="checkbox"
-        id="crss-signup-terms"
-        name="terms"
-        class="crss-form-checkbox"
+        type="email"
+        id="crss-signup-email"
+        name="email"
+        class="crss-form-input"
+        placeholder="your@email.com"
         required
+        autocomplete="email"
       />
-      <span
-        >{termsPrefix}
-        <a href="/terms" target="_blank" class="crss-form-link">{termsLinkText}</a></span
-      >
-    </label>
-  </div>
+    </div>
 
-  <button
-    type="submit"
-    class="crss-btn crss-btn--primary"
-    id="crss-signup-btn"
-    data-default-text={submitLabel}
-  >
-    {submitLabel}
-  </button>
+    <div class="crss-form-group">
+      <label for="crss-signup-name" class="crss-form-label">{nameLabel}</label>
+      <input
+        type="text"
+        id="crss-signup-name"
+        name="name"
+        class="crss-form-input"
+        placeholder={namePlaceholder}
+        required
+        maxlength="100"
+        autocomplete="name"
+      />
+    </div>
 
-  <div
-    class="crss-form-message crss-form-message--error"
-    id="crss-signup-error"
-    style="display: none;"
-  >
-  </div>
+    <div class="crss-form-group crss-form-group--checkbox">
+      <label class="crss-form-checkbox-label">
+        <input
+          type="checkbox"
+          id="crss-signup-terms"
+          name="terms"
+          class="crss-form-checkbox"
+          required
+        />
+        <span
+          >{termsPrefix}
+          <a href="/terms" target="_blank" class="crss-form-link">{termsLinkText}</a></span
+        >
+      </label>
+    </div>
 
-  <p class="crss-form-footer">
-    {footerText}
-    <a href="/auth/signin" class="crss-form-link">{footerLinkText}</a>
-  </p>
-</form>
+    <button
+      type="submit"
+      class="crss-btn crss-btn--primary"
+      id="crss-signup-btn"
+      data-default-text={submitLabel}
+    >
+      {submitLabel}
+    </button>
+
+    <div
+      class="crss-form-message crss-form-message--error"
+      id="crss-signup-error"
+      style="display: none;"
+    >
+    </div>
+
+    <p class="crss-form-footer">
+      {footerText}
+      <a href="/auth/signin" class="crss-form-link">{footerLinkText}</a>
+    </p>
+  </form>
 </slot>
 
 <slot name="before-unnamed-slot" />
@@ -139,36 +139,36 @@ const {
 
 <!-- Confirmation panel — replaces the form after successful submission -->
 <slot name="confirmation">
-<div class="crss-signup-confirm" id="crss-signup-confirm" style="display: none;" role="status">
-  <div class="crss-signup-confirm__icon" aria-hidden="true">
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="40"
-      height="40"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="1.5"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    >
-      <rect x="2" y="4" width="20" height="16" rx="2"></rect>
-      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
-    </svg>
+  <div class="crss-signup-confirm" id="crss-signup-confirm" style="display: none;" role="status">
+    <div class="crss-signup-confirm__icon" aria-hidden="true">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="40"
+        height="40"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+      </svg>
+    </div>
+    <h2 class="crss-signup-confirm__heading" id="crss-confirm-heading">{confirmHeading}</h2>
+    <p class="crss-signup-confirm__detail" id="crss-confirm-name-para">
+      Welcome, <strong id="crss-confirm-name"></strong>.
+    </p>
+    <p class="crss-signup-confirm__detail" id="crss-confirm-action">
+      We've sent a verification link to <strong id="crss-confirm-email"></strong>. Click it to
+      complete creating your account.
+    </p>
+    <p class="crss-signup-confirm__hint">
+      {confirmHint}
+      <a href="/auth/signup" class="crss-form-link">start over</a>.
+    </p>
   </div>
-  <h2 class="crss-signup-confirm__heading" id="crss-confirm-heading">{confirmHeading}</h2>
-  <p class="crss-signup-confirm__detail" id="crss-confirm-name-para">
-    Welcome, <strong id="crss-confirm-name"></strong>.
-  </p>
-  <p class="crss-signup-confirm__detail" id="crss-confirm-action">
-    We've sent a verification link to <strong id="crss-confirm-email"></strong>. Click it to
-    complete creating your account.
-  </p>
-  <p class="crss-signup-confirm__hint">
-    {confirmHint}
-    <a href="/auth/signup" class="crss-form-link">start over</a>.
-  </p>
-</div>
 </slot>
 
 <style is:global>

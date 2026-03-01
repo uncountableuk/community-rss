@@ -12,6 +12,7 @@ import MagicLinkForm from '../../components/MagicLinkForm.astro';
 ---
 
 <BaseLayout title="Sign In" description="Sign in to Community RSS">
+  <slot name="content">
   <main class="crss-signin-page">
     <div class="crss-signin-container">
       <h1 class="crss-signin-title">Sign In</h1>
@@ -24,6 +25,10 @@ import MagicLinkForm from '../../components/MagicLinkForm.astro';
       </p>
     </div>
   </main>
+  </slot>
+  <slot name="before-unnamed-slot" />
+  <slot />
+  <slot name="after-unnamed-slot" />
 </BaseLayout>
 
 <style is:global>

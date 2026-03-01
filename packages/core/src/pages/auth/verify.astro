@@ -10,8 +10,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 ---
 
-<BaseLayout title="Verifying…" description="Verifying your magic link">
-  <main class="crss-verify-page">
+<BaseLayout title="Verifying…" description="Verifying your magic link">  <slot name="content">  <main class="crss-verify-page">
     <div class="crss-verify-container">
       <div id="verify-loading" class="crss-verify-state">
         <div class="crss-verify-spinner" aria-hidden="true"></div>
@@ -28,6 +27,10 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       </div>
     </div>
   </main>
+  </slot>
+  <slot name="before-unnamed-slot" />
+  <slot />
+  <slot name="after-unnamed-slot" />
 </BaseLayout>
 
 <script>

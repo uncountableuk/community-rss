@@ -14,649 +14,655 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
 <BaseLayout title="Your Profile" description="View and edit your profile">
-  <main class="crss-profile-page">
-    <div class="crss-profile-container">
-      <div id="profile-loading" class="crss-profile-state">
-        <div class="crss-profile-spinner" aria-hidden="true"></div>
-        <p>Loading profile...</p>
-      </div>
+  <slot name="content">
+    <main class="crss-profile-page">
+      <div class="crss-profile-container">
+        <div id="profile-loading" class="crss-profile-state">
+          <div class="crss-profile-spinner" aria-hidden="true"></div>
+          <p>Loading profile...</p>
+        </div>
 
-      <div id="profile-unauthenticated" class="crss-profile-state" style="display: none;">
-        <h1 class="crss-profile-title">Sign In Required</h1>
-        <p>You need to sign in to view your profile.</p>
-        <a href="/auth/signin" class="crss-btn crss-btn--primary">Sign In</a>
-      </div>
+        <div id="profile-unauthenticated" class="crss-profile-state" style="display: none;">
+          <h1 class="crss-profile-title">Sign In Required</h1>
+          <p>You need to sign in to view your profile.</p>
+          <a href="/auth/signin" class="crss-btn crss-btn--primary">Sign In</a>
+        </div>
 
-      <div id="profile-content" class="crss-profile-state" style="display: none;">
-        <h1 class="crss-profile-title">Your Profile</h1>
+        <div id="profile-content" class="crss-profile-state" style="display: none;">
+          <h1 class="crss-profile-title">Your Profile</h1>
 
-        <div class="crss-profile-card">
-          <!-- Email — inline editable with verification flow -->
-          <div class="crss-profile-row" id="row-email">
-            <span class="crss-profile-label">Email</span>
-            <div class="crss-profile-value-wrap" id="email-value-wrap">
-              <span id="profile-email" class="crss-profile-value"></span>
-              <button class="crss-edit-btn" aria-label="Change email address" data-field="email">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                </svg>
-              </button>
-            </div>
-            <p class="crss-pending-notice" id="email-pending-notice" style="display: none;">
-              Verification link sent to <strong id="pending-email-value"></strong>. Check your inbox
-              to confirm the change.
-            </p>
-            <div class="crss-inline-editor" id="editor-email" style="display: none;">
-              <p class="crss-email-change-info">
-                A verification link will be sent to your new address. Your current email stays
-                active until the change is confirmed.
+          <div class="crss-profile-card">
+            <!-- Email — inline editable with verification flow -->
+            <div class="crss-profile-row" id="row-email">
+              <span class="crss-profile-label">Email</span>
+              <div class="crss-profile-value-wrap" id="email-value-wrap">
+                <span id="profile-email" class="crss-profile-value"></span>
+                <button class="crss-edit-btn" aria-label="Change email address" data-field="email">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                  </svg>
+                </button>
+              </div>
+              <p class="crss-pending-notice" id="email-pending-notice" style="display: none;">
+                Verification link sent to <strong id="pending-email-value"></strong>. Check your
+                inbox to confirm the change.
               </p>
-              <input
-                type="email"
-                id="input-email"
-                class="crss-form-input"
-                placeholder="new@example.com"
-                autocomplete="email"
-              />
-              <div class="crss-inline-actions">
-                <button class="crss-btn crss-btn--primary crss-btn--sm" data-save="email"
-                  >Send verification</button
-                >
-                <button class="crss-btn crss-btn--ghost crss-btn--sm" data-cancel="email"
-                  >Cancel</button
-                >
-                <span class="crss-inline-status" id="status-email"></span>
+              <div class="crss-inline-editor" id="editor-email" style="display: none;">
+                <p class="crss-email-change-info">
+                  A verification link will be sent to your new address. Your current email stays
+                  active until the change is confirmed.
+                </p>
+                <input
+                  type="email"
+                  id="input-email"
+                  class="crss-form-input"
+                  placeholder="new@example.com"
+                  autocomplete="email"
+                />
+                <div class="crss-inline-actions">
+                  <button class="crss-btn crss-btn--primary crss-btn--sm" data-save="email"
+                    >Send verification</button
+                  >
+                  <button class="crss-btn crss-btn--ghost crss-btn--sm" data-cancel="email"
+                    >Cancel</button
+                  >
+                  <span class="crss-inline-status" id="status-email"></span>
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- Display Name — inline editable -->
-          <div class="crss-profile-row" id="row-name">
-            <span class="crss-profile-label">Display Name</span>
-            <div class="crss-profile-value-wrap">
-              <span id="display-name" class="crss-profile-value"></span>
-              <button class="crss-edit-btn" aria-label="Edit display name" data-field="name">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                </svg>
-              </button>
-            </div>
-            <div class="crss-inline-editor" id="editor-name" style="display: none;">
-              <input
-                type="text"
-                id="input-name"
-                class="crss-form-input"
-                maxlength="100"
-                placeholder="Your display name"
-                autocomplete="name"
-              />
-              <div class="crss-inline-actions">
-                <button class="crss-btn crss-btn--primary crss-btn--sm" data-save="name"
-                  >Save</button
-                >
-                <button class="crss-btn crss-btn--ghost crss-btn--sm" data-cancel="name"
-                  >Cancel</button
-                >
-                <span class="crss-inline-status" id="status-name"></span>
+            <!-- Display Name — inline editable -->
+            <div class="crss-profile-row" id="row-name">
+              <span class="crss-profile-label">Display Name</span>
+              <div class="crss-profile-value-wrap">
+                <span id="display-name" class="crss-profile-value"></span>
+                <button class="crss-edit-btn" aria-label="Edit display name" data-field="name">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                  </svg>
+                </button>
+              </div>
+              <div class="crss-inline-editor" id="editor-name" style="display: none;">
+                <input
+                  type="text"
+                  id="input-name"
+                  class="crss-form-input"
+                  maxlength="100"
+                  placeholder="Your display name"
+                  autocomplete="name"
+                />
+                <div class="crss-inline-actions">
+                  <button class="crss-btn crss-btn--primary crss-btn--sm" data-save="name"
+                    >Save</button
+                  >
+                  <button class="crss-btn crss-btn--ghost crss-btn--sm" data-cancel="name"
+                    >Cancel</button
+                  >
+                  <span class="crss-inline-status" id="status-name"></span>
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- Bio — inline editable -->
-          <div class="crss-profile-row" id="row-bio">
-            <span class="crss-profile-label">Bio</span>
-            <div class="crss-profile-value-wrap">
-              <span id="display-bio" class="crss-profile-value crss-profile-value--muted"></span>
-              <button class="crss-edit-btn" aria-label="Edit bio" data-field="bio">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                </svg>
-              </button>
-            </div>
-            <div class="crss-inline-editor" id="editor-bio" style="display: none;">
-              <textarea
-                id="input-bio"
-                class="crss-form-input crss-form-textarea"
-                maxlength="500"
-                rows="4"
-                placeholder="Tell us about yourself..."></textarea>
-              <span class="crss-char-count" id="bio-char-count">0 / 500</span>
-              <div class="crss-inline-actions">
-                <button class="crss-btn crss-btn--primary crss-btn--sm" data-save="bio">Save</button
-                >
-                <button class="crss-btn crss-btn--ghost crss-btn--sm" data-cancel="bio"
-                  >Cancel</button
-                >
-                <span class="crss-inline-status" id="status-bio"></span>
+            <!-- Bio — inline editable -->
+            <div class="crss-profile-row" id="row-bio">
+              <span class="crss-profile-label">Bio</span>
+              <div class="crss-profile-value-wrap">
+                <span id="display-bio" class="crss-profile-value crss-profile-value--muted"></span>
+                <button class="crss-edit-btn" aria-label="Edit bio" data-field="bio">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                  </svg>
+                </button>
+              </div>
+              <div class="crss-inline-editor" id="editor-bio" style="display: none;">
+                <textarea
+                  id="input-bio"
+                  class="crss-form-input crss-form-textarea"
+                  maxlength="500"
+                  rows="4"
+                  placeholder="Tell us about yourself..."></textarea>
+                <span class="crss-char-count" id="bio-char-count">0 / 500</span>
+                <div class="crss-inline-actions">
+                  <button class="crss-btn crss-btn--primary crss-btn--sm" data-save="bio"
+                    >Save</button
+                  >
+                  <button class="crss-btn crss-btn--ghost crss-btn--sm" data-cancel="bio"
+                    >Cancel</button
+                  >
+                  <span class="crss-inline-status" id="status-bio"></span>
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- Read-only metadata -->
-          <div class="crss-profile-meta">
-            <p class="crss-profile-meta-item">
-              <span class="crss-profile-meta-label">Member since:</span>
-              <span id="profile-joined"></span>
-            </p>
-            <p class="crss-profile-meta-item">
-              <span class="crss-profile-meta-label">Role:</span>
-              <span id="profile-role"></span>
-            </p>
+            <!-- Read-only metadata -->
+            <div class="crss-profile-meta">
+              <p class="crss-profile-meta-item">
+                <span class="crss-profile-meta-label">Member since:</span>
+                <span id="profile-joined"></span>
+              </p>
+              <p class="crss-profile-meta-item">
+                <span class="crss-profile-meta-label">Role:</span>
+                <span id="profile-role"></span>
+              </p>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  </main>
-</BaseLayout>
+    </main>
+  </slot>
+  <slot name="before-unnamed-slot" />
+  <slot />
+  <slot name="after-unnamed-slot" />
 
-<style is:global>
-  @layer crss-components {
-    .crss-profile-page {
-      display: flex;
-      justify-content: center;
-      min-height: 100vh;
-      padding: var(--crss-space-xl);
-    }
-    .crss-profile-container {
-      max-width: 600px;
-      width: 100%;
-    }
-    .crss-profile-state {
-      text-align: center;
-    }
-    .crss-profile-title {
-      font-size: var(--crss-font-size-3xl);
-      font-weight: 700;
-      color: var(--crss-text-primary);
-      margin-bottom: var(--crss-space-xl);
-      text-align: left;
-    }
-    .crss-profile-card {
-      background-color: var(--crss-surface-1);
-      border-radius: var(--crss-radius-lg);
-      overflow: hidden;
-    }
-    .crss-profile-row {
-      padding: var(--crss-space-md) var(--crss-space-xl);
-      border-bottom: 1px solid var(--crss-surface-3);
-    }
-    .crss-profile-row:last-child {
-      border-bottom: none;
-    }
-    .crss-profile-label {
-      display: block;
-      font-size: var(--crss-font-size-xs);
-      font-weight: 600;
-      color: var(--crss-text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      margin-bottom: var(--crss-space-xs);
-    }
-    .crss-profile-value-wrap {
-      display: flex;
-      align-items: center;
-      gap: var(--crss-space-sm);
-    }
-    .crss-profile-value {
-      font-size: var(--crss-font-size-base);
-      color: var(--crss-text-primary);
-      line-height: 1.5;
-    }
-    .crss-profile-value--muted {
-      color: var(--crss-text-secondary);
-      font-style: italic;
-    }
-    .crss-edit-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 2px;
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: var(--crss-text-secondary);
-      border-radius: var(--crss-radius-sm);
-      transition: color var(--crss-transition-fast);
-      flex-shrink: 0;
-    }
-    .crss-edit-btn:hover,
-    .crss-edit-btn:focus-visible {
-      color: var(--crss-brand-primary);
-    }
-    .crss-inline-editor {
-      margin-top: var(--crss-space-sm);
-    }
-    .crss-pending-notice {
-      font-size: var(--crss-font-size-sm);
-      color: var(--crss-success-text, #065f46);
-      background-color: var(--crss-success-bg, #d1fae5);
-      border: 1px solid var(--crss-success-border, #6ee7b7);
-      border-radius: var(--crss-radius-md);
-      padding: var(--crss-space-xs) var(--crss-space-md);
-      margin-top: var(--crss-space-xs);
-    }
-    .crss-email-change-info {
-      font-size: var(--crss-font-size-sm);
-      color: var(--crss-text-secondary);
-      margin-bottom: var(--crss-space-sm);
-      line-height: 1.5;
-    }
-    .crss-form-input {
-      width: 100%;
-      padding: var(--crss-space-sm) var(--crss-space-md);
-      border: 1px solid var(--crss-brand-primary);
-      border-radius: var(--crss-radius-md);
-      font-size: var(--crss-font-size-base);
-      font-family: var(--crss-font-family);
-      color: var(--crss-text-primary);
-      background-color: var(--crss-surface-0);
-      transition: box-shadow var(--crss-transition-fast);
-      box-sizing: border-box;
-    }
-    .crss-form-input:focus {
-      outline: none;
-      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
-    }
-    .crss-form-textarea {
-      resize: vertical;
-      min-height: 80px;
-    }
-    .crss-char-count {
-      display: block;
-      text-align: right;
-      font-size: var(--crss-font-size-xs);
-      color: var(--crss-text-secondary);
-      margin-top: var(--crss-space-xs);
-    }
-    .crss-inline-actions {
-      display: flex;
-      align-items: center;
-      gap: var(--crss-space-sm);
-      margin-top: var(--crss-space-sm);
-    }
-    .crss-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: var(--crss-radius-md);
-      font-size: var(--crss-font-size-base);
-      font-family: var(--crss-font-family);
-      cursor: pointer;
-      transition:
-        background-color var(--crss-transition-fast),
-        color var(--crss-transition-fast);
-    }
-    .crss-btn--primary {
-      padding: var(--crss-space-sm) var(--crss-space-lg);
-      background-color: var(--crss-brand-primary);
-      color: var(--crss-text-inverse);
-      border: none;
-    }
-    .crss-btn--primary:hover {
-      background-color: var(--crss-brand-accent);
-    }
-    .crss-btn--primary:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-    .crss-btn--ghost {
-      padding: var(--crss-space-sm) var(--crss-space-md);
-      background-color: transparent;
-      color: var(--crss-text-secondary);
-      border: 1px solid var(--crss-surface-3);
-    }
-    .crss-btn--ghost:hover {
-      background-color: var(--crss-surface-2);
-      color: var(--crss-text-primary);
-    }
-    .crss-btn--sm {
-      font-size: var(--crss-font-size-sm);
-      padding: var(--crss-space-xs) var(--crss-space-md);
-    }
-    .crss-inline-status {
-      font-size: var(--crss-font-size-sm);
-      color: var(--crss-success-text, #065f46);
-    }
-    .crss-inline-status--error {
-      color: var(--crss-error);
-    }
-    .crss-profile-meta {
-      padding: var(--crss-space-md) var(--crss-space-xl);
-      border-top: 1px solid var(--crss-surface-3);
-      background-color: var(--crss-surface-2);
-    }
-    .crss-profile-meta-item {
-      font-size: var(--crss-font-size-sm);
-      color: var(--crss-text-secondary);
-      margin-bottom: var(--crss-space-xs);
-    }
-    .crss-profile-meta-item:last-child {
-      margin-bottom: 0;
-    }
-    .crss-profile-meta-label {
-      font-weight: 600;
-    }
-    .crss-profile-spinner {
-      width: 32px;
-      height: 32px;
-      border: 3px solid var(--crss-surface-3);
-      border-top-color: var(--crss-brand-primary);
-      border-radius: 50%;
-      animation: crss-spin 0.8s linear infinite;
-      margin: 0 auto var(--crss-space-md);
-    }
-    @keyframes crss-spin {
-      to {
-        transform: rotate(360deg);
+  <style is:global>
+    @layer crss-components {
+      .crss-profile-page {
+        display: flex;
+        justify-content: center;
+        min-height: 100vh;
+        padding: var(--crss-space-xl);
+      }
+      .crss-profile-container {
+        max-width: 600px;
+        width: 100%;
+      }
+      .crss-profile-state {
+        text-align: center;
+      }
+      .crss-profile-title {
+        font-size: var(--crss-font-size-3xl);
+        font-weight: 700;
+        color: var(--crss-text-primary);
+        margin-bottom: var(--crss-space-xl);
+        text-align: left;
+      }
+      .crss-profile-card {
+        background-color: var(--crss-surface-1);
+        border-radius: var(--crss-radius-lg);
+        overflow: hidden;
+      }
+      .crss-profile-row {
+        padding: var(--crss-space-md) var(--crss-space-xl);
+        border-bottom: 1px solid var(--crss-surface-3);
+      }
+      .crss-profile-row:last-child {
+        border-bottom: none;
+      }
+      .crss-profile-label {
+        display: block;
+        font-size: var(--crss-font-size-xs);
+        font-weight: 600;
+        color: var(--crss-text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: var(--crss-space-xs);
+      }
+      .crss-profile-value-wrap {
+        display: flex;
+        align-items: center;
+        gap: var(--crss-space-sm);
+      }
+      .crss-profile-value {
+        font-size: var(--crss-font-size-base);
+        color: var(--crss-text-primary);
+        line-height: 1.5;
+      }
+      .crss-profile-value--muted {
+        color: var(--crss-text-secondary);
+        font-style: italic;
+      }
+      .crss-edit-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--crss-text-secondary);
+        border-radius: var(--crss-radius-sm);
+        transition: color var(--crss-transition-fast);
+        flex-shrink: 0;
+      }
+      .crss-edit-btn:hover,
+      .crss-edit-btn:focus-visible {
+        color: var(--crss-brand-primary);
+      }
+      .crss-inline-editor {
+        margin-top: var(--crss-space-sm);
+      }
+      .crss-pending-notice {
+        font-size: var(--crss-font-size-sm);
+        color: var(--crss-success-text, #065f46);
+        background-color: var(--crss-success-bg, #d1fae5);
+        border: 1px solid var(--crss-success-border, #6ee7b7);
+        border-radius: var(--crss-radius-md);
+        padding: var(--crss-space-xs) var(--crss-space-md);
+        margin-top: var(--crss-space-xs);
+      }
+      .crss-email-change-info {
+        font-size: var(--crss-font-size-sm);
+        color: var(--crss-text-secondary);
+        margin-bottom: var(--crss-space-sm);
+        line-height: 1.5;
+      }
+      .crss-form-input {
+        width: 100%;
+        padding: var(--crss-space-sm) var(--crss-space-md);
+        border: 1px solid var(--crss-brand-primary);
+        border-radius: var(--crss-radius-md);
+        font-size: var(--crss-font-size-base);
+        font-family: var(--crss-font-family);
+        color: var(--crss-text-primary);
+        background-color: var(--crss-surface-0);
+        transition: box-shadow var(--crss-transition-fast);
+        box-sizing: border-box;
+      }
+      .crss-form-input:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+      }
+      .crss-form-textarea {
+        resize: vertical;
+        min-height: 80px;
+      }
+      .crss-char-count {
+        display: block;
+        text-align: right;
+        font-size: var(--crss-font-size-xs);
+        color: var(--crss-text-secondary);
+        margin-top: var(--crss-space-xs);
+      }
+      .crss-inline-actions {
+        display: flex;
+        align-items: center;
+        gap: var(--crss-space-sm);
+        margin-top: var(--crss-space-sm);
+      }
+      .crss-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--crss-radius-md);
+        font-size: var(--crss-font-size-base);
+        font-family: var(--crss-font-family);
+        cursor: pointer;
+        transition:
+          background-color var(--crss-transition-fast),
+          color var(--crss-transition-fast);
+      }
+      .crss-btn--primary {
+        padding: var(--crss-space-sm) var(--crss-space-lg);
+        background-color: var(--crss-brand-primary);
+        color: var(--crss-text-inverse);
+        border: none;
+      }
+      .crss-btn--primary:hover {
+        background-color: var(--crss-brand-accent);
+      }
+      .crss-btn--primary:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+      .crss-btn--ghost {
+        padding: var(--crss-space-sm) var(--crss-space-md);
+        background-color: transparent;
+        color: var(--crss-text-secondary);
+        border: 1px solid var(--crss-surface-3);
+      }
+      .crss-btn--ghost:hover {
+        background-color: var(--crss-surface-2);
+        color: var(--crss-text-primary);
+      }
+      .crss-btn--sm {
+        font-size: var(--crss-font-size-sm);
+        padding: var(--crss-space-xs) var(--crss-space-md);
+      }
+      .crss-inline-status {
+        font-size: var(--crss-font-size-sm);
+        color: var(--crss-success-text, #065f46);
+      }
+      .crss-inline-status--error {
+        color: var(--crss-error);
+      }
+      .crss-profile-meta {
+        padding: var(--crss-space-md) var(--crss-space-xl);
+        border-top: 1px solid var(--crss-surface-3);
+        background-color: var(--crss-surface-2);
+      }
+      .crss-profile-meta-item {
+        font-size: var(--crss-font-size-sm);
+        color: var(--crss-text-secondary);
+        margin-bottom: var(--crss-space-xs);
+      }
+      .crss-profile-meta-item:last-child {
+        margin-bottom: 0;
+      }
+      .crss-profile-meta-label {
+        font-weight: 600;
+      }
+      .crss-profile-spinner {
+        width: 32px;
+        height: 32px;
+        border: 3px solid var(--crss-surface-3);
+        border-top-color: var(--crss-brand-primary);
+        border-radius: 50%;
+        animation: crss-spin 0.8s linear infinite;
+        margin: 0 auto var(--crss-space-md);
+      }
+      @keyframes crss-spin {
+        to {
+          transform: rotate(360deg);
+        }
       }
     }
-  }
-</style>
+  </style>
 
-<script>
-  interface ProfileData {
-    id: string;
-    email: string | null;
-    name: string | null;
-    bio: string | null;
-    role: string;
-    createdAt: string;
-    pendingEmail?: string | null;
-  }
+  <script>
+    interface ProfileData {
+      id: string;
+      email: string | null;
+      name: string | null;
+      bio: string | null;
+      role: string;
+      createdAt: string;
+      pendingEmail?: string | null;
+    }
 
-  let profileData: ProfileData | null = null;
+    let profileData: ProfileData | null = null;
 
-  async function loadProfile() {
-    const loading = document.getElementById('profile-loading');
-    const unauthenticated = document.getElementById('profile-unauthenticated');
-    const content = document.getElementById('profile-content');
-    try {
-      const response = await fetch('/api/v1/profile', { credentials: 'include' });
-      if (response.status === 401) {
+    async function loadProfile() {
+      const loading = document.getElementById('profile-loading');
+      const unauthenticated = document.getElementById('profile-unauthenticated');
+      const content = document.getElementById('profile-content');
+      try {
+        const response = await fetch('/api/v1/profile', { credentials: 'include' });
+        if (response.status === 401) {
+          if (loading) loading.style.display = 'none';
+          if (unauthenticated) unauthenticated.style.display = 'block';
+          return;
+        }
+        if (!response.ok) throw new Error(`Failed to load profile: ${response.status}`);
+        profileData = (await response.json()) as ProfileData;
+        renderProfile(profileData);
         if (loading) loading.style.display = 'none';
-        if (unauthenticated) unauthenticated.style.display = 'block';
+        if (content) content.style.display = 'block';
+      } catch (err) {
+        console.error('[community-rss] Profile load failed:', err);
+        if (loading) loading.textContent = 'Failed to load profile. Please try again.';
+      }
+    }
+
+    function renderProfile(p: ProfileData) {
+      const emailEl = document.getElementById('profile-email');
+      const nameEl = document.getElementById('display-name');
+      const bioEl = document.getElementById('display-bio');
+      const joinedEl = document.getElementById('profile-joined');
+      const roleEl = document.getElementById('profile-role');
+      const pendingNotice = document.getElementById('email-pending-notice');
+      const pendingEmailValue = document.getElementById('pending-email-value');
+      if (emailEl) emailEl.textContent = p.email || '—';
+      if (nameEl) {
+        nameEl.textContent = p.name || '—';
+        nameEl.classList.toggle('crss-profile-value--muted', !p.name);
+      }
+      if (bioEl) {
+        bioEl.textContent = p.bio || 'Not set';
+        bioEl.classList.toggle('crss-profile-value--muted', !p.bio);
+      }
+      if (joinedEl)
+        joinedEl.textContent = p.createdAt ? new Date(p.createdAt).toLocaleDateString() : '—';
+      if (roleEl) roleEl.textContent = p.role === 'admin' ? 'Admin' : 'Member';
+      if (pendingNotice && pendingEmailValue) {
+        if (p.pendingEmail) {
+          pendingEmailValue.textContent = p.pendingEmail;
+          pendingNotice.style.display = 'block';
+        } else {
+          pendingNotice.style.display = 'none';
+        }
+      }
+    }
+
+    function openEditor(field: 'name' | 'bio') {
+      const editor = document.getElementById(`editor-${field}`);
+      const valueWrap = document
+        .querySelector(`[data-field="${field}"]`)
+        ?.closest('.crss-profile-value-wrap');
+      if (!editor || !profileData) return;
+      if (field === 'name') {
+        const input = document.getElementById('input-name') as HTMLInputElement;
+        if (input) {
+          input.value = profileData.name || '';
+          editor.style.display = 'block';
+          if (valueWrap) (valueWrap as HTMLElement).style.display = 'none';
+          input.focus();
+          input.select();
+        }
+      } else {
+        const textarea = document.getElementById('input-bio') as HTMLTextAreaElement;
+        const charCount = document.getElementById('bio-char-count');
+        if (textarea) {
+          textarea.value = profileData.bio || '';
+          if (charCount) charCount.textContent = `${textarea.value.length} / 500`;
+          editor.style.display = 'block';
+          if (valueWrap) (valueWrap as HTMLElement).style.display = 'none';
+          textarea.focus();
+        }
+      }
+    }
+
+    function closeEditor(field: 'name' | 'bio') {
+      const editor = document.getElementById(`editor-${field}`);
+      const valueWrap = document
+        .querySelector(`[data-field="${field}"]`)
+        ?.closest('.crss-profile-value-wrap');
+      const statusEl = document.getElementById(`status-${field}`);
+      if (!editor) return;
+      editor.style.display = 'none';
+      if (valueWrap) (valueWrap as HTMLElement).style.display = 'flex';
+      if (statusEl) statusEl.textContent = '';
+    }
+
+    async function saveField(field: 'name' | 'bio') {
+      const statusEl = document.getElementById(`status-${field}`);
+      const saveBtn = document.querySelector(`[data-save="${field}"]`) as HTMLButtonElement;
+      let value: string;
+      if (field === 'name') {
+        const input = document.getElementById('input-name') as HTMLInputElement;
+        value = input?.value?.trim() ?? '';
+      } else {
+        const textarea = document.getElementById('input-bio') as HTMLTextAreaElement;
+        value = textarea?.value ?? '';
+      }
+      if (saveBtn) saveBtn.disabled = true;
+      if (statusEl) {
+        statusEl.textContent = '';
+        statusEl.className = 'crss-inline-status';
+      }
+      try {
+        const response = await fetch('/api/v1/profile', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ [field]: value }),
+          credentials: 'include',
+        });
+        if (response.ok) {
+          const updated = (await response.json()) as ProfileData;
+          profileData = updated;
+          renderProfile(updated);
+          closeEditor(field);
+        } else {
+          const data = (await response.json().catch(() => ({}))) as Record<string, string>;
+          if (statusEl) {
+            statusEl.textContent = data.message || 'Save failed';
+            statusEl.className = 'crss-inline-status crss-inline-status--error';
+          }
+        }
+      } catch {
+        if (statusEl) {
+          statusEl.textContent = 'Network error';
+          statusEl.className = 'crss-inline-status crss-inline-status--error';
+        }
+      } finally {
+        if (saveBtn) saveBtn.disabled = false;
+      }
+    }
+
+    function openEmailEditor() {
+      const editor = document.getElementById('editor-email');
+      const valueWrap = document.getElementById('email-value-wrap');
+      const input = document.getElementById('input-email') as HTMLInputElement;
+      const statusEl = document.getElementById('status-email');
+      if (!editor || !input) return;
+      if (statusEl) {
+        statusEl.textContent = '';
+        statusEl.className = 'crss-inline-status';
+      }
+      input.value = '';
+      editor.style.display = 'block';
+      if (valueWrap) valueWrap.style.display = 'none';
+      input.focus();
+    }
+
+    function closeEmailEditor() {
+      const editor = document.getElementById('editor-email');
+      const valueWrap = document.getElementById('email-value-wrap');
+      const statusEl = document.getElementById('status-email');
+      if (!editor) return;
+      editor.style.display = 'none';
+      if (valueWrap) valueWrap.style.display = 'flex';
+      if (statusEl) statusEl.textContent = '';
+    }
+
+    async function requestEmailChange() {
+      const input = document.getElementById('input-email') as HTMLInputElement;
+      const statusEl = document.getElementById('status-email');
+      const saveBtn = document.querySelector('[data-save="email"]') as HTMLButtonElement;
+      const newEmail = input?.value?.trim() ?? '';
+      if (!newEmail) {
+        if (statusEl) {
+          statusEl.textContent = 'Please enter a new email address';
+          statusEl.className = 'crss-inline-status crss-inline-status--error';
+        }
         return;
       }
-      if (!response.ok) throw new Error(`Failed to load profile: ${response.status}`);
-      profileData = (await response.json()) as ProfileData;
-      renderProfile(profileData);
-      if (loading) loading.style.display = 'none';
-      if (content) content.style.display = 'block';
-    } catch (err) {
-      console.error('[community-rss] Profile load failed:', err);
-      if (loading) loading.textContent = 'Failed to load profile. Please try again.';
-    }
-  }
-
-  function renderProfile(p: ProfileData) {
-    const emailEl = document.getElementById('profile-email');
-    const nameEl = document.getElementById('display-name');
-    const bioEl = document.getElementById('display-bio');
-    const joinedEl = document.getElementById('profile-joined');
-    const roleEl = document.getElementById('profile-role');
-    const pendingNotice = document.getElementById('email-pending-notice');
-    const pendingEmailValue = document.getElementById('pending-email-value');
-    if (emailEl) emailEl.textContent = p.email || '—';
-    if (nameEl) {
-      nameEl.textContent = p.name || '—';
-      nameEl.classList.toggle('crss-profile-value--muted', !p.name);
-    }
-    if (bioEl) {
-      bioEl.textContent = p.bio || 'Not set';
-      bioEl.classList.toggle('crss-profile-value--muted', !p.bio);
-    }
-    if (joinedEl)
-      joinedEl.textContent = p.createdAt ? new Date(p.createdAt).toLocaleDateString() : '—';
-    if (roleEl) roleEl.textContent = p.role === 'admin' ? 'Admin' : 'Member';
-    if (pendingNotice && pendingEmailValue) {
-      if (p.pendingEmail) {
-        pendingEmailValue.textContent = p.pendingEmail;
-        pendingNotice.style.display = 'block';
-      } else {
-        pendingNotice.style.display = 'none';
+      if (saveBtn) saveBtn.disabled = true;
+      if (statusEl) {
+        statusEl.textContent = '';
+        statusEl.className = 'crss-inline-status';
       }
-    }
-  }
-
-  function openEditor(field: 'name' | 'bio') {
-    const editor = document.getElementById(`editor-${field}`);
-    const valueWrap = document
-      .querySelector(`[data-field="${field}"]`)
-      ?.closest('.crss-profile-value-wrap');
-    if (!editor || !profileData) return;
-    if (field === 'name') {
-      const input = document.getElementById('input-name') as HTMLInputElement;
-      if (input) {
-        input.value = profileData.name || '';
-        editor.style.display = 'block';
-        if (valueWrap) (valueWrap as HTMLElement).style.display = 'none';
-        input.focus();
-        input.select();
-      }
-    } else {
-      const textarea = document.getElementById('input-bio') as HTMLTextAreaElement;
-      const charCount = document.getElementById('bio-char-count');
-      if (textarea) {
-        textarea.value = profileData.bio || '';
-        if (charCount) charCount.textContent = `${textarea.value.length} / 500`;
-        editor.style.display = 'block';
-        if (valueWrap) (valueWrap as HTMLElement).style.display = 'none';
-        textarea.focus();
-      }
-    }
-  }
-
-  function closeEditor(field: 'name' | 'bio') {
-    const editor = document.getElementById(`editor-${field}`);
-    const valueWrap = document
-      .querySelector(`[data-field="${field}"]`)
-      ?.closest('.crss-profile-value-wrap');
-    const statusEl = document.getElementById(`status-${field}`);
-    if (!editor) return;
-    editor.style.display = 'none';
-    if (valueWrap) (valueWrap as HTMLElement).style.display = 'flex';
-    if (statusEl) statusEl.textContent = '';
-  }
-
-  async function saveField(field: 'name' | 'bio') {
-    const statusEl = document.getElementById(`status-${field}`);
-    const saveBtn = document.querySelector(`[data-save="${field}"]`) as HTMLButtonElement;
-    let value: string;
-    if (field === 'name') {
-      const input = document.getElementById('input-name') as HTMLInputElement;
-      value = input?.value?.trim() ?? '';
-    } else {
-      const textarea = document.getElementById('input-bio') as HTMLTextAreaElement;
-      value = textarea?.value ?? '';
-    }
-    if (saveBtn) saveBtn.disabled = true;
-    if (statusEl) {
-      statusEl.textContent = '';
-      statusEl.className = 'crss-inline-status';
-    }
-    try {
-      const response = await fetch('/api/v1/profile', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ [field]: value }),
-        credentials: 'include',
-      });
-      if (response.ok) {
-        const updated = (await response.json()) as ProfileData;
-        profileData = updated;
-        renderProfile(updated);
-        closeEditor(field);
-      } else {
-        const data = (await response.json().catch(() => ({}))) as Record<string, string>;
+      try {
+        const response = await fetch('/api/v1/profile/change-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: newEmail }),
+          credentials: 'include',
+        });
+        if (response.ok) {
+          if (profileData) {
+            profileData = { ...profileData, pendingEmail: newEmail };
+            renderProfile(profileData);
+          }
+          closeEmailEditor();
+        } else {
+          const data = (await response.json().catch(() => ({}))) as Record<string, string>;
+          if (statusEl) {
+            statusEl.textContent = data.message || 'Request failed';
+            statusEl.className = 'crss-inline-status crss-inline-status--error';
+          }
+        }
+      } catch {
         if (statusEl) {
-          statusEl.textContent = data.message || 'Save failed';
+          statusEl.textContent = 'Network error';
           statusEl.className = 'crss-inline-status crss-inline-status--error';
         }
+      } finally {
+        if (saveBtn) saveBtn.disabled = false;
       }
-    } catch {
-      if (statusEl) {
-        statusEl.textContent = 'Network error';
-        statusEl.className = 'crss-inline-status crss-inline-status--error';
-      }
-    } finally {
-      if (saveBtn) saveBtn.disabled = false;
     }
-  }
 
-  function openEmailEditor() {
-    const editor = document.getElementById('editor-email');
-    const valueWrap = document.getElementById('email-value-wrap');
-    const input = document.getElementById('input-email') as HTMLInputElement;
-    const statusEl = document.getElementById('status-email');
-    if (!editor || !input) return;
-    if (statusEl) {
-      statusEl.textContent = '';
-      statusEl.className = 'crss-inline-status';
-    }
-    input.value = '';
-    editor.style.display = 'block';
-    if (valueWrap) valueWrap.style.display = 'none';
-    input.focus();
-  }
-
-  function closeEmailEditor() {
-    const editor = document.getElementById('editor-email');
-    const valueWrap = document.getElementById('email-value-wrap');
-    const statusEl = document.getElementById('status-email');
-    if (!editor) return;
-    editor.style.display = 'none';
-    if (valueWrap) valueWrap.style.display = 'flex';
-    if (statusEl) statusEl.textContent = '';
-  }
-
-  async function requestEmailChange() {
-    const input = document.getElementById('input-email') as HTMLInputElement;
-    const statusEl = document.getElementById('status-email');
-    const saveBtn = document.querySelector('[data-save="email"]') as HTMLButtonElement;
-    const newEmail = input?.value?.trim() ?? '';
-    if (!newEmail) {
-      if (statusEl) {
-        statusEl.textContent = 'Please enter a new email address';
-        statusEl.className = 'crss-inline-status crss-inline-status--error';
-      }
-      return;
-    }
-    if (saveBtn) saveBtn.disabled = true;
-    if (statusEl) {
-      statusEl.textContent = '';
-      statusEl.className = 'crss-inline-status';
-    }
-    try {
-      const response = await fetch('/api/v1/profile/change-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: newEmail }),
-        credentials: 'include',
+    document.querySelectorAll<HTMLButtonElement>('.crss-edit-btn[data-field]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const field = btn.dataset.field as 'name' | 'bio' | 'email';
+        if (field === 'email') openEmailEditor();
+        else openEditor(field);
       });
-      if (response.ok) {
-        if (profileData) {
-          profileData = { ...profileData, pendingEmail: newEmail };
-          renderProfile(profileData);
-        }
-        closeEmailEditor();
-      } else {
-        const data = (await response.json().catch(() => ({}))) as Record<string, string>;
-        if (statusEl) {
-          statusEl.textContent = data.message || 'Request failed';
-          statusEl.className = 'crss-inline-status crss-inline-status--error';
-        }
+    });
+    document.querySelectorAll<HTMLButtonElement>('[data-save]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const field = btn.dataset.save as 'name' | 'bio' | 'email';
+        if (field === 'email') requestEmailChange();
+        else saveField(field);
+      });
+    });
+    document.querySelectorAll<HTMLButtonElement>('[data-cancel]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const field = btn.dataset.cancel as 'name' | 'bio' | 'email';
+        if (field === 'email') closeEmailEditor();
+        else closeEditor(field);
+      });
+    });
+
+    const bioTextarea = document.getElementById('input-bio') as HTMLTextAreaElement;
+    const bioCharCount = document.getElementById('bio-char-count');
+    bioTextarea?.addEventListener('input', () => {
+      if (bioCharCount) bioCharCount.textContent = `${bioTextarea.value.length} / 500`;
+    });
+
+    document.getElementById('input-name')?.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeEditor('name');
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        saveField('name');
       }
-    } catch {
-      if (statusEl) {
-        statusEl.textContent = 'Network error';
-        statusEl.className = 'crss-inline-status crss-inline-status--error';
+    });
+    document.getElementById('input-bio')?.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeEditor('bio');
+    });
+    document.getElementById('input-email')?.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeEmailEditor();
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        requestEmailChange();
       }
-    } finally {
-      if (saveBtn) saveBtn.disabled = false;
-    }
-  }
-
-  document.querySelectorAll<HTMLButtonElement>('.crss-edit-btn[data-field]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const field = btn.dataset.field as 'name' | 'bio' | 'email';
-      if (field === 'email') openEmailEditor();
-      else openEditor(field);
     });
-  });
-  document.querySelectorAll<HTMLButtonElement>('[data-save]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const field = btn.dataset.save as 'name' | 'bio' | 'email';
-      if (field === 'email') requestEmailChange();
-      else saveField(field);
-    });
-  });
-  document.querySelectorAll<HTMLButtonElement>('[data-cancel]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const field = btn.dataset.cancel as 'name' | 'bio' | 'email';
-      if (field === 'email') closeEmailEditor();
-      else closeEditor(field);
-    });
-  });
 
-  const bioTextarea = document.getElementById('input-bio') as HTMLTextAreaElement;
-  const bioCharCount = document.getElementById('bio-char-count');
-  bioTextarea?.addEventListener('input', () => {
-    if (bioCharCount) bioCharCount.textContent = `${bioTextarea.value.length} / 500`;
-  });
-
-  document.getElementById('input-name')?.addEventListener('keydown', (e: KeyboardEvent) => {
-    if (e.key === 'Escape') closeEditor('name');
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      saveField('name');
-    }
-  });
-  document.getElementById('input-bio')?.addEventListener('keydown', (e: KeyboardEvent) => {
-    if (e.key === 'Escape') closeEditor('bio');
-  });
-  document.getElementById('input-email')?.addEventListener('keydown', (e: KeyboardEvent) => {
-    if (e.key === 'Escape') closeEmailEditor();
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      requestEmailChange();
-    }
-  });
-
-  loadProfile();
-</script>
+    loadProfile();
+  </script>
+</BaseLayout>

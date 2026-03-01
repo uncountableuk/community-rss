@@ -16,31 +16,36 @@ import HomepageCTA from '../components/HomepageCTA.astro';
 ---
 
 <BaseLayout title="Community RSS">
-  <main class="crss-homepage">
-    <header class="crss-homepage__header">
-      <h1 class="crss-homepage__title">Community RSS</h1>
-    </header>
+  <slot name="content">
+    <main class="crss-homepage">
+      <header class="crss-homepage__header">
+        <h1 class="crss-homepage__title">Community RSS</h1>
+      </header>
 
-    <!-- Sign-up CTA — server island renders only for unauthenticated visitors -->
-    <HomepageCTA server:defer>
-      <Fragment slot="fallback"></Fragment>
-    </HomepageCTA>
+      <!-- Sign-up CTA — server island renders only for unauthenticated visitors -->
+      <HomepageCTA server:defer>
+        <Fragment slot="fallback"></Fragment>
+      </HomepageCTA>
 
-    <TabBar />
+      <TabBar />
 
-    <!-- Initial empty grid — articles loaded client-side from the API -->
-    <FeedGrid articles={[]} />
+      <!-- Initial empty grid — articles loaded client-side from the API -->
+      <FeedGrid articles={[]} />
 
-    <div id="crss-empty-state" class="crss-homepage__empty" style="display: none;">
-      <p>No articles yet. Articles will appear here once feeds have been synced.</p>
-    </div>
+      <div id="crss-empty-state" class="crss-homepage__empty" style="display: none;">
+        <p>No articles yet. Articles will appear here once feeds have been synced.</p>
+      </div>
 
-    <div id="crss-loading-state" class="crss-homepage__loading">
-      <p>Loading articles...</p>
-    </div>
+      <div id="crss-loading-state" class="crss-homepage__loading">
+        <p>Loading articles...</p>
+      </div>
 
-    <div id="infinite-scroll-sentinel" class="crss-homepage__sentinel"></div>
-  </main>
+      <div id="infinite-scroll-sentinel" class="crss-homepage__sentinel"></div>
+    </main>
+  </slot>
+  <slot name="before-unnamed-slot" />
+  <slot />
+  <slot name="after-unnamed-slot" />
 </BaseLayout>
 
 <style is:global>

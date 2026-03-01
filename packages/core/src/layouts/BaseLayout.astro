@@ -41,11 +41,9 @@ const { title, description = 'Community RSS' } = Astro.props;
     <slot name="header">
       <header class="crss-header">
         <nav class="crss-nav">
-          <a href="/" class="crss-nav-brand">
-            Community RSS
-          </a>
+          <a href="/" class="crss-nav-brand"> Community RSS </a>
           <AuthButton server:defer>
-            <div slot="fallback" class="crss-auth-skeleton" aria-hidden="true" />
+            <div slot="fallback" class="crss-auth-skeleton" aria-hidden="true"></div>
           </AuthButton>
         </nav>
       </header>
