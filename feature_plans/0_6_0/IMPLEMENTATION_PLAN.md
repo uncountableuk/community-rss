@@ -1815,7 +1815,7 @@ bugs above. Further acceptance testing is planned to verify:
 - [x] Phase 15c: New re-eject algorithm
 - [x] Phase 15d: Purge old registry code
 - [x] Phase 15e: AI instructions (framework + consumer)
-- [ ] Phase 15f: Testing
+- [x] Phase 15f: Testing
 - [ ] Phase 15g: Documentation
 
 **Phase 15a Implementation Notes:**
@@ -1926,6 +1926,34 @@ bugs above. Further acceptance testing is planned to verify:
 - Confirmed no stale `slot-registry` references in consumer-facing
   `copilot-instructions.md` template.
 - All 524 tests pass. No regression.
+
+**Phase 15f Implementation Notes:**
+- Created `test/cli/annotation-parser.test.ts` (16 tests): validates
+  `parseAnnotations()` on real source files (BaseLayout, FeedCard,
+  homepage, auth pages) and synthetic files. Covers: alias extraction,
+  dependency parsing, slot detection, additional imports, self-closing
+  vs. block-form slots, unnamed slot detection, null return for
+  non-annotated files, multiple dependencies, multiple import pairs.
+- Created `test/cli/proxy-generator.test.ts` (17 tests): validates
+  `generateProxy()` and convenience functions. Covers: import markers,
+  core import placement, unconditional additional imports, SLOT: markers
+  for all named slots, Fragment block comments, slot descriptions,
+  default content, unnamed slot passthrough, style block, frontmatter
+  structure, error handling, convenience functions for all discovered
+  components/layouts/pages.
+- Created `test/cli/re-eject.test.ts` (9 tests): validates `reEject()`.
+  Covers: active fragment preservation, SLOT: comment above active
+  fragments, commented block for inactive slots, orphan removal,
+  new slot addition, managed import block regeneration, developer
+  import preservation, style preservation, force path.
+- Created `test/cli/annotation-validity.test.ts` (45 parameterised tests):
+  replaces old slot-registry drift tests. Covers: all components/layouts/
+  pages have valid @eject-module, slot names unique per file, every
+  @eject-slot followed by named <slot>, additionalimport/importfrom
+  pairing, file coverage for components/ and layouts/ directories.
+- Total: 87 new tests added. All 611 tests pass (47 files).
+- Issue: used `require()` for discover* functions in proxy-generator test
+  which fails in ESM context — fixed by importing at top level.
 
 ---
 
