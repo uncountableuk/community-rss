@@ -143,7 +143,8 @@ describe('CLI eject', () => {
             // layout renders its own defaults. Developers add slot="header"
             // or slot="footer" content in their proxy when they want to override.
             expect(content).not.toContain('slot name="header"');
-            expect(content).not.toContain('slot name="footer"');        });
+            expect(content).not.toContain('slot name="footer"');
+        });
 
         it('should throw for unknown layout', () => {
             expect(() => eject({ target: 'layouts/NonExistent', cwd: tempDir })).toThrow(

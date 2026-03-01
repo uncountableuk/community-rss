@@ -592,6 +592,132 @@ de-facto scoping. No two components share class names.
 - [ ] Run E2E suite: `npm run test:e2e` — all pass
 - [ ] Run coverage check: `npm run test:coverage` — ≥80% maintained
 
+### Phase 13: Upgradeable Component Ejection
+
+Implements the Proxy Ejection Pattern described in
+[`upgradeable-ejection/IMPACT_ASSESSMENT.md`](upgradeable-ejection/IMPACT_ASSESSMENT.md).
+Every ejectable artefact (component, layout, page) becomes a wrapper
+around the core version using Astro named slots with fallback content
+as the override mechanism.
+
+#### Phase 13a: Core Component & Layout Slot Architecture
+- [ ] `BaseLayout.astro`: Remove `hasHeaderSlot` / `hasFooterSlot` checks;
+      wrap default header in `<slot name="header">...</slot>` with
+      existing nav+AuthButton as fallback; wrap footer in
+      `<slot name="footer">...</slot>`; add empty `<slot name="below-header" />`
+      between header and main content; add
+      `<slot name="before-unnamed-slot" />` and
+      `<slot name="after-unnamed-slot" />` around `<slot />`
+- [ ] `ArticleModal.astro`: Wrap header section in
+      `<slot name="header">`, body (title + content) in
+      `<slot name="body">`, footer in `<slot name="footer">`;
+      add generic wrapper slots
+- [ ] `SignUpForm.astro`: Wrap `<form>` in `<slot name="form">`,
+      confirmation panel in `<slot name="confirmation">`; add generic
+      wrapper slots
+- [ ] Add generic wrapper slots (`before-unnamed-slot`,
+      `after-unnamed-slot`) to all remaining components:
+      AuthButton, FeedCard, FeedGrid, TabBar, MagicLinkForm,
+      ConsentModal, HomepageCTA
+- [ ] **Validation**: All pages render identically with no visual changes.
+      All existing tests pass.
+
+#### Phase 13b: Core Page Slot Architecture
+- [ ] Wrap `<main>` content of each core page in
+      `<slot name="content">...</slot>` with existing markup as fallback:
+      `index.astro`, `profile.astro`, `terms.astro`, `article/[id].astro`,
+      `auth/signin.astro`, `auth/signup.astro`, `auth/verify.astro`,
+      `auth/verify-email-change.astro`
+- [ ] Add `<slot name="before-unnamed-slot" />` and
+      `<slot name="after-unnamed-slot" />` to each page (inside
+      BaseLayout, around the content slot)
+- [ ] **Validation**: All pages still render correctly. Existing tests pass.
+
+#### Phase 13c: Create Slot Registry
+- [ ] Create `src/cli/slot-registry.mjs` with entries for all ejectable
+      artefacts: 9 components + 1 layout + 8 pages
+- [ ] Each registry entry defines: core import path, alias name,
+      additional imports (with `usedBy` slot reference), ordered slot
+      list (name, type, description, placeholder content), default slot flag
+- [ ] Export `SLOT_REGISTRY`, `KNOWN_COMPONENTS`, `KNOWN_LAYOUTS`,
+      `PAGE_REGISTRY` from the registry (migrate from eject.mjs)
+
+#### Phase 13d: Rewrite Proxy Generators
+- [ ] Rewrite `generateComponentProxy()` to read from `SLOT_REGISTRY`
+      and produce commented slot blocks for all named + generic slots
+- [ ] Rewrite `generateLayoutProxy()` to produce commented slot blocks
+      for head, header, below-header, before/after-unnamed-slot, footer
+- [ ] Create `generatePageProxy()` to produce proxy that imports core
+      page; includes commented `content` slot + generic wrapper slots;
+      includes commented-out imports for components used by that page
+- [ ] Update page eject path to use `generatePageProxy()` instead of
+      file-copy + import rewriting
+- [ ] Remove `rewritePageImports()` function (no longer needed)
+- [ ] **Validation**: `eject pages/profile`, `eject components/FeedCard`,
+      `eject layouts/BaseLayout` all produce correct proxy format
+
+#### Phase 13e: Re-eject Parser & Merge Logic
+- [ ] Implement `parseEjectedFile()` — text-based parser that identifies:
+      commented slot blocks (by `SLOT: <name>` marker), uncommented
+      `<Fragment slot="xxx">` overrides, frontmatter, style block,
+      and other developer content
+- [ ] Implement `mergeSlotContent()` — rebuilds file: for each slot in
+      registry order, emits developer's uncommented override if present,
+      else emits fresh commented block. Preserves `<slot />`, style block.
+- [ ] Modify `eject()` to detect existing files WITHOUT `--force`: if
+      file exists and contains `SLOT:` markers → re-eject (merge); if
+      no markers → legacy proxy, inject slot stubs around existing content
+- [ ] Update `--force` flag: reverts to full overwrite (replace entire
+      file with fresh proxy)
+- [ ] **Validation**: Re-eject on a modified proxy preserves uncommented
+      content and refreshes commented stubs
+
+#### Phase 13f: `eject upgrade` & `eject all` Commands
+- [ ] Implement `ejectUpgrade()` — scan `src/components/`, `src/layouts/`,
+      `src/pages/` for files matching known ejectable targets; re-eject each
+- [ ] Implement `ejectAll()` — eject every known target (fresh or re-eject);
+      also eject actions
+- [ ] Update `eject upgrade` to also replace signpost READMEs in each
+      directory with fresh copies from core templates
+- [ ] Route `eject upgrade` and `eject all` in `bin.mjs`
+- [ ] Update `runEject()` help text for new subcommands
+- [ ] **Validation**: `eject upgrade` and `eject all` work correctly
+
+#### Phase 13g: Update Tests
+- [ ] Update `test/cli/eject.test.ts` — change proxy assertions to verify
+      commented slot blocks, generic wrapper slots, new page proxy format
+- [ ] Create `test/cli/slot-registry.test.ts` — verify registry has entries
+      for all components/layouts/pages; slot names unique; imports valid
+- [ ] Create `test/cli/eject-reejection.test.ts` — re-eject preserves
+      uncommented content; refreshes comment blocks; handles legacy proxies
+- [ ] Create `test/cli/eject-upgrade-all.test.ts` — `upgrade` processes
+      existing ejections; `all` ejects everything; README replacement
+- [ ] **Validation**: All tests pass. Coverage ≥80%.
+
+#### Phase 13h: Documentation & AI Guidance Updates
+- [ ] Update `docs/src/content/docs/guides/customisation.md` — rewrite
+      Eject section for slot proxy pattern, add best practices
+- [ ] Update `docs/src/content/docs/api-reference/cli.md` — document
+      `eject upgrade`, `eject all`, re-eject behaviour, slot reference
+- [ ] Update signpost READMEs (pages, components, layouts) with slot
+      proxy examples and available slot lists
+- [ ] Update `.github/copilot-instructions.md` — Proxy Component Pattern,
+      Upgradeable Ejection, eject CLI
+- [ ] Update `.github/instructions/implementation.instructions.md` —
+      Slot Architecture section, generic wrapper slot requirement
+- [ ] Update consumer AI guidance templates (copilot + cursor)
+
+#### Phase 13i: Playground Smoke Test
+- [ ] Reset playground: `npm run reset:playground`
+- [ ] Verify pages render via injection (no ejected files)
+- [ ] Eject `layouts/BaseLayout` — verify slot proxy format, page renders
+- [ ] Eject `pages/profile` — verify page proxy format, page renders
+- [ ] Uncomment a slot override — verify it replaces the default
+- [ ] Re-eject — verify uncommented content preserved, stubs refreshed
+- [ ] Run `eject upgrade` — verify batch processing
+- [ ] Run full test suite: `npm run test:run`
+- [ ] Run coverage: `npm run test:coverage` — ≥80%
+
 ---
 
 ## Test Strategy
@@ -612,6 +738,14 @@ de-facto scoping. No two components share class names.
 |------|--------|
 | `test/cli/init.test.ts` | Remove assertions for scaffolded page files; add assertions for signpost READMEs |
 | `test/integration/integration-factory.test.ts` | Add tests for conditional page injection logic |
+
+### Phase 13 Test Files
+
+| File | Type | Tests |
+|------|------|-------|
+| `test/cli/slot-registry.test.ts` | Unit | Registry completeness, slot uniqueness, import validity |
+| `test/cli/eject-reejection.test.ts` | Unit | Re-eject preservation of uncommented content, comment block refresh, legacy proxy handling |
+| `test/cli/eject-upgrade-all.test.ts` | Unit | Batch upgrade of all ejections, eject-all coverage, README replacement |
 
 ### Testing Principles (Additions)
 
