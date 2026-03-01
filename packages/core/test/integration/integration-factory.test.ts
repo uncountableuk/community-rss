@@ -1,5 +1,16 @@
 import { describe, it, expect, vi } from 'vitest';
 
+const mockExistsSync = vi.hoisted(() =>
+  vi.fn((path: string | URL) => {
+    const pathStr = path instanceof URL ? path.href : String(path);
+    // Return false for playground page files so all page routes get injected
+    if (pathStr.includes('/src/pages/')) return false;
+    // Fall through to the real implementation for everything else
+    const { existsSync: realExistsSync } = require('node:fs');
+    return realExistsSync(path);
+  }),
+);
+
 // Mock scheduler and database modules imported by integration.ts
 vi.mock('../../src/utils/build/scheduler', () => ({
   startScheduler: vi.fn(),
@@ -9,6 +20,14 @@ vi.mock('../../src/db/connection', () => ({
   createDatabase: vi.fn().mockReturnValue({}),
   closeDatabase: vi.fn(),
 }));
+// Mock existsSync so tests don't depend on playground file state
+vi.mock('node:fs', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs')>();
+  return {
+    ...actual,
+    existsSync: mockExistsSync,
+  };
+});
 
 import { createIntegration } from '../../src/integration';
 

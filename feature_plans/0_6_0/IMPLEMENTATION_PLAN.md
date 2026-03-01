@@ -708,15 +708,15 @@ as the override mechanism.
 - [x] Update consumer AI guidance templates (copilot + cursor)
 
 #### Phase 13i: Playground Smoke Test
-- [ ] Reset playground: `npm run reset:playground`
-- [ ] Verify pages render via injection (no ejected files)
-- [ ] Eject `layouts/BaseLayout` — verify slot proxy format, page renders
-- [ ] Eject `pages/profile` — verify page proxy format, page renders
-- [ ] Uncomment a slot override — verify it replaces the default
-- [ ] Re-eject — verify uncommented content preserved, stubs refreshed
-- [ ] Run `eject upgrade` — verify batch processing
-- [ ] Run full test suite: `npm run test:run`
-- [ ] Run coverage: `npm run test:coverage` — ≥80%
+- [x] Reset playground: `npm run reset:playground`
+- [x] Verify pages render via injection (no ejected files)
+- [x] Eject `layouts/BaseLayout` — verify slot proxy format, page renders
+- [x] Eject `pages/profile` — verify page proxy format, page renders
+- [x] Uncomment a slot override — verify it replaces the default
+- [x] Re-eject — verify uncommented content preserved, stubs refreshed
+- [x] Run `eject upgrade` — verify batch processing
+- [x] Run full test suite: `npm run test:run`
+- [x] Run coverage: `npm run test:coverage` — ≥80%
 
 ---
 
@@ -1448,13 +1448,44 @@ in their proxy.
 > slot reference sections. Signpost READMEs now include slot tables for each
 > target type.
 
+### Phase 13i: Playground Smoke Test — ✅ Completed
+
+- [x] Reset playground — 14 files created, clean state (no .astro in src/)
+- [x] Eject `layouts/BaseLayout` — proxy created with `SLOT:` markers, correct
+      `CoreBaseLayout` import, commented `AuthButton` import
+- [x] Eject `pages/profile` — page proxy created with `SLOT: content`, layout
+      NOT auto-ejected (already existed), correct `CoreProfilePage` import
+- [x] Added active footer override: uncommented `<Fragment slot="footer">`
+      with custom `<footer class="crss-footer">` content
+- [x] Re-ejected `layouts/BaseLayout` — "preserved your customizations"
+      message; active footer override retained at line 77
+- [x] Ran `eject upgrade` — re-ejected both layout and page, refreshed all 3
+      signpost READMEs, footer override preserved
+- [x] Fixed `integration-factory.test.ts` — added selective `existsSync` mock
+      that returns `false` for `/src/pages/` paths but delegates to real
+      implementation for everything else. The test was fragile: it used
+      `file:///app/playground/` as root without mocking `existsSync`, so
+      ejected playground files caused page injection to be skipped.
+- [x] Full test suite: **527 tests passing** across 43 test files
+- [x] Coverage: **87.74%** statements, 88.39% branches, 88.42% functions —
+      all above 80% threshold
+
+> **Notes:** The integration-factory test was using the real playground path
+> (`file:///app/playground/`) and relying on no page files existing there.
+> Since playground is ephemeral and may have ejected files during dev, added
+> a `vi.hoisted()` mock for `existsSync` that selectively returns false for
+> page file paths. This makes the test deterministic regardless of playground
+> state. Used `vi.hoisted()` per project convention for mock variables
+> referenced in `vi.mock()` factories.
+
 ---
 
-### Test Summary (Post-Bug-Fixes)
+### Test Summary (Post-Phase-13)
 
-- **481 tests** passing across 40 test files
-- Coverage: ~87.8% statements, ~88.4% branches, ~88.3% functions
+- **527 tests** passing across 43 test files
+- Coverage: ~87.7% statements, ~88.4% branches, ~88.4% functions
 - All thresholds (≥80%) met
+- Integration factory test made deterministic (selective existsSync mock)
 
 ### Acceptance Testing Status
 
