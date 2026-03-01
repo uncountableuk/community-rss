@@ -252,7 +252,7 @@ const props = Astro.props;
             rmSync(tempDir, { recursive: true, force: true });
         });
 
-        it('should re-eject when file exists with SLOT: markers', () => {
+        it('should skip when file exists with SLOT: markers (direct eject)', () => {
             // First eject
             eject({ target: 'components/FeedCard', cwd: tempDir });
 
@@ -264,23 +264,19 @@ const props = Astro.props;
                 '<Fragment slot="before-unnamed-slot">\n    <p>My Override</p>\n  </Fragment>',
             );
             writeFileSync(filePath, content);
+            const modifiedContent = content;
 
-            // Re-eject without --force
-            const { created, messages } = eject({
+            // Re-eject without --force on direct call (should skip)
+            const { skipped } = eject({
                 target: 'components/FeedCard',
                 cwd: tempDir,
             });
 
-            expect(created).toContain('src/components/FeedCard.astro');
-            expect(
-                messages.some((m: string) => m.includes('Re-ejected')),
-            ).toBe(true);
+            expect(skipped).toContain('src/components/FeedCard.astro');
 
-            // Verify active slot preserved
-            const merged = readFileSync(filePath, 'utf-8');
-            expect(merged).toContain('<p>My Override</p>');
-            // Verify other slots refreshed
-            expect(merged).toContain('SLOT: after-unnamed-slot');
+            // Verify file is unchanged
+            const finalContent = readFileSync(filePath, 'utf-8');
+            expect(finalContent).toBe(modifiedContent);
         });
 
         it('should skip when file exists without SLOT: markers', () => {

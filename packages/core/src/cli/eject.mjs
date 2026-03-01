@@ -344,13 +344,12 @@ export function eject({ target, cwd = process.cwd(), force = false }) {
 
     /**
      * Write or merge a proxy file. If the file exists and contains
-     * SLOT: markers, re-ejects by merging developer customizations
-     * into the fresh proxy. If --force is set, always overwrites.
+     * SLOT: markers, skips it. If --force is set, always overwrites.
      *
      * @param {string} relPath - Path relative to project root
      * @param {string} freshProxy - Freshly generated proxy content
      * @param {string} [registryKey] - Registry key for looking up additional imports
-     * @returns {boolean} Whether the file was created/merged
+     * @returns {boolean} Whether the file was created
      */
     function writeOrMerge(relPath, freshProxy, registryKey) {
         const absPath = join(projectRoot, relPath);
@@ -368,15 +367,12 @@ export function eject({ target, cwd = process.cwd(), force = false }) {
             return true;
         }
 
-        // File exists, no --force — try re-eject
+        // File exists, no --force — check if already ejected
         const existing = readFileSync(absPath, 'utf-8');
         if (existing.includes('SLOT:')) {
-            const parsed = parseEjectedFile(existing);
-            const merged = mergeSlotContent(freshProxy, parsed, registryKey);
-            writeFileSync(absPath, merged);
-            created.push(relPath);
-            messages.push(`  ↳ Re-ejected ${relPath} (preserved your customizations)`);
-            return true;
+            // Already ejected; skip
+            skipped.push(relPath);
+            return false;
         }
 
         // Legacy file without markers — skip
@@ -465,83 +461,8 @@ export function eject({ target, cwd = process.cwd(), force = false }) {
 }
 
 /**
- * Scan the developer's project for previously ejected files and re-eject
- * them, preserving active slot customizations while refreshing stubs
- * from the current framework version.
- *
- * Also replaces signpost READMEs in components/, layouts/, and pages/
- * directories with fresh copies from templates.
- *
- * @param {object} options
- * @param {string} [options.cwd] - Working directory
- * @returns {{ created: string[], skipped: string[], messages: string[] }}
- * @since 0.6.0
- */
-export function ejectUpgrade({ cwd = process.cwd() } = {}) {
-    const projectRoot = findProjectRoot(cwd);
-    if (!projectRoot) {
-        throw new Error(
-            'Could not find package.json. Please run this command from your project directory.',
-        );
-    }
-
-    const allCreated = [];
-    const allSkipped = [];
-    const allMessages = [];
-
-    // Scan for existing ejected files
-    const dirs = [
-        { dir: 'src/components', registry: KNOWN_COMPONENTS, prefix: 'components' },
-        { dir: 'src/layouts', registry: KNOWN_LAYOUTS, prefix: 'layouts' },
-    ];
-
-    for (const { dir, registry, prefix } of dirs) {
-        const absDir = join(projectRoot, dir);
-        if (!existsSync(absDir)) continue;
-
-        for (const name of registry) {
-            const filePath = join(absDir, `${name}.astro`);
-            if (existsSync(filePath)) {
-                // Re-eject (merge) — force=false triggers the merge path
-                const result = eject({ target: `${prefix}/${name}`, cwd, force: false });
-                allCreated.push(...result.created);
-                allSkipped.push(...result.skipped);
-                allMessages.push(...result.messages);
-            }
-        }
-    }
-
-    // Scan for ejected pages
-    for (const [pageName, pageInfo] of Object.entries(PAGE_REGISTRY)) {
-        const filePath = join(projectRoot, 'src', pageInfo.file);
-        if (existsSync(filePath)) {
-            const result = eject({ target: `pages/${pageName}`, cwd, force: false });
-            allCreated.push(...result.created);
-            allSkipped.push(...result.skipped);
-            allMessages.push(...result.messages);
-        }
-    }
-
-    // Replace signpost READMEs with fresh copies from templates
-    const readmeDirs = ['components', 'layouts', 'pages'];
-    for (const dir of readmeDirs) {
-        const templateReadme = join(TEMPLATES_DIR, dir, 'README.md');
-        const targetReadme = join(projectRoot, 'src', dir, 'README.md');
-
-        if (existsSync(templateReadme) && existsSync(join(projectRoot, 'src', dir))) {
-            const content = readFileSync(templateReadme, 'utf-8');
-            mkdirSync(dirname(targetReadme), { recursive: true });
-            writeFileSync(targetReadme, content);
-            allMessages.push(`  ↳ Updated ${`src/${dir}/README.md`} (signpost)`);
-        }
-    }
-
-    return { created: allCreated, skipped: allSkipped, messages: allMessages };
-}
-
-/**
- * Eject every known target (fresh or re-eject depending on state).
- * Includes all pages, components, layouts, and actions.
+ * Eject every known target. Includes all pages, components, layouts, and actions.
+ * Already-ejected files are skipped unless --force is used.
  *
  * @param {object} options
  * @param {string} [options.cwd] - Working directory
@@ -601,7 +522,6 @@ export function runEject(args) {
     components/<name>   Eject a component proxy (e.g., components/FeedCard)
     layouts/<name>      Eject a layout proxy (e.g., layouts/BaseLayout)
     actions             Eject the actions scaffold
-    upgrade             Re-eject all existing proxies (preserves customizations)
     all                 Eject every known target
 
   Available pages: ${Object.keys(PAGE_REGISTRY).join(', ')}
@@ -609,7 +529,7 @@ export function runEject(args) {
   Available layouts: ${KNOWN_LAYOUTS.join(', ')}
 
   Options:
-    --force    Overwrite existing files (full reset on upgrade/all)
+    --force    Overwrite existing files
     --help     Show this help message
 `);
         return;
@@ -620,9 +540,7 @@ export function runEject(args) {
     try {
         let result;
 
-        if (target === 'upgrade') {
-            result = ejectUpgrade({ cwd: process.cwd() });
-        } else if (target === 'all') {
+        if (target === 'all') {
             result = ejectAll({ cwd: process.cwd(), force });
         } else {
             result = eject({ target, force });

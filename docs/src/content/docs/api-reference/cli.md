@@ -142,14 +142,14 @@ npx crss eject actions
 
 Regenerates `src/actions/index.ts` with the latest `coreActions` spread.
 
-#### Special Targets
+### Eject All
 
 ```bash
-# Re-eject all previously ejected files (preserves customizations)
-npx crss eject upgrade
-
 # Eject every known target
 npx crss eject all
+
+# Force overwrite all targets (resets customizations)
+npx crss eject all --force
 ```
 
 ### Options
@@ -187,32 +187,22 @@ const props = Astro.props;
 Uncomment a `<Fragment slot="...">` block and add your content to
 customise that section.
 
-### Re-eject Behaviour
+### Skip Behaviour
 
-- **File with `SLOT:` markers** — merges: preserves uncommented slot
-  overrides, refreshes commented stubs, preserves custom styles/imports
-- **File without markers** — skips (use `--force` to overwrite)
+- **File with `SLOT:` markers** — skips (already ejected; use `--force` to overwrite)
+- **File without markers** — skips (legacy file)
 - **`--force` flag** — full overwrite, resets all customizations
 - **Auto-eject dependencies** — ejecting a page auto-ejects its layout
   and component dependencies
 
-### `eject upgrade`
-
-Scans your `src/` directory for previously ejected files and re-ejects
-each one, preserving your active customizations while refreshing
-framework stubs. Also replaces signpost READMEs with fresh copies.
-
-Run this after every `npm update @community-rss/core`.
-
 ### `eject all`
 
 Ejects every known layout, component, page, and actions target.
-Existing files are merged (unless `--force` is used).
+Already-ejected files are skipped (unless `--force` is used).
 
 <Aside type="tip">
-Ejected proxies survive framework updates. Only the slots you uncomment
-are your responsibility — everything else is automatically refreshed
-when you run `npx crss eject upgrade`.
+Once ejected, running eject again will skip the file to preserve your
+customizations. Use `--force` to fully reset.
 </Aside>
 
 ---

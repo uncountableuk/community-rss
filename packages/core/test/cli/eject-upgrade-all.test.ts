@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { eject, ejectUpgrade, ejectAll } from '@cli/eject.mjs';
+import { eject, ejectAll } from '@cli/eject.mjs';
 import { KNOWN_COMPONENTS, KNOWN_LAYOUTS, PAGE_REGISTRY } from '@cli/slot-registry.mjs';
 import {
     existsSync,
@@ -11,88 +11,6 @@ import {
 } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-
-describe('eject upgrade', () => {
-    let tempDir: string;
-
-    beforeEach(() => {
-        tempDir = mkdtempSync(join(tmpdir(), 'crss-upgrade-'));
-        writeFileSync(join(tempDir, 'package.json'), '{}');
-    });
-
-    afterEach(() => {
-        rmSync(tempDir, { recursive: true, force: true });
-    });
-
-    it('should re-eject all existing ejected components', () => {
-        // Eject two components
-        eject({ target: 'components/FeedCard', cwd: tempDir });
-        eject({ target: 'components/TabBar', cwd: tempDir });
-
-        const { created } = ejectUpgrade({ cwd: tempDir });
-
-        // Both should be re-ejected (they have SLOT: markers)
-        expect(created).toContain('src/components/FeedCard.astro');
-        expect(created).toContain('src/components/TabBar.astro');
-    });
-
-    it('should re-eject existing ejected layouts', () => {
-        eject({ target: 'layouts/BaseLayout', cwd: tempDir });
-
-        const { created } = ejectUpgrade({ cwd: tempDir });
-
-        expect(created).toContain('src/layouts/BaseLayout.astro');
-    });
-
-    it('should re-eject existing ejected pages', () => {
-        eject({ target: 'pages/profile', cwd: tempDir });
-
-        const { created } = ejectUpgrade({ cwd: tempDir });
-
-        expect(created).toContain('src/pages/profile.astro');
-    });
-
-    it('should not eject components that do not exist yet', () => {
-        // Only eject FeedCard
-        eject({ target: 'components/FeedCard', cwd: tempDir });
-
-        const { created } = ejectUpgrade({ cwd: tempDir });
-
-        // TabBar was not previously ejected — should not appear
-        expect(created).not.toContain('src/components/TabBar.astro');
-    });
-
-    it('should preserve active slot customizations during upgrade', () => {
-        // Eject and customize
-        eject({ target: 'components/FeedCard', cwd: tempDir });
-        const filePath = join(tempDir, 'src/components/FeedCard.astro');
-        let content = readFileSync(filePath, 'utf-8');
-        content = content.replace(
-            '{/* <Fragment slot="before-unnamed-slot">\n  </Fragment> */}',
-            '<Fragment slot="before-unnamed-slot">\n    <p>My Custom</p>\n  </Fragment>',
-        );
-        writeFileSync(filePath, content);
-
-        // Upgrade
-        ejectUpgrade({ cwd: tempDir });
-
-        // Verify customization preserved
-        const upgraded = readFileSync(filePath, 'utf-8');
-        expect(upgraded).toContain('<p>My Custom</p>');
-    });
-
-    it('should skip legacy files without SLOT: markers', () => {
-        mkdirSync(join(tempDir, 'src/components'), { recursive: true });
-        writeFileSync(
-            join(tempDir, 'src/components/FeedCard.astro'),
-            '<div>Legacy</div>',
-        );
-
-        const { skipped } = ejectUpgrade({ cwd: tempDir });
-
-        expect(skipped).toContain('src/components/FeedCard.astro');
-    });
-});
 
 describe('eject all', () => {
     let tempDir: string;
@@ -163,5 +81,30 @@ describe('eject all', () => {
 
         const content = readFileSync(filePath, 'utf-8');
         expect(content).toContain('CoreFeedCard');
+    });
+
+    it('should skip already-ejected files without --force', () => {
+        // First eject all
+        ejectAll({ cwd: tempDir });
+
+        // Customize a file
+        const filePath = join(tempDir, 'src/components/FeedCard.astro');
+        let content = readFileSync(filePath, 'utf-8');
+        content = content.replace(
+            '{/* <Fragment slot="before-unnamed-slot">\n  </Fragment> */}',
+            '<Fragment slot="before-unnamed-slot">\n    <p>My Override</p>\n  </Fragment>',
+        );
+        writeFileSync(filePath, content);
+        const customizedContent = content;
+
+        // Eject all again without force
+        const { skipped } = ejectAll({ cwd: tempDir, force: false });
+
+        // Should skip already-ejected files
+        expect(skipped).toContain('src/components/FeedCard.astro');
+
+        // Verify file is unchanged
+        const finalContent = readFileSync(filePath, 'utf-8');
+        expect(finalContent).toBe(customizedContent);
     });
 });

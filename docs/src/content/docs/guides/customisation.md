@@ -149,26 +149,24 @@ const props = Astro.props;
 
 <Aside type="tip">
 Ejected proxies **survive framework updates**. Only the slots you
-uncomment are your responsibility — everything else gets refreshed
-automatically when you run `npx crss eject upgrade`.
+uncomment are your responsibility.
 </Aside>
 
-### Upgrading Ejected Files
+### Re-ejecting or Resetting Files
 
-After a framework update, re-eject to refresh commented stubs while
-preserving your active customizations:
+Once a file is ejected, running eject again will skip it to avoid
+disrupting your customizations. Use `--force` to fully reset:
 
 ```bash
-# Re-eject all previously ejected files
-npx crss eject upgrade
+# Attempt to eject again (skipped if already ejected)
+npx crss eject layouts/BaseLayout
 
 # Force-overwrite a specific file (resets all customizations)
-npx crss eject components/FeedCard --force
-```
+npx crss eject layouts/BaseLayout --force
 
-The re-eject parser detects `SLOT:` markers and preserves any
-uncommented `<Fragment>` overrides, developer-added styles, and
-extra imports.
+# Force-overwrite all targets
+npx crss eject all --force
+```
 
 ### Auto-ejected Dependencies
 

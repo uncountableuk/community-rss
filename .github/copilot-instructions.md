@@ -130,14 +130,11 @@ architecture, code reuse, and adherence to established patterns.
 - Custom `<style>` block in the proxy survives package updates
 - No business logic, no API calls in proxies — only slot overrides and styling
 
-### Upgradeable Ejection
+### Ejection
 - CLI: `npx crss eject <target>` creates proxy wrappers with commented slots
-- CLI: `npx crss eject upgrade` re-ejects all existing proxies — refreshes
-  commented stubs while preserving active (uncommented) slot overrides
 - CLI: `npx crss eject all` ejects every known target
-- `SLOT:` markers in comments enable the re-eject parser to identify
-  and preserve developer customizations
-- `--force` flag fully overwrites (resets all customizations)
+- `SLOT:` markers in comments identify ejected files
+- `--force` flag fully overwrites files (resets all customizations)
 - Slot registry at `src/cli/slot-registry.mjs` is the single source of
   truth for all ejectable artefacts and their slots
 
