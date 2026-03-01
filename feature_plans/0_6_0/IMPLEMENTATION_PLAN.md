@@ -673,15 +673,15 @@ as the override mechanism.
       content and refreshes commented stubs
 
 #### Phase 13f: `eject upgrade` & `eject all` Commands
-- [ ] Implement `ejectUpgrade()` — scan `src/components/`, `src/layouts/`,
+- [x] Implement `ejectUpgrade()` — scan `src/components/`, `src/layouts/`,
       `src/pages/` for files matching known ejectable targets; re-eject each
-- [ ] Implement `ejectAll()` — eject every known target (fresh or re-eject);
+- [x] Implement `ejectAll()` — eject every known target (fresh or re-eject);
       also eject actions
-- [ ] Update `eject upgrade` to also replace signpost READMEs in each
+- [x] Update `eject upgrade` to also replace signpost READMEs in each
       directory with fresh copies from core templates
-- [ ] Route `eject upgrade` and `eject all` in `bin.mjs`
-- [ ] Update `runEject()` help text for new subcommands
-- [ ] **Validation**: `eject upgrade` and `eject all` work correctly
+- [x] Route `eject upgrade` and `eject all` in `bin.mjs`
+- [x] Update `runEject()` help text for new subcommands
+- [x] **Validation**: `eject upgrade` and `eject all` work correctly
 
 #### Phase 13g: Update Tests
 - [ ] Update `test/cli/eject.test.ts` — change proxy assertions to verify
@@ -1367,6 +1367,30 @@ in their proxy.
 > both with the developer's active content. Manual validation confirmed:
 > active slots preserved, custom styles preserved, commented stubs refreshed,
 > `<slot />` passthrough retained. Same 3 test failures as Phase 13d.
+
+### Phase 13f: `eject upgrade` & `eject all` Commands — ✅ Completed
+
+- [x] `ejectUpgrade({ cwd })` — scans `src/components/`, `src/layouts/`,
+      and `src/pages/` for files matching known ejectable targets; calls
+      `eject()` with `force: false` for each (triggering re-eject/merge).
+      Also replaces signpost READMEs from CLI templates.
+- [x] `ejectAll({ cwd, force })` — ejects every known layout, component,
+      page, and actions target. Ejects layouts first since pages depend on
+      them via auto-eject.
+- [x] `runEject()` updated to route `upgrade` and `all` targets to the
+      new functions. Help text updated with new subcommands.
+- [x] No changes to `bin.mjs` needed — it already delegates all eject
+      args to `runEject()`, which now handles the routing.
+
+> **Notes:** `ejectUpgrade()` intentionally uses `force: false` to trigger
+> the merge path for files with `SLOT:` markers. Files without markers
+> (legacy format) are skipped with a message. The `ejectAll()` function
+> orders ejections: layouts → components → pages → actions, ensuring
+> auto-ejected layout proxies for pages don't conflict with explicitly
+> ejected ones. README replacement uses the existing template files at
+> `src/cli/templates/{components,layouts,pages}/README.md`. The messages
+> array in the result includes README update entries separately so the CLI
+> prints them alongside file creation messages.
 
 ---
 

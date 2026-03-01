@@ -435,6 +435,124 @@ export function eject({ target, cwd = process.cwd(), force = false }) {
 }
 
 /**
+ * Scan the developer's project for previously ejected files and re-eject
+ * them, preserving active slot customizations while refreshing stubs
+ * from the current framework version.
+ *
+ * Also replaces signpost READMEs in components/, layouts/, and pages/
+ * directories with fresh copies from templates.
+ *
+ * @param {object} options
+ * @param {string} [options.cwd] - Working directory
+ * @returns {{ created: string[], skipped: string[], messages: string[] }}
+ * @since 0.6.0
+ */
+export function ejectUpgrade({ cwd = process.cwd() } = {}) {
+    const projectRoot = findProjectRoot(cwd);
+    if (!projectRoot) {
+        throw new Error(
+            'Could not find package.json. Please run this command from your project directory.',
+        );
+    }
+
+    const allCreated = [];
+    const allSkipped = [];
+    const allMessages = [];
+
+    // Scan for existing ejected files
+    const dirs = [
+        { dir: 'src/components', registry: KNOWN_COMPONENTS, prefix: 'components' },
+        { dir: 'src/layouts', registry: KNOWN_LAYOUTS, prefix: 'layouts' },
+    ];
+
+    for (const { dir, registry, prefix } of dirs) {
+        const absDir = join(projectRoot, dir);
+        if (!existsSync(absDir)) continue;
+
+        for (const name of registry) {
+            const filePath = join(absDir, `${name}.astro`);
+            if (existsSync(filePath)) {
+                // Re-eject (merge) — force=false triggers the merge path
+                const result = eject({ target: `${prefix}/${name}`, cwd, force: false });
+                allCreated.push(...result.created);
+                allSkipped.push(...result.skipped);
+                allMessages.push(...result.messages);
+            }
+        }
+    }
+
+    // Scan for ejected pages
+    for (const [pageName, pageInfo] of Object.entries(PAGE_REGISTRY)) {
+        const filePath = join(projectRoot, 'src', pageInfo.file);
+        if (existsSync(filePath)) {
+            const result = eject({ target: `pages/${pageName}`, cwd, force: false });
+            allCreated.push(...result.created);
+            allSkipped.push(...result.skipped);
+            allMessages.push(...result.messages);
+        }
+    }
+
+    // Replace signpost READMEs with fresh copies from templates
+    const readmeDirs = ['components', 'layouts', 'pages'];
+    for (const dir of readmeDirs) {
+        const templateReadme = join(TEMPLATES_DIR, dir, 'README.md');
+        const targetReadme = join(projectRoot, 'src', dir, 'README.md');
+
+        if (existsSync(templateReadme) && existsSync(join(projectRoot, 'src', dir))) {
+            const content = readFileSync(templateReadme, 'utf-8');
+            mkdirSync(dirname(targetReadme), { recursive: true });
+            writeFileSync(targetReadme, content);
+            allMessages.push(`  ↳ Updated ${`src/${dir}/README.md`} (signpost)`);
+        }
+    }
+
+    return { created: allCreated, skipped: allSkipped, messages: allMessages };
+}
+
+/**
+ * Eject every known target (fresh or re-eject depending on state).
+ * Includes all pages, components, layouts, and actions.
+ *
+ * @param {object} options
+ * @param {string} [options.cwd] - Working directory
+ * @param {boolean} [options.force] - Overwrite every file
+ * @returns {{ created: string[], skipped: string[], messages: string[] }}
+ * @since 0.6.0
+ */
+export function ejectAll({ cwd = process.cwd(), force = false } = {}) {
+    const allCreated = [];
+    const allSkipped = [];
+    const allMessages = [];
+
+    /** Accumulate results from a sub-eject. */
+    function collect(result) {
+        allCreated.push(...result.created);
+        allSkipped.push(...result.skipped);
+        allMessages.push(...result.messages);
+    }
+
+    // Eject all layouts first (pages depend on them)
+    for (const name of KNOWN_LAYOUTS) {
+        collect(eject({ target: `layouts/${name}`, cwd, force }));
+    }
+
+    // Eject all components
+    for (const name of KNOWN_COMPONENTS) {
+        collect(eject({ target: `components/${name}`, cwd, force }));
+    }
+
+    // Eject all pages
+    for (const pageName of Object.keys(PAGE_REGISTRY)) {
+        collect(eject({ target: `pages/${pageName}`, cwd, force }));
+    }
+
+    // Eject actions
+    collect(eject({ target: 'actions', cwd, force }));
+
+    return { created: allCreated, skipped: allSkipped, messages: allMessages };
+}
+
+/**
  * CLI entry point for the eject command.
  * @param {string[]} args - Command-line arguments after 'eject'
  */
@@ -453,13 +571,15 @@ export function runEject(args) {
     components/<name>   Eject a component proxy (e.g., components/FeedCard)
     layouts/<name>      Eject a layout proxy (e.g., layouts/BaseLayout)
     actions             Eject the actions scaffold
+    upgrade             Re-eject all existing proxies (preserves customizations)
+    all                 Eject every known target
 
   Available pages: ${Object.keys(PAGE_REGISTRY).join(', ')}
   Available components: ${KNOWN_COMPONENTS.join(', ')}
   Available layouts: ${KNOWN_LAYOUTS.join(', ')}
 
   Options:
-    --force    Overwrite existing files
+    --force    Overwrite existing files (full reset on upgrade/all)
     --help     Show this help message
 `);
         return;
@@ -468,15 +588,31 @@ export function runEject(args) {
     console.log('\n  @community-rss/core — Ejecting...\n');
 
     try {
-        const { created, skipped, messages } = eject({ target, force });
+        let result;
+
+        if (target === 'upgrade') {
+            result = ejectUpgrade({ cwd: process.cwd() });
+        } else if (target === 'all') {
+            result = ejectAll({ cwd: process.cwd(), force });
+        } else {
+            result = eject({ target, force });
+        }
+
+        const { created, skipped, messages } = result;
 
         for (const file of created) {
-            // Find if there's a special message for this file
             const msg = messages.find((m) => m.includes(file));
             if (msg) {
                 console.log(msg);
             } else {
                 console.log(`  ✔ Created ${file}`);
+            }
+        }
+
+        // Print messages that aren't file-specific (e.g., README updates)
+        for (const msg of messages) {
+            if (!created.some((f) => msg.includes(f))) {
+                console.log(msg);
             }
         }
 
