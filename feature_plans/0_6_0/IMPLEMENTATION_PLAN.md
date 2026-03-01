@@ -634,12 +634,12 @@ as the override mechanism.
 - [x] **Validation**: All pages still render correctly. Existing tests pass.
 
 #### Phase 13c: Create Slot Registry
-- [ ] Create `src/cli/slot-registry.mjs` with entries for all ejectable
+- [x] Create `src/cli/slot-registry.mjs` with entries for all ejectable
       artefacts: 9 components + 1 layout + 8 pages
-- [ ] Each registry entry defines: core import path, alias name,
+- [x] Each registry entry defines: core import path, alias name,
       additional imports (with `usedBy` slot reference), ordered slot
       list (name, type, description, placeholder content), default slot flag
-- [ ] Export `SLOT_REGISTRY`, `KNOWN_COMPONENTS`, `KNOWN_LAYOUTS`,
+- [x] Export `SLOT_REGISTRY`, `KNOWN_COMPONENTS`, `KNOWN_LAYOUTS`,
       `PAGE_REGISTRY` from the registry (migrate from eject.mjs)
 
 #### Phase 13d: Rewrite Proxy Generators
@@ -1298,6 +1298,23 @@ in their proxy.
 > and script blocks remain inside `<BaseLayout>` and outside the slots.
 > The `article/[id].astro` page required an additional replacement since
 > its `</main>` closing tag was not adjacent to `</BaseLayout>`.
+
+### Phase 13c: Create Slot Registry — ✅ Completed
+
+- [x] Created `src/cli/slot-registry.mjs` with 18 entries (9 components +
+      1 layout + 8 pages)
+- [x] Each entry has: `corePath`, `alias`, `slots` (ordered array with
+      name/type/description/placeholder/isDefault), `additionalImports`
+      (with `usedBy` reference)
+- [x] Exported `SLOT_REGISTRY`, `KNOWN_COMPONENTS`, `KNOWN_LAYOUTS`,
+      `PAGE_REGISTRY` — ready to replace inline definitions in eject.mjs
+
+> **Notes:** `KNOWN_COMPONENTS` and `KNOWN_LAYOUTS` are now derived from
+> `SLOT_REGISTRY` keys via `.filter()` + `.map()`. `PAGE_REGISTRY` is a
+> separate export (not derived) to maintain the `file` + `imports` structure
+> needed by the existing eject logic for auto-ejecting dependencies. The
+> `additionalImports` field on registry entries captures the same info from
+> a different angle (slot-centric vs page-centric).
 
 ---
 
