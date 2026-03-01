@@ -133,7 +133,12 @@ proxy ejection system. When adding or modifying slots:
   developer has a local file at the corresponding path, the framework
   skips injection for that route. Pages are not scaffolded by `init`.
 - To take ownership of a page: `npx crss eject pages/<name>`
-- Pages fetch data client-side from API routes
+- **Pages use server-side rendering (SSR) by default.** Data is fetched in
+  the Astro frontmatter via `Astro.locals.app` (which provides `db`,
+  `config`, and `env`) and passed directly to the template. This ensures
+  SEO, correct HTTP status codes (e.g., 404 for missing resources), and
+  fast first paint. The **homepage is the sole approved CSR exception**
+  (dynamic tab switching). New pages must follow the SSR pattern.
 - Components accept configurable `messages`/`labels` props for all
   user-facing strings
 

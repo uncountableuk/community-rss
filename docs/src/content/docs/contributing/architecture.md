@@ -60,8 +60,11 @@ The framework splits routes into two categories:
 
 - **Injected API routes** (11) — Provided by the integration, handle
   data operations, authentication, and sync
-- **Scaffolded page routes** (8) — Generated into the developer's project
-  via CLI, fully customisable
+- **Injected page routes** (8) — Conditionally injected by the integration;
+  skipped when the developer has a local file at the same path. All pages
+  use **server-side rendering (SSR)** — data is fetched in the Astro
+  frontmatter via `Astro.locals.app`. The homepage is the sole exception,
+  using client-side rendering for dynamic tab switching.
 
 ### AppContext
 

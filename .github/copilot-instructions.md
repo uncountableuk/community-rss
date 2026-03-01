@@ -73,6 +73,13 @@ architecture, code reuse, and adherence to established patterns.
   page routes (8) are conditionally injected — if a developer has a local
   file at the same path, the framework's version is skipped. Use
   `npx crss eject pages/<name>` to take local ownership of a page.
+- **Page rendering**: All pages use **server-side rendering (SSR)** by
+  default. Pages fetch data in frontmatter via `Astro.locals.app` (which
+  provides `db`, `config`, and `env`) and pass it to the template as
+  props. This ensures SEO, fast first paint, and correct HTTP status codes
+  (e.g., 404 for missing resources). The **homepage is the sole approved
+  exception** — it uses client-side rendering for dynamic tab switching.
+  Any new page must follow the SSR pattern unless explicitly approved.
 - Email templates: Astro Container API (`.astro`) is the primary rendering
   path, loaded via `virtual:crss-email-templates` Vite virtual module.
   Developer `.html` files with `{{variable}}` placeholders supported as a
@@ -237,5 +244,5 @@ architecture, code reuse, and adherence to established patterns.
 - ❌ Put styles outside `@layer` in framework CSS — consumer styles must win
 - ❌ Import `astro:actions` from the core package — only consumer projects can
 - ❌ Modify files in `node_modules/` or patch the core package
-- ❌ Import `astro:actions` from the core package — only consumer projects can
-- ❌ Modify files in `node_modules/` or patch the core package
+- ❌ Use client-side rendering for pages that can be server-rendered — SSR is
+  the default; CSR requires explicit approval (homepage is the sole exception)

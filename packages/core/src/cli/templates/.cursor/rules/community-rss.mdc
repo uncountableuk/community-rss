@@ -18,7 +18,8 @@ globs: src/**/*.astro, src/**/*.ts, src/**/*.css
 - Class-level overrides (`.crss-feed-card { ... }`) also work in `theme.css`
 
 ## Pages
-- Pages are served automatically by the framework — no files needed
+- Pages are served automatically by the framework using **server-side rendering (SSR)**
+- Data is fetched on the server — no client-side loading spinners
 - To customise a page: `npx crss eject pages/profile`
 - Ejected pages auto-eject dependent layouts and components
 

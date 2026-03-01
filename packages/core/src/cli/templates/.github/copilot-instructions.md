@@ -37,9 +37,11 @@ colour values; always reference a `--crss-*` token.
 ```
 
 ## Pages
-Pages are served automatically by the framework integration. No page
-files are scaffolded by `npx crss init`. If you need to customise a
-page, eject it:
+Pages are served automatically by the framework integration using
+**server-side rendering (SSR)**. Data is fetched on the server and
+rendered into the HTML response — no client-side loading spinners.
+No page files are scaffolded by `npx crss init`. If you need to
+customise a page, eject it:
 
 ```bash
 npx crss eject pages/profile
