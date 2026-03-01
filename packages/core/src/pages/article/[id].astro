@@ -56,16 +56,18 @@ const pageDescription = article.summary || `Article by ${article.authorName || '
         <div class="crss-article__content" set:html={article.content || ''} />
 
         <footer class="crss-article__footer">
-          {article.originalLink && (
-            <a
-              class="crss-article__original-link"
-              href={article.originalLink}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Read original article →
-            </a>
-          )}
+          {
+            article.originalLink && (
+              <a
+                class="crss-article__original-link"
+                href={article.originalLink}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Read original article →
+              </a>
+            )
+          }
         </footer>
       </article>
     </main>

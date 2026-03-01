@@ -827,6 +827,170 @@ pagination continuation).
 
 ---
 
+### Phase 15: Annotation-Driven Ejection System
+
+**Supersedes** the hand-authored `slot-registry.mjs` approach. All registry
+data moves into `@eject-*` annotations inside the `.astro` source files.
+`eject.mjs` reads annotations at runtime; no intermediate file is generated
+or committed. Full specification in
+`feature_plans/0_6_0/slot-registry-maintenance/IMPACT_ASSESSMENT.md`.
+
+#### Phase 15a: Annotate Source Files
+
+- [ ] Add `@eject-module`, `@alias`, and `@eject-dependency` comment block
+      to frontmatter of all 9 component `.astro` files
+- [ ] Add same block to `layouts/BaseLayout.astro`
+- [ ] Add same block to all 8 page `.astro` files (conditional-injection pages
+      only; API routes are excluded)
+- [ ] Add `@eject-slot` + `@description` annotation above every currently-
+      registered ejectable named slot across all annotated files
+- [ ] Add `@additionalimportN` / `@importfromN` pairs to slots that require
+      additional imports (replace `additionalImports[]` from the registry)
+- [ ] Ensure every ejectable `<slot name="...">` uses the block form
+      (`<slot name="...">default content</slot>`) so the placeholder can be
+      extracted verbatim — not the self-closing form
+- [ ] Verify unnamed `<slot />` is present in layout and pages (passthrough
+      detection is automatic)
+
+#### Phase 15b: Rewrite `eject.mjs` — Annotation Parser
+
+- [ ] Implement `parseAnnotations(sourceFilePath)` in `eject.mjs`:
+  - Reads `.astro` file relative to `__dirname` (package-internal path)
+  - Extracts `@eject-module` block: alias, `@eject-dependency` entries
+  - Extracts non-import frontmatter lines as props definition
+  - Locates each `@eject-slot` annotation + following `<slot name>` tag;
+    extracts slot name, description, additional imports, default content
+  - Detects unnamed `<slot />` (passthrough flag)
+- [ ] Replace all usages of `SLOT_REGISTRY` and `PAGE_REGISTRY` imports in
+      `eject.mjs` with calls to `parseAnnotations()`
+- [ ] Replace `KNOWN_COMPONENTS`, `KNOWN_LAYOUTS` derivation with a
+      filesystem walk of `src/components/` and `src/layouts/` filtered by
+      presence of `@eject-module`
+- [ ] Replace `PAGE_REGISTRY` with a filesystem walk of `src/pages/`
+      (excluding `api/`) filtered by `@eject-module`; derive `file` and
+      `imports` from `@eject-dependency` annotations
+- [ ] Update `generateProxy()` to use the parsed annotation data directly
+      (no `entry.slots`, `entry.propsDefinition`, `entry.additionalImports`)
+- [ ] All `additionalimportN` imports for a file included unconditionally in
+      the `@start-eject-import` block; remove per-slot conditional-uncomment
+      logic from `mergeSlotContent`
+
+#### Phase 15c: Implement New Re-eject Algorithm
+
+- [ ] Implement `reEject(existingProxy, parsedAnnotations)` replacing the
+      existing `parseEjectedFile` / `mergeSlotContent` workflow:
+  1. Regenerate `@start-eject-import` … `@end-eject-import` block
+  2. Strip all `{/* … */}` comment blocks from the body
+  3. For each live `<Fragment slot="name">`, look up the current annotation
+     by slot name; insert a fresh comment block immediately above it
+  4. Remove live `<Fragment>` blocks whose slot name no longer exists in
+     the current annotations (orphan removal)
+  5. Append commented blocks for new slots (in annotations, no live fragment)
+  6. Preserve `<style>` block content unchanged
+- [ ] Add `--force` path: fresh `generateProxy()` output only (no merge)
+- [ ] Update `writeOrMerge()` to use `reEject()` instead of the old merge
+
+#### Phase 15d: Purge Old Registry Code
+
+- [ ] Delete `packages/core/src/cli/slot-registry.mjs`
+- [ ] Remove all `import { SLOT_REGISTRY, … }` references from `eject.mjs`
+      and `bin.mjs`
+- [ ] Delete or rewrite all test files that import from `slot-registry.mjs`
+- [ ] Remove `SLOT_REGISTRY` / `PAGE_REGISTRY` / `KNOWN_COMPONENTS` /
+      `KNOWN_LAYOUTS` from the public API surface (`index.ts`) if exported
+- [ ] Remove `slot-registry.mjs` references from all documentation and
+      `copilot-instructions.md`
+
+#### Phase 15e: AI Instructions
+
+**Framework developer instructions**
+(`packages/core/src/cli/templates/.github/instructions/eject-annotations.instructions.md`
+and the corresponding framework-facing `.github/instructions/` file):
+
+- [ ] Document the `@eject-module` / `@eject-slot` annotation contract
+- [ ] Rule: every new ejectable component/layout/page must have `@eject-module`
+- [ ] Rule: every ejectable named slot must have `@eject-slot` + `@description`
+- [ ] Rule: slots should use block form (`<slot name>default</slot>`) so
+      examples are available in the generated proxy
+- [ ] Rule: aim for many small, granular named slots over few large ones
+- [ ] Rule: after modifying a component, run `npx crss eject <target>` and
+      inspect the generated proxy to verify annotation correctness
+- [ ] Rule: `src/` path in `package.json` `files` must never be removed
+- [ ] Remove all instructions referencing hand-editing `slot-registry.mjs`
+
+**Consumer developer instructions** (in the CLI scaffold template
+`packages/core/src/cli/templates/.github/`):
+
+- [ ] Explain the `@start-eject-import` / `@end-eject-import` block and that
+      it is safe to regenerate (do not put custom imports inside it)
+- [ ] Explain how to activate a slot: uncomment the `<Fragment>` block
+- [ ] Explain that the comment above each active fragment shows the current
+      core default — compare it to see if your override needs updating
+- [ ] Explain the re-eject workflow (`npx crss eject <target>`) and what
+      changes vs. what is preserved
+- [ ] Explain that removed slots (orphans) are automatically cleaned up on
+      re-eject
+- [ ] Explain that developer-added imports must go *outside* the
+      `@start-eject-import` markers to survive a re-eject
+
+#### Phase 15f: Testing
+
+- [ ] Write `test/cli/annotation-parser.test.ts`:
+  - `parseAnnotations()` extracts correct alias, dependencies, props, slots
+  - Handles self-closing slots (empty placeholder)
+  - Handles multiple `@additionalimportN` pairs
+  - Detects unnamed slot passthrough
+  - Returns `null` / throws for files without `@eject-module`
+- [ ] Write `test/cli/proxy-generator.test.ts`:
+  - `generateProxy()` produces correct `@start-eject-import` / `@end-eject-import`
+  - All additional imports included unconditionally
+  - Commented `<Fragment>` blocks contain verbatim default slot content
+  - `<slot />` passthrough included only when unnamed slot detected
+- [ ] Write `test/cli/re-eject.test.ts`:
+  - Active fragments receive updated comment above them
+  - Stale comments are stripped and regenerated
+  - Orphan live fragments are removed
+  - New slots are appended as commented blocks
+  - `@start-eject-import` block is regenerated; `<style>` is preserved
+  - `--force` produces a clean regeneration
+- [ ] Write `test/cli/annotation-validity.test.ts` (replaces drift tests):
+  - Every `.astro` file in `src/components/` and `src/layouts/` either has
+    `@eject-module` or is explicitly excluded (no unknown files)
+  - Every `@eject-slot` annotation is immediately followed by a named `<slot>`
+  - Every `@eject-module` file has `@alias` defined
+  - `@additionalimportN` / `@importfromN` pairs are complete (no orphaned keys)
+- [ ] All old `slot-registry.mjs`-dependent tests deleted
+- [ ] Coverage ≥80% maintained
+
+#### Phase 15g: Documentation
+
+- [ ] Update Starlight docs: replace "slot registry" references with
+      "eject annotations"
+- [ ] Add annotation format reference page to docs
+- [ ] Update `eject` CLI help text to explain annotation-driven discovery
+- [ ] Update `README.md` note about `src/` in `files`
+
+### Phase 15 File Changes
+
+| File | Action |
+|------|--------|
+| `packages/core/src/cli/slot-registry.mjs` | **Deleted** |
+| `packages/core/src/cli/eject.mjs` | **Rewritten** |
+| `packages/core/src/components/*.astro` | **Annotated** (9 files) |
+| `packages/core/src/layouts/BaseLayout.astro` | **Annotated** |
+| `packages/core/src/pages/**/*.astro` | **Annotated** (8 files) |
+| `packages/core/test/cli/annotation-parser.test.ts` | **New** |
+| `packages/core/test/cli/proxy-generator.test.ts` | **New** |
+| `packages/core/test/cli/re-eject.test.ts` | **New** |
+| `packages/core/test/cli/annotation-validity.test.ts` | **New** |
+| `packages/core/test/cli/eject.test.ts` (old registry tests) | **Purged/replaced** |
+| `.github/instructions/eject-annotations.instructions.md` | **New** |
+| `packages/core/src/cli/templates/.github/` (consumer instructions) | **Updated** |
+| `packages/core/index.ts` | Remove any `SLOT_REGISTRY` exports |
+| `docs/src/content/docs/` | Update relevant pages |
+
+---
+
 ## Migration Guide (for Pre-0.6.0 Projects)
 
 Documented in the changelog and in the Starlight docs upgrade guide.
@@ -899,7 +1063,8 @@ Back up any custom actions you've added first.
 | Phase 12: Playground reset & smoke test | ~1 hour |
 | Phase 13: Upgradeable component ejection | ~8 hours |
 | Phase 14: Article page SSR migration | ~4 hours |
-| **Total** | **~39.5 hours** |
+| Phase 15: Annotation-driven ejection system | ~10 hours |
+| **Total** | **~49.5 hours** |
 
 ---
 
@@ -1642,6 +1807,18 @@ bugs above. Further acceptance testing is planned to verify:
 - Coverage: ~87.7% statements, ~88.4% branches, ~88.4% functions
 - All thresholds (≥80%) met
 - New test file: `test/pages/article.test.ts` (20 tests)
+
+### Phase 15: Annotation-Driven Ejection System — Not Started
+
+- [ ] Phase 15a: Annotate source files
+- [ ] Phase 15b: Rewrite `eject.mjs` — annotation parser
+- [ ] Phase 15c: New re-eject algorithm
+- [ ] Phase 15d: Purge old registry code
+- [ ] Phase 15e: AI instructions (framework + consumer)
+- [ ] Phase 15f: Testing
+- [ ] Phase 15g: Documentation
+
+---
 
 ### Known Issues
 
