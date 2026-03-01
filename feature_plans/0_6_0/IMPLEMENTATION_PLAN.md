@@ -657,19 +657,19 @@ as the override mechanism.
       `eject layouts/BaseLayout` all produce correct proxy format
 
 #### Phase 13e: Re-eject Parser & Merge Logic
-- [ ] Implement `parseEjectedFile()` — text-based parser that identifies:
+- [x] Implement `parseEjectedFile()` — text-based parser that identifies:
       commented slot blocks (by `SLOT: <name>` marker), uncommented
       `<Fragment slot="xxx">` overrides, frontmatter, style block,
       and other developer content
-- [ ] Implement `mergeSlotContent()` — rebuilds file: for each slot in
+- [x] Implement `mergeSlotContent()` — rebuilds file: for each slot in
       registry order, emits developer's uncommented override if present,
       else emits fresh commented block. Preserves `<slot />`, style block.
-- [ ] Modify `eject()` to detect existing files WITHOUT `--force`: if
+- [x] Modify `eject()` to detect existing files WITHOUT `--force`: if
       file exists and contains `SLOT:` markers → re-eject (merge); if
       no markers → legacy proxy, inject slot stubs around existing content
-- [ ] Update `--force` flag: reverts to full overwrite (replace entire
+- [x] Update `--force` flag: reverts to full overwrite (replace entire
       file with fresh proxy)
-- [ ] **Validation**: Re-eject on a modified proxy preserves uncommented
+- [x] **Validation**: Re-eject on a modified proxy preserves uncommented
       content and refreshes commented stubs
 
 #### Phase 13f: `eject upgrade` & `eject all` Commands
@@ -1342,6 +1342,31 @@ in their proxy.
 > core import; (2) nested page test expected `../../layouts/` depth-relative
 > import; (3) layout proxy test expected `slot name="head"` string and no
 > header/footer slots. All will be updated in Phase 13g.
+
+### Phase 13e: Re-eject Parser & Merge Logic — ✅ Completed
+
+- [x] `parseEjectedFile(content)` — strips `{/* */}` JSX comments, then
+      regex-matches uncommented `<Fragment slot="...">` blocks into
+      `activeSlots` Map. Also extracts custom style content (ignoring the
+      default placeholder comment) and developer-added import lines
+- [x] `mergeSlotContent(freshProxy, parsed)` — for each active slot, finds
+      the matching `SLOT: <name>` comment header + commented Fragment block
+      via regex and replaces with the developer's uncommented content.
+      Preserves custom styles and extra imports.
+- [x] `writeOrMerge(relPath, freshProxy)` — new inner helper in `eject()`:
+      creates new files, re-ejects existing files with `SLOT:` markers,
+      skips legacy files without markers, or overwrites with `--force`
+- [x] Primary eject paths (pages/components/layouts) now use `writeOrMerge`;
+      auto-ejected dependencies still use `writeFile` (skip if exists)
+
+> **Notes:** The parser uses a two-pass approach: first strips all JSX
+> comments (`{/* ... */}`) to isolate active content, then regex-matches
+> `<Fragment slot="name">` blocks. This avoids false positives from
+> commented-out fragments. The merge regex matches both the `SLOT: <name>`
+> comment header and the adjacent commented fragment as one unit, replacing
+> both with the developer's active content. Manual validation confirmed:
+> active slots preserved, custom styles preserved, commented stubs refreshed,
+> `<slot />` passthrough retained. Same 3 test failures as Phase 13d.
 
 ---
 

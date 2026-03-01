@@ -10,23 +10,25 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 ---
 
-<BaseLayout title="Verifying…" description="Verifying your magic link">  <slot name="content">  <main class="crss-verify-page">
-    <div class="crss-verify-container">
-      <div id="verify-loading" class="crss-verify-state">
-        <div class="crss-verify-spinner" aria-hidden="true"></div>
-        <h1 class="crss-verify-title">Verifying your link…</h1>
-        <p class="crss-verify-message">Please wait while we sign you in.</p>
-      </div>
+<BaseLayout title="Verifying…" description="Verifying your magic link">
+  <slot name="content">
+    <main class="crss-verify-page">
+      <div class="crss-verify-container">
+        <div id="verify-loading" class="crss-verify-state">
+          <div class="crss-verify-spinner" aria-hidden="true"></div>
+          <h1 class="crss-verify-title">Verifying your link…</h1>
+          <p class="crss-verify-message">Please wait while we sign you in.</p>
+        </div>
 
-      <div id="verify-error" class="crss-verify-state" style="display: none;">
-        <h1 class="crss-verify-title">Verification Failed</h1>
-        <p id="verify-error-message" class="crss-verify-message">
-          This link is invalid or has expired.
-        </p>
-        <a href="/auth/signin" class="crss-verify-link">Try signing in again</a>
+        <div id="verify-error" class="crss-verify-state" style="display: none;">
+          <h1 class="crss-verify-title">Verification Failed</h1>
+          <p id="verify-error-message" class="crss-verify-message">
+            This link is invalid or has expired.
+          </p>
+          <a href="/auth/signin" class="crss-verify-link">Try signing in again</a>
+        </div>
       </div>
-    </div>
-  </main>
+    </main>
   </slot>
   <slot name="before-unnamed-slot" />
   <slot />

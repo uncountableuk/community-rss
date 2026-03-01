@@ -72,6 +72,113 @@ function generateSlotBlock(slot) {
 }
 
 /**
+ * Parse an ejected proxy file and extract developer customizations.
+ *
+ * Detects:
+ * - Active (uncommented) `<Fragment slot="name">` overrides
+ * - Developer-added style content (beyond the default comment)
+ * - Developer-added imports (beyond the core import)
+ *
+ * @param {string} content - File content of the ejected proxy
+ * @returns {{ activeSlots: Map<string, string>, styleContent: string, extraImports: string[] }}
+ * @since 0.6.0
+ */
+export function parseEjectedFile(content) {
+    /** @type {Map<string, string>} */
+    const activeSlots = new Map();
+
+    // Strip all {/* ... */} JSX comment blocks to isolate active content
+    const withoutComments = content.replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
+
+    // Find all uncommented <Fragment slot="name">...</Fragment> blocks
+    const fragmentRegex = /<Fragment slot="([^"]+)">([\s\S]*?)<\/Fragment>/g;
+    let match;
+    while ((match = fragmentRegex.exec(withoutComments)) !== null) {
+        activeSlots.set(match[1], match[0]);
+    }
+
+    // Extract style content (if not just the default placeholder)
+    let styleContent = '';
+    const styleMatch = content.match(/<style>([\s\S]*?)<\/style>/);
+    if (styleMatch) {
+        const trimmed = styleMatch[1].trim();
+        if (trimmed && trimmed !== '/* Add your custom styles here */') {
+            styleContent = styleMatch[1];
+        }
+    }
+
+    // Extract developer-added import lines from frontmatter
+    const extraImports = [];
+    const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
+    if (fmMatch) {
+        for (const line of fmMatch[1].split('\n')) {
+            const trimmed = line.trim();
+            // Capture imports that aren't the core framework import
+            // and aren't already-commented imports
+            if (
+                trimmed.startsWith('import ') &&
+                !trimmed.includes('@community-rss/core/')
+            ) {
+                extraImports.push(line);
+            }
+        }
+    }
+
+    return { activeSlots, styleContent, extraImports };
+}
+
+/**
+ * Merge developer customizations from a parsed ejected file into a
+ * freshly generated proxy.
+ *
+ * For each active slot, the corresponding commented block in the fresh
+ * proxy is replaced with the developer's uncommented content.
+ *
+ * @param {string} freshProxy - Freshly generated proxy content
+ * @param {{ activeSlots: Map<string, string>, styleContent: string, extraImports: string[] }} parsed
+ * @returns {string}
+ * @since 0.6.0
+ */
+export function mergeSlotContent(freshProxy, parsed) {
+    let result = freshProxy;
+
+    // Replace commented slot blocks with active developer content
+    for (const [slotName, fragmentHtml] of parsed.activeSlots) {
+        // Pattern: the comment header block + the commented Fragment block
+        // We replace both with the developer's uncommented Fragment
+        const escapedName = slotName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const commentedBlockPattern = new RegExp(
+            // Match the SLOT: comment header + the commented Fragment
+            `\\s*\\{/\\*\\s*={3,}\\s*\\n\\s*SLOT:\\s*${escapedName}\\b[\\s\\S]*?={3,}\\s*\\*/\\}` +
+            `\\s*\\{/\\*\\s*<Fragment slot="${escapedName}">[\\s\\S]*?</Fragment>\\s*\\*/\\}`,
+        );
+
+        const replacement = `\n  ${fragmentHtml.trim()}`;
+        result = result.replace(commentedBlockPattern, replacement);
+    }
+
+    // Preserve developer's style content
+    if (parsed.styleContent) {
+        result = result.replace(
+            /<style>\s*\/\*\s*Add your custom styles here\s*\*\/\s*<\/style>/,
+            `<style>${parsed.styleContent}</style>`,
+        );
+    }
+
+    // Preserve developer's extra imports
+    if (parsed.extraImports.length > 0) {
+        const importBlock = parsed.extraImports.join('\n');
+        // Insert after the last uncommented import line in frontmatter
+        result = result.replace(
+            /(import\s+\w+\s+from\s+'@community-rss\/core\/[^']+';)/,
+            `$1\n${importBlock}`,
+        );
+    }
+
+    return result;
+}
+
+/**
  * Generate a proxy wrapper from a registry entry.
  *
  * Produces:
@@ -185,6 +292,7 @@ export function eject({ target, cwd = process.cwd(), force = false }) {
 
     /**
      * Write a file, handling directory creation and force/skip logic.
+     * Used for auto-ejected dependencies — does NOT re-eject.
      * @param {string} relPath - Path relative to project root
      * @param {string} content - File content
      * @param {string} [reason] - Why this file was created (for auto-ejected deps)
@@ -203,6 +311,47 @@ export function eject({ target, cwd = process.cwd(), force = false }) {
             messages.push(`  ↳ Auto-created ${relPath} (${reason})`);
         }
         return true;
+    }
+
+    /**
+     * Write or merge a proxy file. If the file exists and contains
+     * SLOT: markers, re-ejects by merging developer customizations
+     * into the fresh proxy. If --force is set, always overwrites.
+     *
+     * @param {string} relPath - Path relative to project root
+     * @param {string} freshProxy - Freshly generated proxy content
+     * @returns {boolean} Whether the file was created/merged
+     */
+    function writeOrMerge(relPath, freshProxy) {
+        const absPath = join(projectRoot, relPath);
+
+        if (!existsSync(absPath)) {
+            mkdirSync(dirname(absPath), { recursive: true });
+            writeFileSync(absPath, freshProxy);
+            created.push(relPath);
+            return true;
+        }
+
+        if (force) {
+            writeFileSync(absPath, freshProxy);
+            created.push(relPath);
+            return true;
+        }
+
+        // File exists, no --force — try re-eject
+        const existing = readFileSync(absPath, 'utf-8');
+        if (existing.includes('SLOT:')) {
+            const parsed = parseEjectedFile(existing);
+            const merged = mergeSlotContent(freshProxy, parsed);
+            writeFileSync(absPath, merged);
+            created.push(relPath);
+            messages.push(`  ↳ Re-ejected ${relPath} (preserved your customizations)`);
+            return true;
+        }
+
+        // Legacy file without markers — skip
+        skipped.push(relPath);
+        return false;
     }
 
     // --- Parse target ---
@@ -231,7 +380,7 @@ export function eject({ target, cwd = process.cwd(), force = false }) {
         }
 
         const proxy = generatePageProxy(name);
-        writeFile(`src/${pageInfo.file}`, proxy);
+        writeOrMerge(`src/${pageInfo.file}`, proxy);
 
         // Auto-eject layout proxy if needed
         for (const layout of pageInfo.imports.layouts) {
@@ -263,7 +412,7 @@ export function eject({ target, cwd = process.cwd(), force = false }) {
         }
 
         const proxy = generateComponentProxy(name);
-        writeFile(`src/components/${name}.astro`, proxy);
+        writeOrMerge(`src/components/${name}.astro`, proxy);
         return { created, skipped, messages };
     }
 
@@ -276,7 +425,7 @@ export function eject({ target, cwd = process.cwd(), force = false }) {
         }
 
         const proxy = generateLayoutProxy(name);
-        writeFile(`src/layouts/${name}.astro`, proxy);
+        writeOrMerge(`src/layouts/${name}.astro`, proxy);
         return { created, skipped, messages };
     }
 

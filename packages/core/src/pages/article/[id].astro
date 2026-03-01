@@ -16,41 +16,41 @@ const { id } = Astro.params;
 
 <BaseLayout title="Article" description="Article detail">
   <slot name="content">
-  <main class="crss-article-page">
-    <div id="article-loading" class="crss-article-page__loading">
-      <p>Loading article...</p>
-    </div>
+    <main class="crss-article-page">
+      <div id="article-loading" class="crss-article-page__loading">
+        <p>Loading article...</p>
+      </div>
 
-    <div id="article-error" class="crss-article-page__error" style="display: none;">
-      <p id="article-error-message">Article not found.</p>
-      <a href="/">← Back to feed</a>
-    </div>
+      <div id="article-error" class="crss-article-page__error" style="display: none;">
+        <p id="article-error-message">Article not found.</p>
+        <a href="/">← Back to feed</a>
+      </div>
 
-    <article id="article-content" class="crss-article" style="display: none;">
-      <header class="crss-article__header">
-        <a href="/" class="crss-article__back">← Back to feed</a>
-        <div class="crss-article__meta">
-          <time id="article-date"></time>
-          <span id="article-author"></span>
-        </div>
-        <h1 id="article-title" class="crss-article__title"></h1>
-      </header>
+      <article id="article-content" class="crss-article" style="display: none;">
+        <header class="crss-article__header">
+          <a href="/" class="crss-article__back">← Back to feed</a>
+          <div class="crss-article__meta">
+            <time id="article-date"></time>
+            <span id="article-author"></span>
+          </div>
+          <h1 id="article-title" class="crss-article__title"></h1>
+        </header>
 
-      <div id="article-body" class="crss-article__content"></div>
+        <div id="article-body" class="crss-article__content"></div>
 
-      <footer class="crss-article__footer">
-        <a
-          id="article-original-link"
-          class="crss-article__original-link"
-          target="_blank"
-          rel="noopener noreferrer"
-          style="display: none;"
-        >
-          Read original article →
-        </a>
-      </footer>
-    </article>
-  </main>
+        <footer class="crss-article__footer">
+          <a
+            id="article-original-link"
+            class="crss-article__original-link"
+            target="_blank"
+            rel="noopener noreferrer"
+            style="display: none;"
+          >
+            Read original article →
+          </a>
+        </footer>
+      </article>
+    </main>
   </slot>
   <slot name="before-unnamed-slot" />
   <slot />
