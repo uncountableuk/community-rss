@@ -1,53 +1,71 @@
 ---
 /**
- * Article detail page — renders a single article.
+ * Article detail page — renders a single article via SSR.
  *
- * Loads article data client-side from the API for display.
- * The URL parameter [id] identifies the article.
+ * Loads article data server-side in the frontmatter via the database
+ * query layer. The full article content is included in the initial
+ * HTML response for SEO and performance.
  *
  * Customise this page to fit your community's design.
  *
  * @route /article/[id]
+ * @since 0.2.0
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getArticleById } from '../../db/queries/articles';
+import type { AppContext } from '../../types/context';
 
 const { id } = Astro.params;
+const app = (Astro.locals as { app?: AppContext }).app;
+
+if (!id || !app?.db) {
+  return new Response('Not Found', { status: 404 });
+}
+
+const article = await getArticleById(app.db, id);
+
+if (!article) {
+  return new Response('Not Found', { status: 404 });
+}
+
+const formattedDate = article.publishedAt
+  ? new Date(article.publishedAt).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    })
+  : '';
+
+const pageTitle = `${article.title} — Community RSS`;
+const pageDescription = article.summary || `Article by ${article.authorName || 'Unknown'}`;
 ---
 
-<BaseLayout title="Article" description="Article detail">
+<BaseLayout title={pageTitle} description={pageDescription}>
   <slot name="content">
     <main class="crss-article-page">
-      <div id="article-loading" class="crss-article-page__loading">
-        <p>Loading article...</p>
-      </div>
-
-      <div id="article-error" class="crss-article-page__error" style="display: none;">
-        <p id="article-error-message">Article not found.</p>
-        <a href="/">← Back to feed</a>
-      </div>
-
-      <article id="article-content" class="crss-article" style="display: none;">
+      <article class="crss-article">
         <header class="crss-article__header">
           <a href="/" class="crss-article__back">← Back to feed</a>
           <div class="crss-article__meta">
-            <time id="article-date"></time>
-            <span id="article-author"></span>
+            {formattedDate && <time>{formattedDate}</time>}
+            <span>by {article.authorName || 'Unknown'}</span>
           </div>
-          <h1 id="article-title" class="crss-article__title"></h1>
+          <h1 class="crss-article__title">{article.title}</h1>
         </header>
 
-        <div id="article-body" class="crss-article__content"></div>
+        <div class="crss-article__content" set:html={article.content || ''} />
 
         <footer class="crss-article__footer">
-          <a
-            id="article-original-link"
-            class="crss-article__original-link"
-            target="_blank"
-            rel="noopener noreferrer"
-            style="display: none;"
-          >
-            Read original article →
-          </a>
+          {article.originalLink && (
+            <a
+              class="crss-article__original-link"
+              href={article.originalLink}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Read original article →
+            </a>
+          )}
         </footer>
       </article>
     </main>
@@ -63,25 +81,6 @@ const { id } = Astro.params;
       max-width: 800px;
       margin: 0 auto;
       padding: var(--crss-space-xl) var(--crss-space-md);
-    }
-
-    .crss-article-page__loading {
-      text-align: center;
-      padding: var(--crss-space-3xl);
-      color: var(--crss-text-muted);
-    }
-
-    .crss-article-page__error {
-      text-align: center;
-      padding: var(--crss-space-3xl);
-      color: var(--crss-text-muted);
-    }
-
-    .crss-article-page__error a {
-      color: var(--crss-brand-primary);
-      text-decoration: none;
-      margin-top: var(--crss-space-md);
-      display: inline-block;
     }
 
     .crss-article__back {
@@ -163,80 +162,3 @@ const { id } = Astro.params;
     }
   }
 </style>
-
-<script define:vars={{ id }}>
-  async function loadArticle() {
-    const loadingEl = document.getElementById('article-loading');
-    const errorEl = document.getElementById('article-error');
-    const contentEl = document.getElementById('article-content');
-
-    if (!id) {
-      if (loadingEl) loadingEl.style.display = 'none';
-      if (errorEl) errorEl.style.display = 'block';
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/v1/articles?id=${encodeURIComponent(id)}`);
-
-      if (!response.ok) {
-        if (loadingEl) loadingEl.style.display = 'none';
-        if (errorEl) errorEl.style.display = 'block';
-        return;
-      }
-
-      const article = await response.json();
-
-      if (!article || !article.data) {
-        if (loadingEl) loadingEl.style.display = 'none';
-        if (errorEl) errorEl.style.display = 'block';
-        return;
-      }
-
-      const data = Array.isArray(article.data) ? article.data[0] : article.data;
-      if (!data) {
-        if (loadingEl) loadingEl.style.display = 'none';
-        if (errorEl) errorEl.style.display = 'block';
-        return;
-      }
-
-      // Populate article content
-      const titleEl = document.getElementById('article-title');
-      const dateEl = document.getElementById('article-date');
-      const authorEl = document.getElementById('article-author');
-      const bodyEl = document.getElementById('article-body');
-      const linkEl = document.getElementById('article-original-link');
-
-      if (titleEl) titleEl.textContent = data.title;
-      if (dateEl && data.publishedAt) {
-        dateEl.textContent = new Date(data.publishedAt).toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        });
-      }
-      if (authorEl) authorEl.textContent = `by ${data.authorName || 'Unknown'}`;
-      if (bodyEl) bodyEl.innerHTML = data.content || '';
-      if (linkEl && data.originalLink) {
-        linkEl.href = data.originalLink;
-        linkEl.style.display = 'inline';
-      }
-
-      // Update page title
-      document.title = `${data.title} — Community RSS`;
-
-      if (loadingEl) loadingEl.style.display = 'none';
-      if (contentEl) contentEl.style.display = 'block';
-    } catch (e) {
-      console.error('[community-rss] Failed to load article:', e);
-      if (loadingEl) loadingEl.style.display = 'none';
-      if (errorEl) {
-        document.getElementById('article-error-message').textContent =
-          'Failed to load article. Please try again later.';
-        errorEl.style.display = 'block';
-      }
-    }
-  }
-
-  loadArticle();
-</script>

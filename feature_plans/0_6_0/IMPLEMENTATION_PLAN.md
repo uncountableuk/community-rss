@@ -718,6 +718,70 @@ as the override mechanism.
 - [x] Run full test suite: `npm run test:run`
 - [x] Run coverage: `npm run test:coverage` — ≥80%
 
+### Phase 14: Article Page SSR Migration
+
+Implements the findings from
+[`article-ssr/IMPACT_ASSESSMENT.md`](article-ssr/IMPACT_ASSESSMENT.md).
+Migrates the article detail page (`/article/[id]`) from Client-Side
+Rendering (CSR) to Server-Side Rendering (SSR). The original CSR approach
+was a workaround for Cloudflare Workers constraints that was carried
+forward after the 0.4.0 platform migration.
+
+**Architectural rule established:** All pages MUST use SSR for initial
+content rendering unless explicitly approved otherwise. The homepage is
+the sole approved CSR exception (infinite scroll requires client-side
+pagination continuation).
+
+#### Phase 14a: SSR Implementation for `article/[id].astro`
+- [ ] Move fetch logic from `<script>` block into Astro frontmatter:
+      import `getArticleById` from `../../db/queries/articles`, access
+      `Astro.locals.app` for DB, query article by `id` param
+- [ ] Handle missing/invalid article: return 404 Response when article
+      not found or `id` missing
+- [ ] Replace empty HTML shell with SSR-populated template: title,
+      author, date, content (`set:html`), original link
+- [ ] Pass dynamic `title` and `description` to `BaseLayout` props for
+      SEO (article title, article summary)
+- [ ] Remove entire `<script define:vars={{ id }}>` block (~60 lines)
+- [ ] Remove loading state (`#article-loading`) and error state
+      (`#article-error`) divs (no longer needed — server handles this)
+- [ ] Remove `style="display: none;"` from article container
+- [ ] Preserve all CSS styles, slot architecture, and `crss-` class names
+- [ ] **Validation**: Article page renders full content on first load.
+      No client-side JavaScript needed for article display.
+
+#### Phase 14b: Unit Tests for SSR Article Page
+- [ ] Create `test/pages/article.test.ts` to verify SSR logic:
+      - `getArticleById` is called with correct `id` parameter
+      - 404 returned when article not found
+      - 404 returned when `id` param missing
+      - Article data correctly shapes the response
+- [ ] Run full test suite: `npm run test:run` — all pass
+- [ ] Verify ≥80% coverage maintained
+
+#### Phase 14c: Documentation & AI Guidance — SSR Page Rendering Policy
+- [ ] Update `.github/copilot-instructions.md`:
+      - Add "Page Rendering" section: all pages use SSR by default;
+        document the homepage as the sole approved CSR exception
+      - Update Architecture notes to reflect SSR article page
+- [ ] Update `.github/instructions/implementation.instructions.md`:
+      - Change "Pages fetch data client-side from API routes" in Route
+        Architecture section to document SSR data fetching pattern
+      - Add SSR page rendering standard: pages query DB in frontmatter
+        via `Astro.locals.app`, only use CSR for paginated continuations
+- [ ] Update `docs/src/content/docs/contributing/architecture.md`:
+      - Update Route Split section to reflect SSR rendering for pages
+- [ ] Update consumer AI guidance templates:
+      - `src/cli/templates/.github/copilot-instructions.md`
+      - `src/cli/templates/.cursor/rules/community-rss.mdc`
+- [ ] **Validation**: All documentation references SSR as the default
+      rendering approach for pages
+
+#### Phase 14d: Commit & Verify
+- [ ] Run `npm run test:run` — all tests pass
+- [ ] Run `npm run test:coverage` — ≥80% maintained
+- [ ] Commit each sub-phase separately with descriptive messages
+
 ---
 
 ## Test Strategy
@@ -746,6 +810,12 @@ as the override mechanism.
 | `test/cli/slot-registry.test.ts` | Unit | Registry completeness, slot uniqueness, import validity |
 | `test/cli/eject-reejection.test.ts` | Unit | Re-eject preservation of uncommented content, comment block refresh, legacy proxy handling |
 | `test/cli/eject-upgrade-all.test.ts` | Unit | Batch upgrade of all ejections, eject-all coverage, README replacement |
+
+### Phase 14 Test Files
+
+| File | Type | Tests |
+|------|------|-------|
+| `test/pages/article.test.ts` | Unit | SSR frontmatter logic: article found, not found (404), missing ID (404), DB access |
 
 ### Testing Principles (Additions)
 
@@ -827,7 +897,9 @@ Back up any custom actions you've added first.
 | Phase 10: Documentation | ~3 hours |
 | Phase 11: `.github` instruction updates | ~2 hours |
 | Phase 12: Playground reset & smoke test | ~1 hour |
-| **Total** | **~27.5 hours** |
+| Phase 13: Upgradeable component ejection | ~8 hours |
+| Phase 14: Article page SSR migration | ~4 hours |
+| **Total** | **~39.5 hours** |
 
 ---
 
