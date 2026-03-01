@@ -134,12 +134,16 @@ export function parseEjectedFile(content) {
  * For each active slot, the corresponding commented block in the fresh
  * proxy is replaced with the developer's uncommented content.
  *
+ * Additionally, any additional imports required by active slots are
+ * automatically uncommented.
+ *
  * @param {string} freshProxy - Freshly generated proxy content
  * @param {{ activeSlots: Map<string, string>, styleContent: string, extraImports: string[] }} parsed
+ * @param {string} registryKey - Registry key to identify the entry (e.g., 'layouts/BaseLayout')
  * @returns {string}
  * @since 0.6.0
  */
-export function mergeSlotContent(freshProxy, parsed) {
+export function mergeSlotContent(freshProxy, parsed, registryKey) {
     let result = freshProxy;
 
     // Replace commented slot blocks with active developer content
@@ -173,6 +177,27 @@ export function mergeSlotContent(freshProxy, parsed) {
             /(import\s+\w+\s+from\s+'@community-rss\/core\/[^']+';)/,
             `$1\n${importBlock}`,
         );
+    }
+
+    // Automatically uncomment required additional imports for active slots
+    if (registryKey) {
+        const entry = SLOT_REGISTRY[registryKey];
+        if (entry && entry.additionalImports && entry.additionalImports.length > 0) {
+            for (const imp of entry.additionalImports) {
+                // Check if this import is needed by any active slot
+                const slotNeedsImport = parsed.activeSlots.has(imp.usedBy);
+                if (slotNeedsImport) {
+                    // Uncomment the import line (change // import to import)
+                    const commentedImportPattern = new RegExp(
+                        `//\\s*import\\s+${imp.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s+from\\s+'${imp.from.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}';`,
+                    );
+                    result = result.replace(
+                        commentedImportPattern,
+                        `import ${imp.name} from '${imp.from}';`,
+                    );
+                }
+            }
+        }
     }
 
     return result;
@@ -320,9 +345,10 @@ export function eject({ target, cwd = process.cwd(), force = false }) {
      *
      * @param {string} relPath - Path relative to project root
      * @param {string} freshProxy - Freshly generated proxy content
+     * @param {string} [registryKey] - Registry key for looking up additional imports
      * @returns {boolean} Whether the file was created/merged
      */
-    function writeOrMerge(relPath, freshProxy) {
+    function writeOrMerge(relPath, freshProxy, registryKey) {
         const absPath = join(projectRoot, relPath);
 
         if (!existsSync(absPath)) {
@@ -342,7 +368,7 @@ export function eject({ target, cwd = process.cwd(), force = false }) {
         const existing = readFileSync(absPath, 'utf-8');
         if (existing.includes('SLOT:')) {
             const parsed = parseEjectedFile(existing);
-            const merged = mergeSlotContent(freshProxy, parsed);
+            const merged = mergeSlotContent(freshProxy, parsed, registryKey);
             writeFileSync(absPath, merged);
             created.push(relPath);
             messages.push(`  ↳ Re-ejected ${relPath} (preserved your customizations)`);
@@ -380,7 +406,7 @@ export function eject({ target, cwd = process.cwd(), force = false }) {
         }
 
         const proxy = generatePageProxy(name);
-        writeOrMerge(`src/${pageInfo.file}`, proxy);
+        writeOrMerge(`src/${pageInfo.file}`, proxy, `pages/${name}`);
 
         // Auto-eject layout proxy if needed
         for (const layout of pageInfo.imports.layouts) {
@@ -412,7 +438,7 @@ export function eject({ target, cwd = process.cwd(), force = false }) {
         }
 
         const proxy = generateComponentProxy(name);
-        writeOrMerge(`src/components/${name}.astro`, proxy);
+        writeOrMerge(`src/components/${name}.astro`, proxy, `components/${name}`);
         return { created, skipped, messages };
     }
 
@@ -425,7 +451,7 @@ export function eject({ target, cwd = process.cwd(), force = false }) {
         }
 
         const proxy = generateLayoutProxy(name);
-        writeOrMerge(`src/layouts/${name}.astro`, proxy);
+        writeOrMerge(`src/layouts/${name}.astro`, proxy, `layouts/${name}`);
         return { created, skipped, messages };
     }
 

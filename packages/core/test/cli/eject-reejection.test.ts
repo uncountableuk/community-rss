@@ -192,6 +192,52 @@ const props = Astro.props;
             const merged = mergeSlotContent(fresh, parsed);
             expect(merged).toContain('<slot />');
         });
+
+        it('should uncomment required additional imports when slots are active', () => {
+            // Test with BaseLayout which has AuthButton as an additional import
+            // required by the header slot
+            const fresh = generateLayoutProxy('BaseLayout');
+            const parsed = {
+                activeSlots: new Map([
+                    [
+                        'header',
+                        '<Fragment slot="header">\n    <header><AuthButton /></header>\n  </Fragment>',
+                    ],
+                ]),
+                styleContent: '',
+                extraImports: [],
+            };
+            const merged = mergeSlotContent(fresh, parsed, 'layouts/BaseLayout');
+
+            // AuthButton import should be uncommented
+            expect(merged).toContain('import AuthButton from \'@community-rss/core/components/AuthButton.astro\';');
+            // Should not have the commented version
+            expect(merged).not.toContain('// import AuthButton from \'@community-rss/core/components/AuthButton.astro\';');
+            // Active header slot should be preserved
+            expect(merged).toContain('<Fragment slot="header">');
+            expect(merged).toContain('<AuthButton />');
+        });
+
+        it('should not uncomment imports if their slots are not active', () => {
+            // Test BaseLayout without active header slot
+            const fresh = generateLayoutProxy('BaseLayout');
+            const parsed = {
+                activeSlots: new Map([
+                    [
+                        'footer',
+                        '<Fragment slot="footer"><footer>Custom</footer></Fragment>',
+                    ],
+                ]),
+                styleContent: '',
+                extraImports: [],
+            };
+            const merged = mergeSlotContent(fresh, parsed, 'layouts/BaseLayout');
+
+            // AuthButton import should remain commented since header is not active
+            expect(merged).toContain('// import AuthButton from \'@community-rss/core/components/AuthButton.astro\';');
+            // Footer should be preserved
+            expect(merged).toContain('<Fragment slot="footer">');
+        });
     });
 
     describe('eject() re-eject behavior', () => {
