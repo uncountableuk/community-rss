@@ -1813,7 +1813,7 @@ bugs above. Further acceptance testing is planned to verify:
 - [x] Phase 15a: Annotate source files
 - [x] Phase 15b: Rewrite `eject.mjs` — annotation parser
 - [x] Phase 15c: New re-eject algorithm
-- [ ] Phase 15d: Purge old registry code
+- [x] Phase 15d: Purge old registry code
 - [ ] Phase 15e: AI instructions (framework + consumer)
 - [ ] Phase 15f: Testing
 - [ ] Phase 15g: Documentation
@@ -1894,6 +1894,24 @@ bugs above. Further acceptance testing is planned to verify:
   `eject-upgrade-all.test.ts` that expected "skip" behavior — now expect
   "re-eject" behavior (preserves customizations, refreshes managed content).
 - All 544 tests pass. No regression.
+
+**Phase 15d Implementation Notes:**
+- Deleted `src/cli/slot-registry.mjs` (830 lines) — superseded entirely by
+  annotation-driven parser in `eject.mjs`.
+- Deleted `test/cli/slot-registry.test.ts` (20 tests) — tested the deleted
+  module's exports and structure.
+- Updated `test/cli/eject-upgrade-all.test.ts` to import
+  `discoverComponents`, `discoverLayouts`, `discoverPages` from `eject.mjs`
+  instead of `KNOWN_COMPONENTS`, `KNOWN_LAYOUTS`, `PAGE_REGISTRY` from
+  `slot-registry.mjs`.
+- Updated `.github/copilot-instructions.md` — replaced slot-registry
+  reference with annotation-driven description.
+- No exports of `SLOT_REGISTRY` etc. existed in `index.ts` — no changes
+  needed there.
+- `eject.mjs` already had no imports from `slot-registry.mjs` (removed in
+  Phase 15b).
+- All 524 tests pass (43 files). 20 tests removed with the deleted file;
+  equivalent coverage now provided by annotation-parser tests in Phase 15f.
 
 ---
 

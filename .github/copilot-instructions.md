@@ -142,8 +142,13 @@ architecture, code reuse, and adherence to established patterns.
 - CLI: `npx crss eject all` ejects every known target
 - `SLOT:` markers in comments identify ejected files
 - `--force` flag fully overwrites files (resets all customizations)
-- Slot registry at `src/cli/slot-registry.mjs` is the single source of
-  truth for all ejectable artefacts and their slots
+- Without `--force`, re-ejecting an existing proxy merges: managed imports
+  are refreshed, new slots are added, developer overrides are preserved
+- Annotation-driven: `@eject-module` and `@eject-slot` annotations in
+  `.astro` source files are the single source of truth for ejectable
+  artefacts and their slots — no external registry file needed
+- `eject.mjs` discovers ejectable targets by walking the filesystem and
+  parsing annotations at runtime via `parseAnnotations()`
 
 ### Protected Areas
 - Never modify files in `node_modules/@community-rss/core/`

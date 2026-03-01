@@ -634,8 +634,8 @@ export function reEject(existingContent, annotations, registryKey) {
         category === 'layouts'
             ? 'layout'
             : category === 'pages'
-              ? 'page'
-              : 'component';
+                ? 'page'
+                : 'component';
     const friendlyName = annotations.alias.replace('Core', '');
 
     // Collect all additional imports from all slots (unconditionally)

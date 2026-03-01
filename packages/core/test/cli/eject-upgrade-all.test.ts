@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { eject, ejectAll } from '@cli/eject.mjs';
-import { KNOWN_COMPONENTS, KNOWN_LAYOUTS, PAGE_REGISTRY } from '@cli/slot-registry.mjs';
+import { eject, ejectAll, discoverComponents, discoverLayouts, discoverPages } from '@cli/eject.mjs';
 import {
     existsSync,
     mkdirSync,
@@ -27,7 +26,7 @@ describe('eject all', () => {
     it('should eject all known layouts', () => {
         const { created } = ejectAll({ cwd: tempDir });
 
-        for (const layout of KNOWN_LAYOUTS) {
+        for (const layout of discoverLayouts()) {
             expect(created).toContain(`src/layouts/${layout}.astro`);
         }
     });
@@ -35,7 +34,7 @@ describe('eject all', () => {
     it('should eject all known components', () => {
         const { created } = ejectAll({ cwd: tempDir });
 
-        for (const comp of KNOWN_COMPONENTS) {
+        for (const comp of discoverComponents()) {
             expect(created).toContain(`src/components/${comp}.astro`);
         }
     });
@@ -43,8 +42,8 @@ describe('eject all', () => {
     it('should eject all known pages', () => {
         const { created } = ejectAll({ cwd: tempDir });
 
-        for (const [, info] of Object.entries(PAGE_REGISTRY)) {
-            expect(created).toContain(`src/${info.file}`);
+        for (const page of discoverPages()) {
+            expect(created).toContain(`src/pages/${page}.astro`);
         }
     });
 
