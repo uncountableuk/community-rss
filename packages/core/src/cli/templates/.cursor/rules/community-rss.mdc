@@ -34,7 +34,7 @@ globs: src/**/*.astro, src/**/*.ts, src/**/*.css
 - All available named slots are commented-out blocks — uncomment to override
 - Wrappers own `<style>`, core owns logic — pass all props via `{...Astro.props}`
 - No business logic, API calls, or data transformation in wrappers
-- Run `npx crss eject upgrade` after framework updates to refresh stubs
+- Run `npx crss eject all` after framework updates to refresh stubs
 
 ## Email Templates
 - Edit `.astro` files in `src/email-templates/` — full Astro components

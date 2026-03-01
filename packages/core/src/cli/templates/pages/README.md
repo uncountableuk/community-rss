@@ -50,10 +50,12 @@ Uncomment the `content` slot and add your markup to replace the page content.
 ## Upgrading After a Framework Update
 
 ```bash
-npx crss eject upgrade
+npx crss eject all
 ```
 
-Refreshes commented stubs while preserving your active overrides.
+Re-ejects every target — refreshes imports and commented stubs while
+preserving your active (uncommented) slot overrides, custom styles,
+and extra imports.
 
 ## Learn More
 

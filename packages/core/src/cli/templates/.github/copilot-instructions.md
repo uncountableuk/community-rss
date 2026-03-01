@@ -84,12 +84,13 @@ Rules for proxy wrappers:
 - Only: slot overrides, styling, surrounding markup
 
 ### Upgrading ejected files
-After a framework update, run:
+After a framework update, re-eject to refresh managed sections:
 ```bash
-npx crss eject upgrade
+npx crss eject all
 ```
-This refreshes commented stubs while preserving your active
-(uncommented) slot overrides, custom styles, and extra imports.
+This refreshes imports and commented stubs while preserving your
+active (uncommented) slot overrides, custom styles, and extra imports.
+You can also re-eject a single target: `npx crss eject components/FeedCard`
 
 ## Email Templates
 Customise emails by editing the `.astro` files in `src/email-templates/`:

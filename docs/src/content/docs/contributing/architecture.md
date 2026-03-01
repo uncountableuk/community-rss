@@ -155,6 +155,14 @@ Scaffolded wrappers in developer `src/components/` import core components
 and own the `<style>` block. Core owns logic; developer owns styling.
 No business logic, API calls, or data transformation in wrappers.
 
+### Annotation-Driven Ejection
+
+The `eject` CLI derives all registry data from `@eject-module` and
+`@eject-slot` annotations embedded in `.astro` source files. There is
+no external registry file. See
+[Eject Annotations](/contributing/eject-annotations/) for the full
+annotation contract.
+
 ## Execution Contexts
 
 Code is organised by where it runs:

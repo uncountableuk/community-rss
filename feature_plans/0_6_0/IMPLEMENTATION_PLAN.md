@@ -959,16 +959,17 @@ and the corresponding framework-facing `.github/instructions/` file):
   - Every `@eject-slot` annotation is immediately followed by a named `<slot>`
   - Every `@eject-module` file has `@alias` defined
   - `@additionalimportN` / `@importfromN` pairs are complete (no orphaned keys)
-- [ ] All old `slot-registry.mjs`-dependent tests deleted
-- [ ] Coverage ≥80% maintained
+- [x] All old `slot-registry.mjs`-dependent tests deleted
+- [x] Coverage ≥80% maintained
 
 #### Phase 15g: Documentation
 
-- [ ] Update Starlight docs: replace "slot registry" references with
+- [x] Update Starlight docs: replace "slot registry" references with
       "eject annotations"
-- [ ] Add annotation format reference page to docs
-- [ ] Update `eject` CLI help text to explain annotation-driven discovery
-- [ ] Update `README.md` note about `src/` in `files`
+- [x] Add annotation format reference page to docs
+- [x] Update `eject` CLI help text to explain annotation-driven discovery
+- [x] Update template READMEs and AI instructions to replace `eject upgrade`
+      with `eject all` (the correct re-eject workflow)
 
 ### Phase 15 File Changes
 
@@ -1954,6 +1955,28 @@ bugs above. Further acceptance testing is planned to verify:
 - Total: 87 new tests added. All 611 tests pass (47 files).
 - Issue: used `require()` for discover* functions in proxy-generator test
   which fails in ESM context — fixed by importing at top level.
+
+**Phase 15g Implementation Notes:**
+- No "slot registry" references existed in Starlight docs — only feature
+  plans (historical records, left as-is). Task complete by inspection.
+- Created `docs/src/content/docs/contributing/eject-annotations.md`:
+  comprehensive annotation reference page for Starlight docs site.
+  Covers: overview, annotation formats (@eject-module, @eject-slot),
+  generated proxy structure, re-ejection behaviour, rules for
+  contributors.
+- Updated `docs/src/content/docs/contributing/architecture.md`: added
+  "Annotation-Driven Ejection" subsection under Proxy Component Pattern
+  with cross-reference to the new annotation reference page.
+- CLI help text (`runEject()`) already mentions annotation-driven
+  discovery — "Available targets are discovered from @eject-module
+  annotations". No changes needed.
+- `src/` already present in `package.json` `files` array — no changes
+  needed for README.
+- Updated 5 template files that referenced non-existent `eject upgrade`
+  command: `components/README.md`, `layouts/README.md`, `pages/README.md`,
+  `.github/copilot-instructions.md`, `.cursor/rules/community-rss.mdc`.
+  All now reference `eject all` (the correct re-eject workflow).
+- All 611 tests pass (47 files). No issues encountered.
 
 ---
 

@@ -54,10 +54,16 @@ const props = Astro.props;
 ## Upgrading After a Framework Update
 
 ```bash
-npx crss eject upgrade
+npx crss eject all
 ```
 
-Refreshes commented stubs while preserving your active (uncommented) overrides.
+Re-ejects every target — refreshes imports and commented stubs while
+preserving your active (uncommented) slot overrides, custom styles,
+and extra imports. You can also re-eject a single component:
+
+```bash
+npx crss eject components/FeedCard
+```
 
 ## Learn More
 
