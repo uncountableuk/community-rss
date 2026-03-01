@@ -24,7 +24,7 @@ describe('CLI eject', () => {
     });
 
     describe('eject pages', () => {
-        it('should eject a page with rewritten imports', () => {
+        it('should eject a page as a proxy wrapper', () => {
             const { created } = eject({ target: 'pages/profile', cwd: tempDir });
 
             expect(created).toContain('src/pages/profile.astro');
@@ -33,9 +33,12 @@ describe('CLI eject', () => {
                 join(tempDir, 'src/pages/profile.astro'),
                 'utf-8',
             );
-            // Import should point to local layout, not package-internal path
-            expect(content).toContain('../layouts/BaseLayout.astro');
-            expect(content).not.toContain('@community-rss/core');
+            // Page proxy imports from core package
+            expect(content).toContain('@community-rss/core/pages/profile.astro');
+            expect(content).toContain('CoreProfile');
+            // Has commented slot blocks
+            expect(content).toContain('SLOT: content');
+            expect(content).toContain('<slot />');
         });
 
         it('should auto-eject layout proxy when ejecting a page', () => {
@@ -84,7 +87,7 @@ describe('CLI eject', () => {
             expect(content).toBe('custom layout');
         });
 
-        it('should eject nested auth pages with correct import depth', () => {
+        it('should eject nested auth pages as proxy wrappers', () => {
             const { created } = eject({ target: 'pages/auth/signin', cwd: tempDir });
 
             expect(created).toContain('src/pages/auth/signin.astro');
@@ -93,8 +96,10 @@ describe('CLI eject', () => {
                 join(tempDir, 'src/pages/auth/signin.astro'),
                 'utf-8',
             );
-            expect(content).toContain('../../layouts/BaseLayout.astro');
-            expect(content).toContain('../../components/MagicLinkForm.astro');
+            // Proxy imports from core, no depth-relative paths
+            expect(content).toContain('@community-rss/core/pages/auth/signin.astro');
+            expect(content).toContain('CoreSignin');
+            expect(content).toContain('SLOT: content');
         });
 
         it('should throw for unknown page', () => {
@@ -127,7 +132,7 @@ describe('CLI eject', () => {
     });
 
     describe('eject layouts', () => {
-        it('should create a layout proxy with slot passthrough', () => {
+        it('should create a layout proxy with commented slot blocks', () => {
             const { created } = eject({ target: 'layouts/BaseLayout', cwd: tempDir });
 
             expect(created).toContain('src/layouts/BaseLayout.astro');
@@ -137,13 +142,17 @@ describe('CLI eject', () => {
                 'utf-8',
             );
             expect(content).toContain('@community-rss/core/layouts/BaseLayout.astro');
-            expect(content).toContain('slot name="head"');
             expect(content).toContain('<slot />');
-            // Header/footer slots are NOT forwarded by default — the core
-            // layout renders its own defaults. Developers add slot="header"
-            // or slot="footer" content in their proxy when they want to override.
-            expect(content).not.toContain('slot name="header"');
-            expect(content).not.toContain('slot name="footer"');
+            // All slots present as commented blocks with SLOT: markers
+            expect(content).toContain('SLOT: head');
+            expect(content).toContain('SLOT: header');
+            expect(content).toContain('SLOT: below-header');
+            expect(content).toContain('SLOT: before-unnamed-slot');
+            expect(content).toContain('SLOT: after-unnamed-slot');
+            expect(content).toContain('SLOT: footer');
+            // All slot blocks are commented out by default
+            expect(content).toContain('{/* <Fragment slot="header">');
+            expect(content).toContain('{/* <Fragment slot="footer">');
         });
 
         it('should throw for unknown layout', () => {

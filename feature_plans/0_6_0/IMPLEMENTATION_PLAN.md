@@ -684,15 +684,15 @@ as the override mechanism.
 - [x] **Validation**: `eject upgrade` and `eject all` work correctly
 
 #### Phase 13g: Update Tests
-- [ ] Update `test/cli/eject.test.ts` — change proxy assertions to verify
+- [x] Update `test/cli/eject.test.ts` — change proxy assertions to verify
       commented slot blocks, generic wrapper slots, new page proxy format
-- [ ] Create `test/cli/slot-registry.test.ts` — verify registry has entries
+- [x] Create `test/cli/slot-registry.test.ts` — verify registry has entries
       for all components/layouts/pages; slot names unique; imports valid
-- [ ] Create `test/cli/eject-reejection.test.ts` — re-eject preserves
+- [x] Create `test/cli/eject-reejection.test.ts` — re-eject preserves
       uncommented content; refreshes comment blocks; handles legacy proxies
-- [ ] Create `test/cli/eject-upgrade-all.test.ts` — `upgrade` processes
+- [x] Create `test/cli/eject-upgrade-all.test.ts` — `upgrade` processes
       existing ejections; `all` ejects everything; README replacement
-- [ ] **Validation**: All tests pass. Coverage ≥80%.
+- [x] **Validation**: All tests pass. Coverage ≥80%.
 
 #### Phase 13h: Documentation & AI Guidance Updates
 - [ ] Update `docs/src/content/docs/guides/customisation.md` — rewrite
@@ -1391,6 +1391,35 @@ in their proxy.
 > `src/cli/templates/{components,layouts,pages}/README.md`. The messages
 > array in the result includes README update entries separately so the CLI
 > prints them alongside file creation messages.
+
+### Phase 13g: Update Tests — ✅ Completed
+
+- [x] Fixed 3 failing tests in `test/cli/eject.test.ts`:
+  - Page eject test: asserts proxy import from `@community-rss/core/pages/`
+    and `SLOT: content` marker (was: local layout import)
+  - Nested auth page test: asserts core import + `SLOT: content` (was:
+    depth-relative imports)
+  - Layout proxy test: asserts all `SLOT:` markers for head, header,
+    below-header, before/after-unnamed-slot, footer + commented Fragments
+- [x] Created `test/cli/slot-registry.test.ts` — 17 tests covering:
+  registry structure, corePath/alias/slot validation, unique slot names,
+  exactly one default slot per entry, valid slot types, KNOWN_COMPONENTS/
+  KNOWN_LAYOUTS derivation, PAGE_REGISTRY cross-references
+- [x] Created `test/cli/eject-reejection.test.ts` — 12 tests covering:
+  parseEjectedFile (active slots, styles, imports), mergeSlotContent
+  (slot replacement, style/import preservation, default slot retention),
+  eject() re-eject flow (merge on SLOT: markers, skip on legacy, --force)
+- [x] Created `test/cli/eject-upgrade-all.test.ts` — 13 tests covering:
+  ejectUpgrade (re-ejects existing, skips non-existent, preserves slots,
+  skips legacy), ejectAll (all layouts/components/pages/actions, no
+  layout duplication, force overwrite)
+
+> **Notes:** 527 tests passing across 43 files (481 → 527, +46 new).
+> Coverage: ~87.7% statements, ~88.4% branches, ~88.4% functions — well
+> above the 80% threshold. The `eject-upgrade-all.test.ts` tests revealed
+> that `ejectAll()` correctly avoids duplicating the BaseLayout proxy
+> (ejected once explicitly in layouts, then pages skip auto-eject because
+> it already exists).
 
 ---
 
