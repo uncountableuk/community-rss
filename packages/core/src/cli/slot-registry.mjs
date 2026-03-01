@@ -36,6 +36,7 @@
  * @property {string} alias - Core component alias used in the proxy (e.g., 'CoreBaseLayout')
  * @property {SlotDefinition[]} slots - Ordered list of slots
  * @property {AdditionalImport[]} [additionalImports] - Imports needed for slot placeholder content
+ * @property {string} [propsDefinition] - TypeScript Props interface definition (e.g., 'interface Props { title: string; }')
  */
 
 /**
@@ -50,6 +51,10 @@ export const SLOT_REGISTRY = {
     'layouts/BaseLayout': {
         corePath: '@community-rss/core/layouts/BaseLayout.astro',
         alias: 'CoreBaseLayout',
+        propsDefinition: `interface Props {
+  title: string;
+  description?: string;
+}`,
         additionalImports: [
             {
                 name: 'AuthButton',
@@ -114,6 +119,13 @@ export const SLOT_REGISTRY = {
     'components/AuthButton': {
         corePath: '@community-rss/core/components/AuthButton.astro',
         alias: 'CoreAuthButton',
+        propsDefinition: `interface Props {
+  labels?: {
+    signIn?: string;
+    signOut?: string;
+    profileLink?: string;
+  };
+}`,
         slots: [
             {
                 name: 'before-unnamed-slot',
@@ -137,6 +149,21 @@ export const SLOT_REGISTRY = {
     'components/FeedCard': {
         corePath: '@community-rss/core/components/FeedCard.astro',
         alias: 'CoreFeedCard',
+        propsDefinition: `interface Props {
+  id: string;
+  title: string;
+  summary?: string;
+  authorName?: string;
+  publishedAt?: Date;
+  originalLink?: string;
+  feedTitle?: string;
+  heartCount?: number;
+  starCount?: number;
+  labels?: {
+    hearts?: string;
+    stars?: string;
+  };
+}`,
         slots: [
             {
                 name: 'before-unnamed-slot',
@@ -160,6 +187,21 @@ export const SLOT_REGISTRY = {
     'components/FeedGrid': {
         corePath: '@community-rss/core/components/FeedGrid.astro',
         alias: 'CoreFeedGrid',
+        propsDefinition: `interface Article {
+  id: string;
+  title: string;
+  summary?: string;
+  authorName?: string;
+  publishedAt?: Date;
+  originalLink?: string;
+  feedTitle?: string;
+  heartCount?: number;
+  starCount?: number;
+}
+
+interface Props {
+  articles: Article[];
+}`,
         slots: [
             {
                 name: 'before-unnamed-slot',
@@ -183,6 +225,17 @@ export const SLOT_REGISTRY = {
     'components/TabBar': {
         corePath: '@community-rss/core/components/TabBar.astro',
         alias: 'CoreTabBar',
+        propsDefinition: `interface Tab {
+  id: string;
+  label: string;
+  active: boolean;
+  disabled: boolean;
+}
+
+interface Props {
+  tabs?: Tab[];
+  ariaLabel?: string;
+}`,
         slots: [
             {
                 name: 'before-unnamed-slot',
@@ -206,6 +259,21 @@ export const SLOT_REGISTRY = {
     'components/ArticleModal': {
         corePath: '@community-rss/core/components/ArticleModal.astro',
         alias: 'CoreArticleModal',
+        propsDefinition: `interface Props {
+  id: string;
+  title: string;
+  content?: string;
+  authorName?: string;
+  publishedAt?: Date;
+  originalLink?: string;
+  feedTitle?: string;
+  labels?: {
+    close?: string;
+    next?: string;
+    previous?: string;
+    readOriginal?: string;
+  };
+}`,
         slots: [
             {
                 name: 'header',
@@ -258,6 +326,16 @@ export const SLOT_REGISTRY = {
     'components/MagicLinkForm': {
         corePath: '@community-rss/core/components/MagicLinkForm.astro',
         alias: 'CoreMagicLinkForm',
+        propsDefinition: `interface Props {
+  messages?: {
+    emailLabel?: string;
+    emailPlaceholder?: string;
+    submitLabel?: string;
+    successText?: string;
+    errorText?: string;
+    networkErrorText?: string;
+  };
+}`,
         slots: [
             {
                 name: 'before-unnamed-slot',
@@ -281,6 +359,24 @@ export const SLOT_REGISTRY = {
     'components/SignUpForm': {
         corePath: '@community-rss/core/components/SignUpForm.astro',
         alias: 'CoreSignUpForm',
+        propsDefinition: `interface Props {
+  messages?: {
+    emailLabel?: string;
+    nameLabel?: string;
+    namePlaceholder?: string;
+    termsPrefix?: string;
+    termsLinkText?: string;
+    submitLabel?: string;
+    footerText?: string;
+    footerLinkText?: string;
+    confirmHeading?: string;
+    confirmHint?: string;
+  };
+  errorMessages?: {
+    createFailed?: string;
+    networkError?: string;
+  };
+}`,
         slots: [
             {
                 name: 'form',
@@ -324,6 +420,15 @@ export const SLOT_REGISTRY = {
     'components/ConsentModal': {
         corePath: '@community-rss/core/components/ConsentModal.astro',
         alias: 'CoreConsentModal',
+        propsDefinition: `interface Props {
+  messages?: {
+    title?: string;
+    body?: string;
+    detail?: string;
+    acceptLabel?: string;
+    declineLabel?: string;
+  };
+}`,
         slots: [
             {
                 name: 'before-unnamed-slot',
@@ -347,6 +452,13 @@ export const SLOT_REGISTRY = {
     'components/HomepageCTA': {
         corePath: '@community-rss/core/components/HomepageCTA.astro',
         alias: 'CoreHomepageCTA',
+        propsDefinition: `interface Props {
+  messages?: {
+    text?: string;
+    createAccount?: string;
+    signIn?: string;
+  };
+}`,
         slots: [
             {
                 name: 'before-unnamed-slot',

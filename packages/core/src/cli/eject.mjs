@@ -229,6 +229,11 @@ export function generateProxy(registryKey) {
         .map((imp) => `// import ${imp.name} from '${imp.from}';`)
         .join('\n');
 
+    // Include Props interface definition if available
+    const propsInterface = entry.propsDefinition
+        ? entry.propsDefinition + '\n\n'
+        : '';
+
     const frontmatter = `---
 /**
  * ${entry.alias.replace('Core', '')} proxy wrapper — developer-owned wrapper around
@@ -240,8 +245,7 @@ export function generateProxy(registryKey) {
  * @since 0.6.0
  */
 import ${entry.alias} from '${entry.corePath}';
-${additionalImportLines ? additionalImportLines + '\n' : ''}
-const props = Astro.props;
+${additionalImportLines ? additionalImportLines + '\n' : ''}${propsInterface}const props = Astro.props;
 ---`;
 
     // Build slot blocks
