@@ -1814,7 +1814,7 @@ bugs above. Further acceptance testing is planned to verify:
 - [x] Phase 15b: Rewrite `eject.mjs` — annotation parser
 - [x] Phase 15c: New re-eject algorithm
 - [x] Phase 15d: Purge old registry code
-- [ ] Phase 15e: AI instructions (framework + consumer)
+- [x] Phase 15e: AI instructions (framework + consumer)
 - [ ] Phase 15f: Testing
 - [ ] Phase 15g: Documentation
 
@@ -1912,6 +1912,20 @@ bugs above. Further acceptance testing is planned to verify:
   Phase 15b).
 - All 524 tests pass (43 files). 20 tests removed with the deleted file;
   equivalent coverage now provided by annotation-parser tests in Phase 15f.
+
+**Phase 15e Implementation Notes:**
+- Created `.github/instructions/eject-annotations.instructions.md` —
+  framework developer rules for maintaining `@eject-module` and
+  `@eject-slot` annotations in `.astro` source files. Covers: annotation
+  contract, required/optional fields, block vs. self-closing slot guidance,
+  granularity principles, verification workflow, format reference.
+- Created `packages/core/src/cli/templates/.github/instructions/eject-customization.instructions.md`
+  — consumer developer guide for working with ejected proxy wrappers.
+  Covers: managed import block (don't put custom imports inside),
+  activating slot overrides, re-eject workflow, `--force` path, tips.
+- Confirmed no stale `slot-registry` references in consumer-facing
+  `copilot-instructions.md` template.
+- All 524 tests pass. No regression.
 
 ---
 
