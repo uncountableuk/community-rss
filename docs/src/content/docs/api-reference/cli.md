@@ -82,8 +82,9 @@ npx crss init --force
 
 ## npx crss eject
 
-Copies a page, component, layout, or actions file into your project for
-full local control.
+Generates a proxy wrapper for a page, component, layout, or actions file.
+Proxies expose **named slots** as commented-out blocks — uncomment any
+slot to override that section while keeping all other logic in the core.
 
 ```bash
 npx crss eject <target> [options]
@@ -93,8 +94,7 @@ npx crss eject <target> [options]
 
 #### Pages
 
-Eject a page to take local ownership. The framework stops injecting its
-version for that route.
+Eject a page proxy to customise its content. The framework stops injecting its version for that route.
 
 ```bash
 npx crss eject pages/profile
@@ -117,8 +117,8 @@ npx crss eject components/FeedCard
 npx crss eject components/ArticleModal
 ```
 
-Creates a thin proxy in `src/components/` that imports the core component
-with `<slot />` passthrough. Add your own `<style>` block.
+Creates a proxy in `src/components/` with all available slot overrides
+as commented-out blocks. Add your own `<style>` block for custom styling.
 
 Available components: `AuthButton`, `HomepageCTA`, `ConsentModal`,
 `FeedGrid`, `TabBar`, `ArticleModal`, `MagicLinkForm`, `FeedCard`,
@@ -130,7 +130,9 @@ Available components: `AuthButton`, `HomepageCTA`, `ConsentModal`,
 npx crss eject layouts/BaseLayout
 ```
 
-Creates a layout proxy with named slot passthrough (`default`, `head`).
+Creates a layout proxy with slot overrides for `head`, `header`,
+`below-header`, `before-unnamed-slot`, `after-unnamed-slot`,
+and `footer`.
 
 #### Actions
 
@@ -140,23 +142,77 @@ npx crss eject actions
 
 Regenerates `src/actions/index.ts` with the latest `coreActions` spread.
 
+#### Special Targets
+
+```bash
+# Re-eject all previously ejected files (preserves customizations)
+npx crss eject upgrade
+
+# Eject every known target
+npx crss eject all
+```
+
 ### Options
 
 | Flag | Description |
 |------|-------------|
-| `--force` | Overwrite existing ejected files |
+| `--force` | Full overwrite — resets all customizations |
 
-### Behaviour
+### Proxy Format
 
-- **Skip if exists** — won't overwrite existing files unless `--force` is used
+Each ejected file is a proxy wrapper with commented `SLOT:` blocks:
+
+```astro
+---
+import CoreFeedCard from '@community-rss/core/components/FeedCard.astro';
+const props = Astro.props;
+---
+<CoreFeedCard {...props}>
+  {/* =========================================
+    SLOT: before-unnamed-slot
+    Content injected before the main content area.
+    =========================================
+  */}
+
+  {/* <Fragment slot="before-unnamed-slot">
+  </Fragment> */}
+
+  <slot />
+</CoreFeedCard>
+<style>
+  /* Add your custom styles here */
+</style>
+```
+
+Uncomment a `<Fragment slot="...">` block and add your content to
+customise that section.
+
+### Re-eject Behaviour
+
+- **File with `SLOT:` markers** — merges: preserves uncommented slot
+  overrides, refreshes commented stubs, preserves custom styles/imports
+- **File without markers** — skips (use `--force` to overwrite)
+- **`--force` flag** — full overwrite, resets all customizations
 - **Auto-eject dependencies** — ejecting a page auto-ejects its layout
   and component dependencies
-- **Import rewriting** — ejected pages get imports rewritten from package
-  paths to local relative paths
 
-<Aside type="caution">
-Ejected files are **your responsibility**. Future framework updates won't
-automatically update them. Review changelogs when upgrading.
+### `eject upgrade`
+
+Scans your `src/` directory for previously ejected files and re-ejects
+each one, preserving your active customizations while refreshing
+framework stubs. Also replaces signpost READMEs with fresh copies.
+
+Run this after every `npm update @community-rss/core`.
+
+### `eject all`
+
+Ejects every known layout, component, page, and actions target.
+Existing files are merged (unless `--force` is used).
+
+<Aside type="tip">
+Ejected proxies survive framework updates. Only the slots you uncomment
+are your responsibility — everything else is automatically refreshed
+when you run `npx crss eject upgrade`.
 </Aside>
 
 ---

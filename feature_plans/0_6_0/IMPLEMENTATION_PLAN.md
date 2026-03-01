@@ -695,17 +695,17 @@ as the override mechanism.
 - [x] **Validation**: All tests pass. Coverage ≥80%.
 
 #### Phase 13h: Documentation & AI Guidance Updates
-- [ ] Update `docs/src/content/docs/guides/customisation.md` — rewrite
+- [x] Update `docs/src/content/docs/guides/customisation.md` — rewrite
       Eject section for slot proxy pattern, add best practices
-- [ ] Update `docs/src/content/docs/api-reference/cli.md` — document
+- [x] Update `docs/src/content/docs/api-reference/cli.md` — document
       `eject upgrade`, `eject all`, re-eject behaviour, slot reference
-- [ ] Update signpost READMEs (pages, components, layouts) with slot
+- [x] Update signpost READMEs (pages, components, layouts) with slot
       proxy examples and available slot lists
-- [ ] Update `.github/copilot-instructions.md` — Proxy Component Pattern,
+- [x] Update `.github/copilot-instructions.md` — Proxy Component Pattern,
       Upgradeable Ejection, eject CLI
-- [ ] Update `.github/instructions/implementation.instructions.md` —
+- [x] Update `.github/instructions/implementation.instructions.md` —
       Slot Architecture section, generic wrapper slot requirement
-- [ ] Update consumer AI guidance templates (copilot + cursor)
+- [x] Update consumer AI guidance templates (copilot + cursor)
 
 #### Phase 13i: Playground Smoke Test
 - [ ] Reset playground: `npm run reset:playground`
@@ -1420,6 +1420,33 @@ in their proxy.
 > that `ejectAll()` correctly avoids duplicating the BaseLayout proxy
 > (ejected once explicitly in layouts, then pages skip auto-eject because
 > it already exists).
+
+### Phase 13h: Documentation & AI Guidance Updates — ✅ Completed
+
+- [x] Rewrote Level 3 section in `docs/src/content/docs/guides/customisation.md`
+      — full proxy ejection pattern with code examples, upgrade workflow,
+      auto-ejected dependencies explanation
+- [x] Rewrote CLI eject section in `docs/src/content/docs/api-reference/cli.md`
+      — new targets (`upgrade`, `all`), proxy format code example, re-eject
+      behaviour details, removed obsolete "import rewriting" language
+- [x] Updated all 3 signpost READMEs with slot tables, proxy format examples,
+      `eject upgrade` instructions
+- [x] Updated `.github/copilot-instructions.md` — Proxy Component Pattern
+      section now describes slot blocks, `SLOT:` markers, re-eject workflow;
+      added Upgradeable Ejection section with slot-registry reference
+- [x] Updated `.github/instructions/implementation.instructions.md` — added
+      Slot Architecture section with generic wrapper requirements, structural
+      slot guidance, fallback content vs `has()` warning
+- [x] Updated consumer AI guidance: `.github/copilot-instructions.md` template
+      now covers proxy slot overrides + `eject upgrade`; `.cursor/rules/`
+      template updated similarly
+
+> **Notes:** Updated 9 documentation/guidance files total. The customisation
+> guide Level 3 table now shows "Survives updates? Yes (via `eject upgrade`)"
+> instead of the previous "No (manual merge)". The CLI reference gained
+> ~60 lines of new content for the proxy format, re-eject, upgrade/all, and
+> slot reference sections. Signpost READMEs now include slot tables for each
+> target type.
 
 ---
 

@@ -38,6 +38,24 @@ Before creating a new utility:
 - No `:global()` wrappers — `is:global` makes them redundant
 - All visual values must reference `--crss-comp-*` or `--crss-sys-*` tokens
 
+## Slot Architecture
+All core components, layouts, and pages expose named slots for the
+proxy ejection system. When adding or modifying slots:
+
+- **Generic wrapper slots**: Every component/layout/page MUST have
+  `before-unnamed-slot` and `after-unnamed-slot` extension slots
+- **Structural slots**: Complex components expose meaningful sections
+  (e.g., `header`, `body`, `footer` on ArticleModal; `form`, `confirmation`
+  on SignUpForm)
+- **Content super-slot**: All pages wrap their `<main>` content in
+  `<slot name="content">...</slot>` with existing markup as fallback
+- **Default slot**: Use `<slot />` as a passthrough for the unnamed slot
+- Use slot fallback content (not `Astro.slots.has()`) for conditional
+  rendering — Astro forwarding causes `has()` to return true for empty
+  forwarded slots
+- Always update `src/cli/slot-registry.mjs` when adding/changing slots
+- Slot order matters: appears in registry order in the generated proxy
+
 ## Import Standards
 - **Source code** (`src/`): Use **relative imports** for all cross-directory
   imports (e.g., `../types/options`). Path aliases in source code break

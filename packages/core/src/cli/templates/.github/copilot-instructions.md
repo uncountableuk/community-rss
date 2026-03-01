@@ -45,9 +45,9 @@ page, eject it:
 npx crss eject pages/profile
 ```
 
-This copies the page to `src/pages/profile.astro` and auto-ejects
-any dependent layouts and components. The framework stops injecting
-its version for that route.
+This creates a proxy wrapper at `src/pages/profile.astro` with a
+`content` slot override. Auto-ejects any dependent layouts and
+components. The framework stops injecting its version for that route.
 
 ## Astro Actions
 Use Astro Actions for all server communication. The scaffolded
@@ -70,15 +70,24 @@ Override them in your page files:
 ```
 
 ## Ejected Components
-Use `npx crss eject components/FeedCard` to create a thin proxy wrapper
-in `src/components/`. The proxy imports the core component and gives you
-a local `<style>` block for customisation.
+Use `npx crss eject components/FeedCard` to create a proxy wrapper in
+`src/components/`. The proxy imports the core component and exposes all
+available named slots as commented-out blocks.
 
 Rules for proxy wrappers:
 - Import core component from `@community-rss/core/components/*`
 - Pass all props through via `{...Astro.props}`
+- Uncomment only the slots you need to override
 - No business logic, no API calls, no data transformation
-- Only: styling overrides, slot content, surrounding markup
+- Only: slot overrides, styling, surrounding markup
+
+### Upgrading ejected files
+After a framework update, run:
+```bash
+npx crss eject upgrade
+```
+This refreshes commented stubs while preserving your active
+(uncommented) slot overrides, custom styles, and extra imports.
 
 ## Email Templates
 Customise emails by editing the `.astro` files in `src/email-templates/`:

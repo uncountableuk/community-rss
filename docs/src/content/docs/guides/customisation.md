@@ -93,49 +93,91 @@ is un-layered, your rules automatically beat the framework:
 
 ## Level 3 — Eject & Edit
 
-Copy a page, component, or layout into your project for full control:
+Create a proxy wrapper for a page, component, or layout:
 
 ```bash
-# Eject a single page
+# Eject a single page (creates a proxy wrapper)
 npx crss eject pages/profile
 
-# Eject a component (creates a proxy wrapper)
+# Eject a component
 npx crss eject components/FeedCard
 
 # Eject a layout
 npx crss eject layouts/BaseLayout
 
+# Eject everything
+npx crss eject all
+
 # See all available targets
 npx crss eject --help
 ```
 
-When you eject a page, the framework:
-1. Copies the page source into your `src/pages/` directory
-2. Auto-ejects any layouts and components the page depends on
-3. Rewrites imports to point to your local copies
-4. Stops serving the framework's version for that route
-
-<Aside type="caution">
-Ejected files are **your responsibility**. Future framework updates won't
-automatically update ejected pages. You'll need to manually merge any
-changes when upgrading.
-</Aside>
-
-### Component Proxies
-
-Ejected components are **thin proxy wrappers** that import the core
-component and re-export it with a `<slot />`:
+When you eject, the framework creates a **proxy wrapper** that imports the
+core version and exposes all its named slots as commented-out blocks.
+Uncomment any slot to override that section:
 
 ```astro
 ---
 import CoreFeedCard from '@community-rss/core/components/FeedCard.astro';
+const props = Astro.props;
 ---
-<CoreFeedCard {...Astro.props}>
+<CoreFeedCard {...props}>
+  {/* =========================================
+    SLOT: before-unnamed-slot
+    Content injected before the main content area.
+    =========================================
+  */}
+
+  {/* <Fragment slot="before-unnamed-slot">
+  </Fragment> */}
+
   <slot />
+
+  {/* =========================================
+    SLOT: after-unnamed-slot
+    Content injected after the main content area.
+    =========================================
+  */}
+
+  {/* <Fragment slot="after-unnamed-slot">
+  </Fragment> */}
 </CoreFeedCard>
 <style>
   /* Your custom styles here — survives package updates */
 </style>
+```
+
+<Aside type="tip">
+Ejected proxies **survive framework updates**. Only the slots you
+uncomment are your responsibility — everything else gets refreshed
+automatically when you run `npx crss eject upgrade`.
+</Aside>
+
+### Upgrading Ejected Files
+
+After a framework update, re-eject to refresh commented stubs while
+preserving your active customizations:
+
+```bash
+# Re-eject all previously ejected files
+npx crss eject upgrade
+
+# Force-overwrite a specific file (resets all customizations)
+npx crss eject components/FeedCard --force
+```
+
+The re-eject parser detects `SLOT:` markers and preserves any
+uncommented `<Fragment>` overrides, developer-added styles, and
+extra imports.
+
+### Auto-ejected Dependencies
+
+When you eject a page, any layout or component it depends on is
+automatically ejected as a proxy wrapper (unless you already have one):
+
+```
+  ✔ Created src/pages/profile.astro
+  ↳ Auto-created src/layouts/BaseLayout.astro (layout proxy — profile imports this)
 ```
 
 ## Level 4 — Custom Actions

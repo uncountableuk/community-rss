@@ -6,34 +6,54 @@ files needed here.
 
 ## How It Works
 
-The framework injects page routes at build time. If you place a file
-here with the same name, your version takes priority and the framework's
+The framework injects page routes at build time. When you eject a page,
+a proxy wrapper is created that imports the core page and exposes its
+`content` slot. Your version takes priority and the framework's injected
 version is skipped.
 
 ## Available Pages
 
-| Route | File | Description |
+| Route | File | Content Slot |
 |-------|------|-------------|
-| `/` | `index.astro` | Homepage with article feed grid |
-| `/profile` | `profile.astro` | User profile page |
-| `/terms` | `terms.astro` | Terms of Service |
-| `/article/[id]` | `article/[id].astro` | Article detail page |
-| `/auth/signin` | `auth/signin.astro` | Sign-in page |
-| `/auth/signup` | `auth/signup.astro` | Sign-up page |
-| `/auth/verify` | `auth/verify.astro` | Magic link verification |
-| `/auth/verify-email-change` | `auth/verify-email-change.astro` | Email change verification |
+| `/` | `index.astro` | Replaces the full page content (feed grid) |
+| `/profile` | `profile.astro` | Replaces user profile content |
+| `/terms` | `terms.astro` | Replaces terms page content |
+| `/article/[id]` | `article/[id].astro` | Replaces article detail content |
+| `/auth/signin` | `auth/signin.astro` | Replaces sign-in form area |
+| `/auth/signup` | `auth/signup.astro` | Replaces sign-up form area |
+| `/auth/verify` | `auth/verify.astro` | Replaces verification content |
+| `/auth/verify-email-change` | `auth/verify-email-change.astro` | Replaces email change content |
 
 ## Ejecting a Page
-
-To customize a specific page, use the eject command:
 
 ```bash
 npx crss eject pages/profile
 ```
 
-This copies the framework's page to your project with correct imports.
-You can then edit it freely. The framework will no longer inject that
-route — your version takes over.
+This creates a proxy wrapper with a `content` slot override:
+
+```astro
+---
+import CoreProfile from '@community-rss/core/pages/profile.astro';
+const props = Astro.props;
+---
+<CoreProfile {...props}>
+  {/* SLOT: content — Replace the entire page content. */}
+  {/* <Fragment slot="content"> ... </Fragment> */}
+
+  <slot />
+</CoreProfile>
+```
+
+Uncomment the `content` slot and add your markup to replace the page content.
+
+## Upgrading After a Framework Update
+
+```bash
+npx crss eject upgrade
+```
+
+Refreshes commented stubs while preserving your active overrides.
 
 ## Learn More
 

@@ -5,15 +5,15 @@ This directory is for **layout overrides**. The framework provides a
 
 ## How It Works
 
-When you eject a layout, a proxy wrapper is created here. The proxy
-re-exports the core layout with slot passthrough, giving you a place
-to customize the page shell (header, footer, global styles).
+When you eject a layout, a proxy wrapper is created here with all
+available slot overrides as commented-out blocks. Uncomment any slot
+to override that section.
 
 ## Available Layouts
 
-| Layout | Description |
-|--------|-------------|
-| `BaseLayout.astro` | Main page layout with header, nav, and CSS tokens |
+| Layout | Slots |
+|--------|-------|
+| `BaseLayout.astro` | head, header, below-header, before-unnamed-slot, after-unnamed-slot, footer |
 
 ## Ejecting a Layout
 
@@ -21,7 +21,7 @@ to customize the page shell (header, footer, global styles).
 npx crss eject layouts/BaseLayout
 ```
 
-This creates a proxy wrapper with named slot passthrough:
+This creates a proxy with commented slot blocks:
 
 ```astro
 ---
@@ -29,12 +29,26 @@ import CoreBaseLayout from '@community-rss/core/layouts/BaseLayout.astro';
 const props = Astro.props;
 ---
 <CoreBaseLayout {...props}>
-  <slot name="head" slot="head" />
-  <slot name="header" slot="header" />
+  {/* SLOT: head — Inject extra <head> content ... */}
+  {/* <Fragment slot="head"> </Fragment> */}
+
+  {/* SLOT: header — Replace the default header ... */}
+  {/* <Fragment slot="header"> <nav>...</nav> </Fragment> */}
+
   <slot />
-  <slot name="footer" slot="footer" />
+
+  {/* SLOT: footer — Replace the default footer ... */}
+  {/* <Fragment slot="footer"> <footer>...</footer> </Fragment> */}
 </CoreBaseLayout>
 ```
+
+## Upgrading After a Framework Update
+
+```bash
+npx crss eject upgrade
+```
+
+Refreshes commented stubs while preserving your active overrides.
 
 ## Learn More
 

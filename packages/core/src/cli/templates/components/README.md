@@ -6,23 +6,23 @@ framework's injected pages.
 
 ## How It Works
 
-When you eject a component, a thin **proxy wrapper** is created here.
-The proxy re-exports the core component, giving you a place to add
-custom styles or modify markup without touching the framework source.
+When you eject a component, a **proxy wrapper** is created here with
+all available named slots as commented-out blocks. Uncomment any slot
+to override that section — core logic stays in the framework.
 
 ## Available Components
 
-| Component | Description |
-|-----------|-------------|
-| `AuthButton.astro` | Sign in/out button in the header |
-| `FeedCard.astro` | Individual article card |
-| `FeedGrid.astro` | Responsive article grid layout |
-| `TabBar.astro` | Tab navigation (All/New/Popular) |
-| `ArticleModal.astro` | Full article modal overlay |
-| `MagicLinkForm.astro` | Sign-in email form |
-| `SignUpForm.astro` | Registration form |
-| `ConsentModal.astro` | Guest interaction consent dialog |
-| `HomepageCTA.astro` | Homepage call-to-action banner |
+| Component | Slots |
+|-----------|-------|
+| `AuthButton.astro` | before-unnamed-slot, after-unnamed-slot |
+| `FeedCard.astro` | before-unnamed-slot, after-unnamed-slot |
+| `FeedGrid.astro` | before-unnamed-slot, after-unnamed-slot |
+| `TabBar.astro` | before-unnamed-slot, after-unnamed-slot |
+| `ArticleModal.astro` | header, body, footer, before/after-unnamed-slot |
+| `MagicLinkForm.astro` | before-unnamed-slot, after-unnamed-slot |
+| `SignUpForm.astro` | form, confirmation, before/after-unnamed-slot |
+| `ConsentModal.astro` | before-unnamed-slot, after-unnamed-slot |
+| `HomepageCTA.astro` | before-unnamed-slot, after-unnamed-slot |
 
 ## Ejecting a Component
 
@@ -30,19 +30,34 @@ custom styles or modify markup without touching the framework source.
 npx crss eject components/FeedCard
 ```
 
-This creates a proxy wrapper that you can customize:
+This creates a proxy with commented slot blocks (shown truncated):
 
 ```astro
 ---
 import CoreFeedCard from '@community-rss/core/components/FeedCard.astro';
 const props = Astro.props;
 ---
-<CoreFeedCard {...props}><slot /></CoreFeedCard>
+<CoreFeedCard {...props}>
+  {/* SLOT: before-unnamed-slot ... */}
+  {/* <Fragment slot="before-unnamed-slot"> </Fragment> */}
 
+  <slot />
+
+  {/* SLOT: after-unnamed-slot ... */}
+  {/* <Fragment slot="after-unnamed-slot"> </Fragment> */}
+</CoreFeedCard>
 <style>
   /* Your custom styles here */
 </style>
 ```
+
+## Upgrading After a Framework Update
+
+```bash
+npx crss eject upgrade
+```
+
+Refreshes commented stubs while preserving your active (uncommented) overrides.
 
 ## Learn More
 

@@ -122,10 +122,24 @@ architecture, code reuse, and adherence to established patterns.
 - Always provide a `slot="fallback"` for loading skeletons
 
 ### Proxy Component Pattern
-- Scaffolded components in developers' `src/components/` are **thin wrappers**
-  that import core components from `@community-rss/core/components/*`
-- Wrappers own the `<style>` block (survives package updates); core owns logic
-- No business logic, no API calls in wrappers — only styling and props
+- Ejected components/layouts/pages in developers' `src/` are **proxy wrappers**
+  that import core artefacts from `@community-rss/core/components/*` etc.
+- Proxies expose all available named slots as commented-out `{/* SLOT: <name> */}`
+  blocks with `<Fragment slot="...">` placeholders
+- Developers uncomment only the slots they need to override
+- Custom `<style>` block in the proxy survives package updates
+- No business logic, no API calls in proxies — only slot overrides and styling
+
+### Upgradeable Ejection
+- CLI: `npx crss eject <target>` creates proxy wrappers with commented slots
+- CLI: `npx crss eject upgrade` re-ejects all existing proxies — refreshes
+  commented stubs while preserving active (uncommented) slot overrides
+- CLI: `npx crss eject all` ejects every known target
+- `SLOT:` markers in comments enable the re-eject parser to identify
+  and preserve developer customizations
+- `--force` flag fully overwrites (resets all customizations)
+- Slot registry at `src/cli/slot-registry.mjs` is the single source of
+  truth for all ejectable artefacts and their slots
 
 ### Protected Areas
 - Never modify files in `node_modules/@community-rss/core/`
