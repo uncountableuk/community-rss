@@ -140,7 +140,10 @@ export function parseAnnotations(filePath) {
 
     // ── Extract @eject-slot annotations ───────────────────────────────
     const slots = [];
-    const slotAnnotationRegex = /\{\/\*\s*@eject-slot\b([\s\S]*?)\*\/\}/g;
+    // Match JSX expression blocks containing @eject-slot:
+    //   {/* @eject-slot ... */}       — inline form
+    //   {\n  /* @eject-slot ... */\n} — multiline JSX expression form
+    const slotAnnotationRegex = /\{\s*\/\*\s*@eject-slot\b([\s\S]*?)\*\/\s*\}/g;
     let slotMatch;
 
     while ((slotMatch = slotAnnotationRegex.exec(template)) !== null) {
@@ -218,7 +221,7 @@ export function parseAnnotations(filePath) {
 
     // ── Detect unnamed <slot /> ───────────────────────────────────────
     const stripped = template
-        .replace(/\{\/\*[\s\S]*?\*\/\}/g, '') // remove JSX comments
+        .replace(/\{\s*\/\*[\s\S]*?\*\/\s*\}/g, '') // remove JSX comment expressions
         .replace(/<slot\s+name="[^"]*"[\s\S]*?(?:\/>|<\/slot>)/g, ''); // remove named slots
     const hasUnnamedSlot = /<slot\s*\/?>/.test(stripped);
 
@@ -598,6 +601,158 @@ export function mergeSlotContent(freshProxy, parsed) {
     return result;
 }
 
+// ─── Re-eject Algorithm ───────────────────────────────────────────────
+
+/**
+ * Re-eject an existing proxy file with updated annotations.
+ *
+ * Preserves:
+ * - Active (uncommented) `<Fragment slot="name">` overrides for slots
+ *   that still exist in current annotations
+ * - Developer-added `<style>` content
+ * - Developer-added imports (outside the `@start-eject-import` block)
+ * - Developer-added frontmatter code (outside the managed block)
+ *
+ * Updates:
+ * - Managed import block (`@start-eject-import` … `@end-eject-import`)
+ * - Comment blocks for inactive/new slots refreshed from annotations
+ * - Orphan live fragments (slot no longer in annotations) are removed
+ *
+ * @param {string} existingContent - Current proxy file content
+ * @param {ParsedAnnotations} annotations - Current parsed annotations
+ * @param {string} registryKey - Key like 'components/FeedCard'
+ * @returns {string} Updated proxy content
+ * @since 0.6.0
+ */
+export function reEject(existingContent, annotations, registryKey) {
+    // ── 1. Parse existing developer customizations ────────────────────
+    const parsed = parseEjectedFile(existingContent);
+
+    // ── 2. Build the new frontmatter ──────────────────────────────────
+    const category = registryKey.split('/')[0];
+    const categoryLabel =
+        category === 'layouts'
+            ? 'layout'
+            : category === 'pages'
+              ? 'page'
+              : 'component';
+    const friendlyName = annotations.alias.replace('Core', '');
+
+    // Collect all additional imports from all slots (unconditionally)
+    /** @type {Map<string, string>} */
+    const allAdditionalImports = new Map();
+    for (const slot of annotations.slots) {
+        for (const imp of slot.additionalImports) {
+            allAdditionalImports.set(imp.name, imp.from);
+        }
+    }
+
+    const importLines = [
+        `import ${annotations.alias} from '${annotations.corePath}';`,
+    ];
+    for (const [name, from] of allAdditionalImports) {
+        importLines.push(`import ${name} from '${from}';`);
+    }
+
+    const propsBlock = annotations.propsDefinition
+        ? '\n' + annotations.propsDefinition + '\n'
+        : '';
+
+    // Developer's extra imports go after the managed block
+    const extraImportBlock =
+        parsed.extraImports.length > 0
+            ? '\n' + parsed.extraImports.join('\n')
+            : '';
+
+    // Preserve developer frontmatter code outside managed block
+    let extraFrontmatter = '';
+    const fmMatch = existingContent.match(/^---\n([\s\S]*?)\n---/);
+    if (fmMatch) {
+        const fm = fmMatch[1];
+        // Remove the managed block
+        const withoutManaged = fm.replace(
+            /\/\*[\s\S]*?@start-eject-import[\s\S]*?@end-eject-import[\s\S]*?\*\//gs,
+            '',
+        );
+        // Remove JSDoc blocks
+        const withoutJSDoc = withoutManaged.replace(/\/\*\*[\s\S]*?\*\//g, '');
+        // Remove import lines (both core and extra — we re-add them)
+        const devLines = withoutJSDoc
+            .split('\n')
+            .filter((l) => {
+                const t = l.trim();
+                return t && !t.startsWith('import ') && !t.startsWith('const props');
+            })
+            .join('\n')
+            .trim();
+        if (devLines) {
+            extraFrontmatter = '\n' + devLines;
+        }
+    }
+
+    const frontmatter = `---
+/**
+ * ${friendlyName} proxy wrapper — developer-owned wrapper around
+ * the core ${friendlyName} ${categoryLabel}.
+ *
+ * Uncomment any slot below to override that section.
+ * The core ${categoryLabel} handles all logic.
+ *
+ * @since 0.6.0
+ */
+/*
+ * @start-eject-import
+ */
+${importLines.join('\n')}
+${propsBlock}
+const props = Astro.props;
+/*
+ * @end-eject-import
+ */${extraImportBlock}${extraFrontmatter}
+---`;
+
+    // ── 3. Build the body — preserve active slots, refresh comments ───
+    const slotParts = [];
+
+    for (const slot of annotations.slots) {
+        if (parsed.activeSlots.has(slot.name)) {
+            // Developer has an active override — keep it, add fresh comment
+            const activeFragment = parsed.activeSlots.get(slot.name);
+            slotParts.push(`
+  {/* =========================================
+    SLOT: ${slot.name}
+    ${slot.description}
+    =========================================
+  */}
+
+  ${activeFragment.trim()}`);
+        } else {
+            // No active override — generate commented block
+            slotParts.push('\n' + generateSlotBlock(slot));
+        }
+    }
+
+    // Unnamed-slot passthrough
+    if (annotations.hasUnnamedSlot) {
+        slotParts.push('\n  <slot />');
+    }
+
+    const body = slotParts.join('\n');
+
+    // ── 4. Preserve style block ───────────────────────────────────────
+    const styleContent = parsed.styleContent
+        ? parsed.styleContent
+        : '\n  /* Add your custom styles here */\n';
+
+    return `${frontmatter}
+
+<${annotations.alias} {...props}>${body}
+</${annotations.alias}>
+
+<style>${styleContent}</style>
+`;
+}
+
 // ─── File Helpers ─────────────────────────────────────────────────────
 
 /**
@@ -662,14 +817,21 @@ export function eject({ target, cwd = process.cwd(), force = false }) {
     }
 
     /**
-     * Write or skip a proxy file. Existing files with SLOT: markers
-     * or @start-eject-import are skipped unless --force is set.
+     * Write, re-eject, or skip a proxy file.
+     *
+     * - New file: write the fresh proxy
+     * - Existing + --force: overwrite with fresh proxy
+     * - Existing ejected proxy: re-eject (merge developer content with
+     *   updated annotations)
+     * - Existing non-proxy file: skip
      *
      * @param {string} relPath
      * @param {string} freshProxy
+     * @param {ParsedAnnotations} annotations
+     * @param {string} registryKey
      * @returns {boolean}
      */
-    function writeOrMerge(relPath, freshProxy) {
+    function writeOrMerge(relPath, freshProxy, annotations, registryKey) {
         const absPath = join(projectRoot, relPath);
 
         if (!existsSync(absPath)) {
@@ -691,8 +853,12 @@ export function eject({ target, cwd = process.cwd(), force = false }) {
             existing.includes('SLOT:') ||
             existing.includes('@start-eject-import')
         ) {
-            skipped.push(relPath);
-            return false;
+            // Re-eject: preserve developer customizations, update managed content
+            const merged = reEject(existing, annotations, registryKey);
+            writeFileSync(absPath, merged);
+            created.push(relPath);
+            messages.push(`  ↳ Re-ejected ${relPath} (preserved your customizations)`);
+            return true;
         }
 
         // Legacy file without markers — skip
@@ -731,9 +897,10 @@ export function eject({ target, cwd = process.cwd(), force = false }) {
             );
         }
 
+        const pageKey = `pages/${name}`;
         const pageFile = `pages/${name}.astro`;
-        const proxy = generateProxy(annotations, `pages/${name}`);
-        writeOrMerge(`src/${pageFile}`, proxy);
+        const proxy = generateProxy(annotations, pageKey);
+        writeOrMerge(`src/${pageFile}`, proxy, annotations, pageKey);
 
         // Auto-eject dependencies from @eject-dependency annotations
         for (const dep of annotations.dependencies) {
@@ -782,8 +949,9 @@ export function eject({ target, cwd = process.cwd(), force = false }) {
             );
         }
 
-        const proxy = generateProxy(annotations, `components/${name}`);
-        writeOrMerge(`src/components/${name}.astro`, proxy);
+        const compKey = `components/${name}`;
+        const proxy = generateProxy(annotations, compKey);
+        writeOrMerge(`src/components/${name}.astro`, proxy, annotations, compKey);
         return { created, skipped, messages };
     }
 
@@ -803,8 +971,9 @@ export function eject({ target, cwd = process.cwd(), force = false }) {
             );
         }
 
-        const proxy = generateProxy(annotations, `layouts/${name}`);
-        writeOrMerge(`src/layouts/${name}.astro`, proxy);
+        const layoutKey = `layouts/${name}`;
+        const proxy = generateProxy(annotations, layoutKey);
+        writeOrMerge(`src/layouts/${name}.astro`, proxy, annotations, layoutKey);
         return { created, skipped, messages };
     }
 

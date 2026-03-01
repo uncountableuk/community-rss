@@ -253,7 +253,7 @@ const props = Astro.props;
             rmSync(tempDir, { recursive: true, force: true });
         });
 
-        it('should skip when file exists with SLOT: markers (direct eject)', () => {
+        it('should re-eject when file exists with SLOT: markers (preserving customizations)', () => {
             // First eject
             eject({ target: 'components/FeedCard', cwd: tempDir });
 
@@ -265,19 +265,24 @@ const props = Astro.props;
                 '<Fragment slot="before-unnamed-slot">\n    <p>My Override</p>\n  </Fragment>',
             );
             writeFileSync(filePath, content);
-            const modifiedContent = content;
 
-            // Re-eject without --force on direct call (should skip)
-            const { skipped } = eject({
+            // Re-eject without --force — should merge (re-eject)
+            const { created, messages } = eject({
                 target: 'components/FeedCard',
                 cwd: tempDir,
             });
 
-            expect(skipped).toContain('src/components/FeedCard.astro');
+            // File should be in created (re-ejected), not skipped
+            expect(created).toContain('src/components/FeedCard.astro');
+            expect(messages.some((m: string) => m.includes('Re-ejected'))).toBe(true);
 
-            // Verify file is unchanged
+            // Developer override should be preserved
             const finalContent = readFileSync(filePath, 'utf-8');
-            expect(finalContent).toBe(modifiedContent);
+            expect(finalContent).toContain('<p>My Override</p>');
+            expect(finalContent).toContain('<Fragment slot="before-unnamed-slot">');
+            // Managed imports should be present
+            expect(finalContent).toContain('@start-eject-import');
+            expect(finalContent).toContain('@end-eject-import');
         });
 
         it('should skip when file exists without SLOT: markers', () => {

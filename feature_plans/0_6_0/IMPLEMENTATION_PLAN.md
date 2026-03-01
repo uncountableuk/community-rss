@@ -1812,7 +1812,7 @@ bugs above. Further acceptance testing is planned to verify:
 
 - [x] Phase 15a: Annotate source files
 - [x] Phase 15b: Rewrite `eject.mjs` — annotation parser
-- [ ] Phase 15c: New re-eject algorithm
+- [x] Phase 15c: New re-eject algorithm
 - [ ] Phase 15d: Purge old registry code
 - [ ] Phase 15e: AI instructions (framework + consumer)
 - [ ] Phase 15f: Testing
@@ -1868,6 +1868,31 @@ bugs above. Further acceptance testing is planned to verify:
   import commenting behaviour; new assertion verifies imports are always
   live. Removed stale `registryKey` third argument from `mergeSlotContent`
   calls.
+- All 544 tests pass. No regression.
+
+**Phase 15c Implementation Notes:**
+- Implemented `reEject(existingContent, annotations, registryKey)` in
+  `eject.mjs` (~100 lines). The function:
+  1. Parses developer customizations via `parseEjectedFile()`
+  2. Regenerates the managed `@start-eject-import` … `@end-eject-import`
+     block from current annotations
+  3. Preserves active `<Fragment slot="name">` overrides for slots that
+     still exist in annotations (adds fresh comment header above each)
+  4. Removes orphan live fragments (slot removed from annotations)
+  5. Adds commented blocks for new slots not previously present
+  6. Preserves developer `<style>` content and extra imports
+- Updated `writeOrMerge()` to call `reEject()` when an existing ejected
+  proxy is detected (has `SLOT:` or `@start-eject-import` markers).
+  Previously skipped; now merges and reports `↳ Re-ejected`.
+- `--force` path unchanged: writes fresh `generateProxy()` output (no merge).
+- Fixed critical bug in `parseAnnotations()`: the `@eject-slot` regex
+  `\{\/\*\s*@eject-slot` did not match the actual annotation format
+  `{\n  /* @eject-slot` where `{` and `/*` are on separate lines. Updated
+  regex to `\{\s*\/\*\s*@eject-slot` to match both inline and multiline
+  JSX expression forms. Same fix applied to unnamed-slot detection regex.
+- Updated 2 tests in `eject-reejection.test.ts` and 1 test in
+  `eject-upgrade-all.test.ts` that expected "skip" behavior — now expect
+  "re-eject" behavior (preserves customizations, refreshes managed content).
 - All 544 tests pass. No regression.
 
 ---

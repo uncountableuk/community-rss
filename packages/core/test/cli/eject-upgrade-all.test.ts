@@ -83,7 +83,7 @@ describe('eject all', () => {
         expect(content).toContain('CoreFeedCard');
     });
 
-    it('should skip already-ejected files without --force', () => {
+    it('should re-eject already-ejected files without --force (preserving customizations)', () => {
         // First eject all
         ejectAll({ cwd: tempDir });
 
@@ -95,16 +95,18 @@ describe('eject all', () => {
             '<Fragment slot="before-unnamed-slot">\n    <p>My Override</p>\n  </Fragment>',
         );
         writeFileSync(filePath, content);
-        const customizedContent = content;
 
-        // Eject all again without force
-        const { skipped } = ejectAll({ cwd: tempDir, force: false });
+        // Eject all again without force — should re-eject, not skip
+        const { created, messages } = ejectAll({ cwd: tempDir, force: false });
 
-        // Should skip already-ejected files
-        expect(skipped).toContain('src/components/FeedCard.astro');
+        // File should be re-ejected (in created, not skipped)
+        expect(created).toContain('src/components/FeedCard.astro');
 
-        // Verify file is unchanged
+        // Developer customization should be preserved
         const finalContent = readFileSync(filePath, 'utf-8');
-        expect(finalContent).toBe(customizedContent);
+        expect(finalContent).toContain('<p>My Override</p>');
+        expect(finalContent).toContain('<Fragment slot="before-unnamed-slot">');
+        // Managed imports should be refreshed
+        expect(finalContent).toContain('@start-eject-import');
     });
 });
