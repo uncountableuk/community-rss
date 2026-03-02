@@ -43,8 +43,9 @@ const {
     @description Content injected before the magic link form. */
 }
 <slot name="before-unnamed-slot" />
-class="crss-magic-link-form" id="crss-magic-link-form" data-error-text={errorText}
-data-network-error-text={networkErrorText}
+<form
+  class="crss-magic-link-form" id="crss-magic-link-form" data-error-text={errorText}
+  data-network-error-text={networkErrorText}
 >
 <div class="crss-form-group">
   <label for="crss-email-input" class="crss-form-label">{emailLabel}</label>
@@ -78,6 +79,7 @@ data-network-error-text={networkErrorText}
 
 <div class="crss-form-message crss-form-message--error" id="crss-error-msg" style="display: none;">
 </div>
+</form>
 
 <slot />
 {

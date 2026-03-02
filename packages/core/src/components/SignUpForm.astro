@@ -70,8 +70,9 @@ const {
     @description Replace the sign-up form. Warning: The <script> block relies on specific element IDs. If you replace this slot, re-implement the same IDs or provide your own script. */
 }
 <slot name="form">
-  class="crss-signup-form" id="crss-signup-form" data-error-create={createFailed}
-  data-error-network={networkError}
+  <form
+    class="crss-signup-form" id="crss-signup-form" data-error-create={createFailed}
+    data-error-network={networkError}
   >
   <div class="crss-form-group">
     <label for="crss-signup-email" class="crss-form-label">{emailLabel}</label>
@@ -136,6 +137,7 @@ const {
     {footerText}
     <a href="/auth/signin" class="crss-form-link">{footerLinkText}</a>
   </p>
+  </form>
 </slot>
 
 
