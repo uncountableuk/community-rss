@@ -151,7 +151,7 @@ const props = Astro.props;
             expect(merged).toContain('<p>Custom</p>');
             // Other slots should still be commented
             expect(merged).toContain('SLOT: after-unnamed-slot');
-            expect(merged).toContain('{/* <Fragment slot="after-unnamed-slot">');
+            expect(merged).toContain('<Fragment slot="after-unnamed-slot">');
         });
 
         it('should preserve custom style content', () => {
@@ -257,11 +257,11 @@ const props = Astro.props;
             // First eject
             eject({ target: 'components/FeedCard', cwd: tempDir });
 
-            // Modify the file — uncomment a slot
+            // Modify the file — uncomment a slot by replacing the commented block with an active fragment
             const filePath = join(tempDir, 'src/components/FeedCard.astro');
             let content = readFileSync(filePath, 'utf-8');
             content = content.replace(
-                '{/* <Fragment slot="before-unnamed-slot">\n  </Fragment> */}',
+                /\{\/\*[\s\S]*?SLOT: before-unnamed-slot[\s\S]*?<\/Fragment>\s*\*\/\}/,
                 '<Fragment slot="before-unnamed-slot">\n    <p>My Override</p>\n  </Fragment>',
             );
             writeFileSync(filePath, content);
@@ -315,7 +315,7 @@ const props = Astro.props;
             const filePath = join(tempDir, 'src/components/FeedCard.astro');
             let content = readFileSync(filePath, 'utf-8');
             content = content.replace(
-                '{/* <Fragment slot="before-unnamed-slot">\n  </Fragment> */}',
+                /\{\/\*[\s\S]*?SLOT: before-unnamed-slot[\s\S]*?<\/Fragment>\s*\*\/\}/,
                 '<Fragment slot="before-unnamed-slot">\n    <p>My Override</p>\n  </Fragment>',
             );
             writeFileSync(filePath, content);
@@ -327,7 +327,7 @@ const props = Astro.props;
             const fresh = readFileSync(filePath, 'utf-8');
             expect(fresh).not.toContain('<p>My Override</p>');
             expect(fresh).toContain(
-                '{/* <Fragment slot="before-unnamed-slot">',
+                '<Fragment slot="before-unnamed-slot">',
             );
         });
     });

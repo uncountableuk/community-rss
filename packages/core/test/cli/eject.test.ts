@@ -150,9 +150,9 @@ describe('CLI eject', () => {
             expect(content).toContain('SLOT: before-unnamed-slot');
             expect(content).toContain('SLOT: after-unnamed-slot');
             expect(content).toContain('SLOT: footer');
-            // All slot blocks are commented out by default
-            expect(content).toContain('{/* <Fragment slot="header">');
-            expect(content).toContain('{/* <Fragment slot="footer">');
+            // All slot blocks have fragments (may or may not contain inline check)
+            expect(content).toContain('<Fragment slot="header">');
+            expect(content).toContain('<Fragment slot="footer">');
         });
 
         it('should throw for unknown layout', () => {

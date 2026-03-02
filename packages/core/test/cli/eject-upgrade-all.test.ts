@@ -90,7 +90,7 @@ describe('eject all', () => {
         const filePath = join(tempDir, 'src/components/FeedCard.astro');
         let content = readFileSync(filePath, 'utf-8');
         content = content.replace(
-            '{/* <Fragment slot="before-unnamed-slot">\n  </Fragment> */}',
+            /\{\/\*[\s\S]*?SLOT: before-unnamed-slot[\s\S]*?<\/Fragment>\s*\*\/\}/,
             '<Fragment slot="before-unnamed-slot">\n    <p>My Override</p>\n  </Fragment>',
         );
         writeFileSync(filePath, content);

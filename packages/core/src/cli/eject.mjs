@@ -620,9 +620,9 @@ export function mergeSlotContent(freshProxy, parsed) {
     // Replace commented slot blocks with active developer content
     for (const [slotName, fragmentHtml] of parsed.activeSlots) {
         const escapedName = slotName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        // Match the new slot block format: {/* ... SLOT: name ... */} followed by newlines
         const commentedBlockPattern = new RegExp(
-            `\\s*\\{/\\*\\s*={3,}\\s*\\n\\s*SLOT:\\s*${escapedName}\\b[\\s\\S]*?={3,}\\s*\\*/\\}` +
-            `\\s*\\{/\\*\\s*<Fragment slot="${escapedName}">[\\s\\S]*?</Fragment>\\s*\\*/\\}`,
+            `\\{/\\*[\\s\\S]*?SLOT:\\s*${escapedName}\\b[\\s\\S]*?</Fragment>\\s*\\*/\\}`,
         );
 
         const replacement = `\n  ${fragmentHtml.trim()}`;
@@ -772,18 +772,16 @@ const props = Astro.props;
 
     for (const slot of annotations.slots) {
         if (parsed.activeSlots.has(slot.name)) {
-            // Developer has an active override — keep it, add fresh comment
+            // Developer has an active override — keep uncommented, add fresh comment above it
             const activeFragment = parsed.activeSlots.get(slot.name);
-            slotParts.push(`
-  {/*
-    =========================================
-    SLOT: ${slot.name}
-    ${slot.description}
-    =========================================
-  ${activeFragment.trim()}
-  */}`);
+            
+            // Use standard slot block format for the comment (showing default example)
+            const commentBlock = generateSlotBlock(slot);
+            
+            // Add comment above, then active fragment below (uncommented)
+            slotParts.push(`${commentBlock}\n  ${activeFragment.trim()}`);
         } else {
-            // No active override — generate commented block
+            // No active override — generate fully commented block
             slotParts.push('\n' + generateSlotBlock(slot));
         }
     }

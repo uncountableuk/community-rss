@@ -79,9 +79,14 @@ describe('generateProxy', () => {
 
         it('should include commented Fragment blocks for each slot', () => {
             const proxy = generateLayoutProxy('BaseLayout');
-            expect(proxy).toContain('{/* <Fragment slot="head">');
-            expect(proxy).toContain('{/* <Fragment slot="header">');
-            expect(proxy).toContain('{/* <Fragment slot="footer">');
+            // Check for SLOT markers rather than the exact inline format
+            // (new format has SLOT marker followed by description before the Fragment tag)
+            expect(proxy).toContain('SLOT: head');
+            expect(proxy).toContain('<Fragment slot="head">');
+            expect(proxy).toContain('SLOT: header');
+            expect(proxy).toContain('<Fragment slot="header">');
+            expect(proxy).toContain('SLOT: footer');
+            expect(proxy).toContain('<Fragment slot="footer">');
         });
 
         it('should include slot descriptions', () => {

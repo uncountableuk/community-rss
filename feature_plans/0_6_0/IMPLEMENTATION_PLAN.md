@@ -1896,6 +1896,46 @@ bugs above. Further acceptance testing is planned to verify:
   "re-eject" behavior (preserves customizations, refreshes managed content).
 - All 544 tests pass. No regression.
 
+**Phase 15c Bugfix (2026-03-02): Re-eject Active Fragment Preservation**
+- Issue: When re-ejecting an existing proxy with developer-customized
+  active slots, the logic was wrapping the active `<Fragment>` content
+  INSIDE the JSX comment block, effectively re-commenting the override.
+  This broke the intended design where active fragments should remain
+  uncommented outside the comment block.
+- Root cause: Lines 773–788 of `reEject()` checked if a slot had an active
+  override, then inserted the entire `activeFragment` HTML string inside
+  the `{/* ... */}` comment wrapper, creating invalid structure.
+- Fix: Updated lines 772–795 to reuse the existing `generateSlotBlock()`
+  function to create the comment block (which shows the default example
+  and description), then append the active fragment HTML OUTSIDE and
+  AFTER the comment on a new line. This ensures:
+  1. The comment block shows the default slot content as reference
+  2. The developer's active override remains uncommented and active
+  3. Subsequent re-ejects correctly re-detect the active fragment via
+     `parseEjectedFile()` since it's no longer wrapped in comments
+- Code change: Replaced inline comment block construction with:
+  ```javascript
+  if (parsed.activeSlots.has(slot.name)) {
+    const activeFragment = parsed.activeSlots.get(slot.name);
+    const commentBlock = generateSlotBlock(slot);
+    slotParts.push(`${commentBlock}\n  ${activeFragment.trim()}`);
+  }
+  ```
+- Impact: Re-eject is now idempotent — running `npx crss eject` multiple
+  times on a proxy with customizations preserves those customizations
+  indefinitely. Comment blocks above active slots are refreshed on each
+  re-eject to stay current with annotation descriptions and default content.
+- Test: Verified manually by editing `playground/src/layouts/BaseLayout.astro`
+  to add active `Welcome` content to `below-header` and `before-unnamed-slot`
+  slots, re-ejecting twice, and confirming fragments remained active and
+  were preserved through each re-eject cycle.
+- Related configuration improvements:
+  - Updated `.vscode/settings.json` to disable `editor.formatOnSave`
+    globally (users prefer manual lint control)
+  - Added `playground/src/**/*.astro` to `.prettierignore` to prevent
+    aggressive reformatting of ejected files which was destroying JSX
+    comment block structure and making developer edits non-functional
+
 **Phase 15d Implementation Notes:**
 - Deleted `src/cli/slot-registry.mjs` (830 lines) — superseded entirely by
   annotation-driven parser in `eject.mjs`.
