@@ -331,13 +331,13 @@ function generateSlotBlock(slot) {
     const placeholder = slot.defaultContent
         ? `\n    ${slot.defaultContent.split('\n').join('\n    ')}\n  `
         : '\n  ';
-    return `  {/* =========================================
+    return `  {/*
+    =========================================
     SLOT: ${slot.name}
     ${slot.description}
     =========================================
-  */}
-
-  {/* <Fragment slot="${slot.name}">${placeholder}</Fragment> */}`;
+  <Fragment slot="${slot.name}">${placeholder}</Fragment>
+  */}`;
 }
 
 /**
@@ -719,13 +719,13 @@ const props = Astro.props;
             // Developer has an active override — keep it, add fresh comment
             const activeFragment = parsed.activeSlots.get(slot.name);
             slotParts.push(`
-  {/* =========================================
+  {/*
+    =========================================
     SLOT: ${slot.name}
     ${slot.description}
     =========================================
-  */}
-
-  ${activeFragment.trim()}`);
+  ${activeFragment.trim()}
+  */}`);
         } else {
             // No active override — generate commented block
             slotParts.push('\n' + generateSlotBlock(slot));
