@@ -27,6 +27,11 @@ The `X_Y_Z` folder corresponds to the target release version.
 
 ## Required Sections
 
+### 0. Requirements Check
+- **CRITICAL**: Before starting any feature plan, you must check the `docs/src/content/docs/reference-requirements/` documentation.
+- Verify that your proposed feature does not conflict with the Reference Requirements.
+- If there is a discrepancy between the requested feature and the Reference Requirements, you MUST inform the developer and provide options on how to proceed (e.g., update the requirements, adjust the feature, or reject the request).
+
 ### 1. Overview
 - What problem does this feature solve?
 - Who benefits (Guest, Registered, Verified Author, Admin)?

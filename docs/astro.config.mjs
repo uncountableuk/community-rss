@@ -22,6 +22,10 @@ export default defineConfig({
           autogenerate: { directory: 'api-reference' },
         },
         {
+          label: 'Reference Requirements',
+          autogenerate: { directory: 'reference-requirements' },
+        },
+        {
           label: 'Contributing',
           autogenerate: { directory: 'contributing' },
         },
