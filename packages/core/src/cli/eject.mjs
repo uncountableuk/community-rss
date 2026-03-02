@@ -102,11 +102,16 @@ export function parseAnnotations(filePath) {
     // ── Extract props definition (type declarations only) ─────────────
     const propsLines = [];
     let inCommentBlock = false;
+    let inRuntimeStatement = false;
+    let braceDepth = 0;
+    let parenDepth = 0;
+    let foundInterfaceOrType = false;
+    let typeDefinitionBraceDepth = 0;
 
     for (const line of frontmatter.split('\n')) {
         const trimmed = line.trim();
 
-        // Track comment blocks (skip JSDoc and annotation blocks)
+        // Track multi-line comment blocks
         if (
             !inCommentBlock &&
             (trimmed.startsWith('/**') || trimmed.startsWith('/*'))
@@ -123,13 +128,64 @@ export function parseAnnotations(filePath) {
         // Skip import statements
         if (trimmed.startsWith('import ')) continue;
 
-        // Skip runtime statements (const, let, var assignments)
-        if (/^(const|let|var)\s/.test(trimmed)) continue;
+        // Skip single-line comments
+        if (trimmed.startsWith('//')) continue;
 
-        // Skip empty leading lines
-        if (!propsLines.length && !trimmed) continue;
+        // Track runtime statements (const, let, var assignments) and their continuations
+        if (!inRuntimeStatement && /^(const|let|var)\s/.test(trimmed)) {
+            inRuntimeStatement = true;
+            braceDepth = 0;
+            parenDepth = 0;
+        }
 
-        propsLines.push(line);
+        if (inRuntimeStatement) {
+            // Count braces and parentheses on this line
+            for (const char of line) {
+                if (char === '{') braceDepth++;
+                else if (char === '}') braceDepth--;
+                else if (char === '(') parenDepth++;
+                else if (char === ')') parenDepth--;
+            }
+
+            // Statement ends when we're back to depth 0 and line ends with semicolon
+            if (braceDepth <= 0 && parenDepth <= 0 && trimmed.endsWith(';')) {
+                inRuntimeStatement = false;
+            }
+            continue;
+        }
+
+        // Detect interface or type declaration start
+        if (/^(interface|type)\s/.test(trimmed)) {
+            foundInterfaceOrType = true;
+            typeDefinitionBraceDepth = 0;
+            // Count opening braces on this line
+            for (const char of trimmed) {
+                if (char === '{') typeDefinitionBraceDepth++;
+                else if (char === '}') typeDefinitionBraceDepth--;
+            }
+        }
+
+        if (foundInterfaceOrType) {
+            // Include the line
+            propsLines.push(line);
+
+            // Count braces to track when the type definition ends
+            for (const char of trimmed) {
+                if (char === '{') typeDefinitionBraceDepth++;
+                else if (char === '}') typeDefinitionBraceDepth--;
+            }
+
+            // If we've closed all braces, we're done with this type definition
+            if (typeDefinitionBraceDepth === 0 && /[{}]/.test(trimmed)) {
+                foundInterfaceOrType = false;
+            }
+            continue;
+        }
+
+        // Skip empty lines when not building props
+        if (!trimmed) continue;
+
+        // Skip any other lines (they're runtime code)
     }
 
     // Trim trailing blank lines
