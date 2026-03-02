@@ -399,8 +399,16 @@ const {
       if (response.ok) {
         const respData = (await response.json().catch(() => ({}))) as { exists?: boolean };
 
-        form.style.display = 'none';
+        // Guard: Astro SSR renders named-slot fallback content inside the first
+        // HTML element of the preceding slot (the <form>). Move the confirmation
+        // panel to be a sibling of the form BEFORE hiding it, otherwise
+        // form.style.display = 'none' hides the confirmation too.
         const confirm = document.getElementById('crss-signup-confirm');
+        if (confirm && form.contains(confirm)) {
+          form.after(confirm);
+        }
+
+        form.style.display = 'none';
         const confirmHeading = document.getElementById('crss-confirm-heading');
         const confirmNamePara = document.getElementById('crss-confirm-name-para');
         const confirmEmail = document.getElementById('crss-confirm-email');
