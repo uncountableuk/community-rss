@@ -24,6 +24,7 @@ The overarching goal is to present a fully comprehensive Astro application as an
 - To enable safe core upgrades without destroying custom templates, injected components exist as manageable **Proxy Components**.
 - Ejection via CLI extracts a thin wrapper pointing directly back to the `core`. Developers place custom UI layout only within distinct annotated `<Fragment slot="X">` wrappers, allowing the package to safely upgrade the underlying component without severing customized front-end logic.
 - Proxy wrappers cannot contain core business logic—they exist only for visual styling and slot manipulation.
+- The mechanism that makes ejection possible is the **Eject Protocol** — a set of source-file annotations (`@eject-module`, `@eject-slot`) that framework authors must embed in every ejectable artefact. See [Eject Protocol](eject-protocol) for the full specification.
 
 ## 4. Route Precedence
 

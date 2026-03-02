@@ -40,6 +40,8 @@ When developers need more control than CSS can provide, they use the Eject comma
 - **Active Fragment Detection:** The CLI `eject` algorithm parses the existing local component file for uncommented (active) `<Fragment slot="X">` overrides. 
 - **Merging Output:** During a re-eject, it generates fresh comment blocks showcasing the upstream default structures, but intelligently appends the developer's previously active fragments *outside* of those comment blocks so they remain functionally active. This allows the latest package updates to merge seamlessly around the developer's local overrides indefinitely.
 
+For a complete technical description of the annotation format and the five-phase algorithm the CLI executes, see the [Eject Protocol](eject-protocol) reference requirement.
+
 ## 4. Email Templating
 
 Email responses leverage a dual-mode system designed for developer ownership:
