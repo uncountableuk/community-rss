@@ -42,8 +42,10 @@ const {
     @description Content injected before the consent modal. */
 }
 <slot name="before-unnamed-slot" />
-class="crss-consent-overlay" id="crss-consent-overlay" style="display: none;" role="dialog" aria-modal="true"
-aria-labelledby="crss-consent-title" >
+<div
+  class="crss-consent-overlay" id="crss-consent-overlay" style="display: none;" role="dialog" aria-modal="true"
+  aria-labelledby="crss-consent-title" 
+>
 <div class="crss-consent-modal">
   <h2 class="crss-consent-title" id="crss-consent-title">{modalTitle}</h2>
   <p class="crss-consent-text">
@@ -60,6 +62,7 @@ aria-labelledby="crss-consent-title" >
       {declineLabel}
     </button>
   </div>
+</div>
 </div>
 
 <slot />
