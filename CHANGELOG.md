@@ -7,6 +7,178 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-03-03
+
+### Added
+
+- **Progressive customization hierarchy** — four-level framework for
+  customizing the framework: (1) CSS Tokens & Classes, (2) Page Layouts,
+  (3) Components & Layouts (via eject), (4) API & Actions. Documented in
+  guides and AI instructions.
+- **Conditional page injection** — 8 pages (index, profile, terms, article
+  detail, auth flows, verify-email-change) now injected by default rather
+  than scaffolded. Developers who have local page files get them mapped
+  automatically; no breaking change on upgrade.
+- **Global layered styles for all components** — all 9 components +
+  BaseLayout migrated from Astro scoped `<style>` to `<style is:global>`
+  wrapped in `@layer crss-components`, fixing CSS specificity barrier that
+  prevented consumer class overrides in `theme.css`.
+- **Tier 3 component tokens fully wired** — added 10+ new tokens
+  (`--crss-comp-cta-*`, `--crss-comp-header-*`, `--crss-comp-btn-*`,
+  `--crss-comp-form-*` expansions) and consumed every defined token across
+  all components. No hardcoded colour, size, or transition values remain.
+- **`npx crss eject` CLI command** — take ownership of pages, components,
+  layouts, and actions locally. Supports auto-ejection of dependencies
+  (`eject pages/profile` also ejects layout + component proxies), re-ejection
+  with content preservation, `--force` overwrites, and batch operations
+  (`eject all`, `eject upgrade`).
+- **Slot-based proxy component system** — all ejectable artefacts use Astro
+  named slots for granular customization. Comments mark each slot with
+  `SLOT: <name>` and show the default content. Developer uncomments a
+  `<Fragment>` block to override. Re-eject automatically refreshes comment
+  blocks while preserving active overrides (idempotent).
+- **Annotation-driven ejection** — all `.astro` source files in core
+  annotated with `@eject-module`, `@eject-slot`, `@eject-dependency` JSDoc
+  blocks. No hand-written slot registry file — `eject.mjs` parses annotations
+  at runtime and generates proxies dynamically. Consumers can also use
+  `@crss-lookup/<category>/<File>.astro` virtual prefix in ejected code.
+- **`coreActions` spread pattern** — 6 action definitions (`fetchArticles`,
+  `checkEmail`, `submitSignup`, `updateProfile`, `changeEmail`,
+  `confirmEmailChange`) exported from `@community-rss/core/actions`. Scaffolded
+  `src/actions/index.ts` uses `...coreActions` instead of copying handlers.
+  New actions added to core appear automatically after `npm update` (no manual
+  scaffold refresh needed).
+- **Minimal CLI scaffold** — `npx crss init` now produces a minimal project:
+  config files, `theme.css`, `src/actions/index.ts`, and signpost READMEs
+  (no page files, no component proxies). Pages are served via injection;
+  proxies are created on-demand via `eject`.
+- **Signpost READMEs** — three new template READMEs explain the progressive
+  customization model to developers: `src/pages/README.md`, `src/components/README.md`,
+  `src/layouts/README.md`. Each lists available targets and shows how to eject.
+- **Enhanced `theme.css` scaffold** — now documents all four customization
+  levels with practical examples: brand colour change, dark mode, sticky
+  header, flat card style, pill-shaped buttons. Line count tripled from 47
+  to ~130 with educational comments.
+- **Article page SSR** (`/article/[id]`) — migrated from client-side rendering
+  to server-side rendering. Article data fetched in Astro frontmatter via
+  `Astro.locals.app`, full HTML rendered on first load, dynamic article modal
+  replaced with full-page template. Proper 404 status for missing articles.
+- **Homepage SSR with progressive enhancement** — articles fetched server-side
+  and rendered via `FeedCard.astro`. Replaced 130-line client-side `createArticleCard()`
+  function with Astro-rendered cards. Infinite scroll via `IntersectionObserver`
+  uses `DOMParser` to extract server-rendered cards from next page's response.
+  No-JS fallback: `#crss-load-more-link` navigates normally.
+- **`getArticlesWithFeedTitle` DB query** — new `leftJoin` query in
+  `src/db/queries/articles.ts` returns `ArticleWithFeedTitle[]` with joined
+  feed titles. Exported from the public API.
+- **Consumer `theme.css` auto-injection** — integration now auto-detects and
+  injects developer's `src/styles/theme.css` after framework CSS. No manual
+  import needed; token and class overrides apply automatically.
+- **Cascading component override fixes** — Vite plugin (`crss-consumer-overrides`)
+  scope expanded from core pages to all core `.astro` imports. Ejected `FeedCard`
+  override now cascades to cards rendered on the homepage, in infinite scroll,
+  everywhere the component is used internally. Plugin runs with `enforce: 'pre'`
+  to intercept relative imports before Vite's default resolution phase.
+- **Consumer `@crss-lookup/` virtual prefix** — developers can use
+  `@crss-lookup/components/FeedCard.astro` in ejected proxy code for
+  ergonomic access to sibling proxy files (same resolution semantics as
+  regular eject).
+- **Prismatic test coverage** — added 150+ new tests across 7 new test files:
+  CSS architecture (cascading, specificity), token wiring (audit), annotation
+  parsing, proxy generation, re-ejection, conditional injection, SSR article
+  page, articles-with-feed-title DB query. Coverage: 87.7% statements, 88.4%
+  branches, 88.4% functions.
+- **Comprehensive documentation** — rewrote 3 Starlight guide pages
+  (customisation, styling, CLI) and added new reference pages. Updated all
+  `.github/` instruction files for AI assistants (Copilot, Cursor). Added
+  framework-contributor instructions for maintaining annotations.
+- **AI guidance for developers** — scaffolded `.github/copilot-instructions.md`
+  and `.cursor/rules/community-rss.mdc` now explain progressive customization,
+  the four-level hierarchy, and when to use eject vs theme.css.
+
+### Changed
+
+- **Component styles**: All 9 components + BaseLayout now use `<style is:global>`
+  + `@layer crss-components` (was scoped `<style>` causing specificity conflicts).
+  Removed all `:global()` wrapper blocks (now redundant).
+- **Page templates**: All 8 page source files and their CLI template copies
+  use global layered styles (fixed consumer CSS overrides for page-scoped styles).
+- **CLI scaffold**: Removed page files and component proxy stubs. Added
+  signpost READMEs explaining injection model and eject command. File count
+  reduced from 22 to 14.
+- **Page imports in core**: Moved from `@community-rss/core/components/*`
+  (bypassing proxies) to relative imports via the `crss-consumer-overrides`
+  Vite plugin, enabling consumer proxy cascading.
+- **Integration route injection**: Added conditional page injection hook —
+  8 page routes now injected conditionally. If developer has a local file
+  at the expected path, injection is skipped and Astro's file router uses
+  the developer's version automatically.
+- **Actions scaffold**: Changed from full-copy of handlers (with duplicated
+  Zod schemas) to `coreActions` spread pattern with wrapper. Stale action
+  copy issues eliminated.
+- **`zod` dependency**: Added as both `peerDependency` (forces singleton
+  resolution in consumers) and `devDependency` (core's own tests).
+- **Astro SSR default**: All pages now use SSR for data fetching by default.
+  Homepage and individual article pages fetch data in frontmatter and render
+  full HTML on initial load. Exceptions must be explicitly documented and
+  approved (CSR incompatible with proxy override system).
+- **AI instruction files**: Updated `.github/copilot-instructions.md`,
+  `.github/instructions/implementation.instructions.md`, consumer guidance
+  templates. All now reference the four-level hierarchy, conditional injection,
+  annotation-driven ejection, and SSR-first page rendering.
+
+### Fixed
+
+- **Consumer `.crss-*` class overrides now work** — specificity barrier removed
+  by switching from scoped styles (`[data-astro-cid-*]` combinator) to layered
+  global styles. Consumer `theme.css` classes beat framework `@layer
+  crss-components` without need for `!important`.
+- **Page style scoping blocked theme overrides** — all 8 page files were using
+  scoped `<style>` blocks, a 0.5.0 regression. Now using global layered styles.
+- **Consumer theme.css never injected** — integration was missing auto-detection
+  step. Now scans for `<astroRoot>/src/styles/theme.css` and injects it last.
+- **Injected pages bypassed consumer proxy components** — relative imports from
+  core pages resolved back to the core package, not the consumer's ejected
+  proxies. Added `crss-consumer-overrides` Vite plugin with `enforce: 'pre'`
+  to intercept and redirect to consumer files.
+- **Vite plugin not running early enough** — filesystem resolver ran before
+  normal `resolveId` hooks. Added `enforce: 'pre'` to ensure plugin runs in
+  pre-resolution phase.
+- **Layout proxy slot forwarding hiding defaults** — proxy forwarded all named
+  slots (header, footer), causing condition checks in the core layout to
+  detect "provided" siots and render empty wrappers instead of defaults.
+  Removed header/footer slot forwarding from proxy template.
+
+### Removed
+
+- **`slot-registry.mjs` — superseded by annotation-driven parser.**
+  `eject.mjs` now parses `@eject-module` and `@eject-slot` annotations
+  directly from source files at runtime. No intermediate registry file.
+- **Page scaffold entries — pages no longer scaffolded.** Framework injects
+  them by default; developers use `eject` to take local ownership.
+- **Component proxy scaffold entries — proxies on-demand via `eject`.**
+  Minimal scaffold contains only signpost READMEs explaining how to eject.
+- **Global scoped styles duplication — `:global()` wrapper blocks removed**
+  from components since all styles are now global + layered.
+- **Client-side article rendering — removed 130-line `createArticleCard()` JS
+  builder** that duplicated FeedCard.astro markup. Articles now rendered
+  server-side by Astro components.
+
+### Known Issues
+
+- `prettier` configurations in `.vscode/settings.json` may conflict with Astro's
+  formatter on save. Playground sets `editor.formatOnSave: false` (user-driven
+  formatting preferred).
+- Large ejected files may cause TypeScript linting to consider them "generated"
+  and suppress diagnostics. Add `// @ts-check` JSDoc to re-enable for Cursor
+  IDE users.
+- `@importfromN` annotation values use `@crss-lookup/` prefix which is resolved
+  at consumer build time. If the prefix is not defined in the consumer's
+  `astro.config.mjs` (e.g., old pre-0.6.0 projects that haven't updated), the
+  import will fail. Added `crss-consumer-overrides` plugin to handle redirect
+  for pages; consumers must apply similar logic if they define custom Vite
+  plugins for component-level imports.
+
 ## [0.5.0] — 2026-02-28
 
 ### Added
