@@ -1,0 +1,116 @@
+---
+title: Eject Annotations
+description: How the annotation-driven ejection system works for framework contributors
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+## Overview
+
+The CLI `eject` command generates proxy wrappers from metadata annotations
+embedded directly in `.astro` source files. There is **no external registry
+file** — `eject.mjs` discovers ejectable targets by walking the filesystem
+and parsing annotations at runtime.
+
+## How It Works
+
+1. `parseAnnotations(filePath)` reads an `.astro` file
+2. Extracts `@eject-module` metadata from the frontmatter
+3. Extracts `@eject-slot` annotations from the template body
+4. `generateProxy()` uses this data to build a proxy wrapper
+5. `reEject()` merges developer customizations with updated annotations
+
+## Annotation Format
+
+### @eject-module (Frontmatter)
+
+Every ejectable component, layout, or page must include this comment
+block in its frontmatter:
+
+```astro
+---
+/*
+ * @eject-module
+ * @alias CoreFeedCard
+ * @eject-dependency layouts/BaseLayout
+ * @eject-dependency components/AuthButton
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+```
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `@eject-module` | Yes | Marks the file as ejectable |
+| `@alias` | Yes | Name for the core import in proxies (e.g., `CoreFeedCard`) |
+| `@eject-dependency` | No | Auto-eject these when this target is ejected. Repeatable. |
+
+### @eject-slot (Template Body)
+
+Placed as a JSX comment immediately before a named `<slot>` tag:
+
+```astro
+{
+  /* @eject-slot
+      @description Replace the default header/nav bar.
+      @additionalimport1 AuthButton
+      @importfrom1 @community-rss/core/components/AuthButton.astro */
+}
+<slot name="header">
+  <header class="crss-header">Default header</header>
+</slot>
+```
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `@eject-slot` | Yes | Marks the next `<slot>` as ejectable |
+| `@description` | Yes | Description shown in the generated proxy |
+| `@additionalimportN` | No | Component name needed for this slot override |
+| `@importfromN` | No | Import path for the above component |
+
+<Aside type="tip">
+The `N` suffix on `@additionalimport` and `@importfrom` must match
+(e.g., `@additionalimport1` pairs with `@importfrom1`). Multiple pairs
+are supported.
+</Aside>
+
+## Generated Proxy Structure
+
+When a developer runs `npx crss eject components/FeedCard`, the system:
+
+1. Reads `src/components/FeedCard.astro` from the installed package
+2. Parses all annotations
+3. Generates a proxy wrapper with:
+   - **Managed import block** (`@start-eject-import` / `@end-eject-import`)
+   - **Commented slot blocks** with `SLOT:` markers
+   - **Unnamed slot passthrough** (`<slot />`) when applicable
+   - **Empty `<style>` block** for developer customization
+
+## Re-ejection
+
+Running `eject` again on an existing proxy (without `--force`) triggers
+a **merge** that:
+
+- Preserves active (uncommented) `<Fragment slot="...">` overrides
+- Preserves developer `<style>` content
+- Preserves developer imports outside the managed block
+- Regenerates the managed import block
+- Adds commented blocks for new slots
+- Removes orphan fragments for deleted slots
+
+## Rules for Contributors
+
+1. Every new ejectable `.astro` file needs `@eject-module` + `@alias`
+2. Every ejectable named slot needs `@eject-slot` + `@description`
+3. Prefer block-form slots (`<slot name="x">default</slot>`) over
+   self-closing (`<slot name="x" />`) so proxies show examples
+4. Aim for many small slots — each is an independent customization point
+5. After changes, verify with `npx crss eject <target>` in the playground
+6. The `src/` path in `package.json` `files` must never be removed
+
+## Full Algorithm Specification
+
+This page is a quick-reference syntax card. For the full algorithm specification
+— including all five phases of the eject process, the `ParsedAnnotations` type
+shape, re-ejection merge semantics, and a framework-author checklist — see the
+[Eject Protocol](../reference-requirements/eject-protocol) reference requirement.

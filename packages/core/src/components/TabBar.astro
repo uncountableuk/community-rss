@@ -8,6 +8,11 @@
  * @since 0.2.0
  */
 
+/*
+ * @eject-module
+ * @alias CoreTabBar
+ */
+
 interface Tab {
   id: string;
   label: string;
@@ -32,64 +37,78 @@ const defaultTabs: Tab[] = [
 const { tabs = defaultTabs, ariaLabel = 'Feed views' } = Astro.props;
 ---
 
-<nav class="crss-tab-bar" role="tablist" aria-label={ariaLabel}>
-  {
-    tabs.map((tab) => (
-      <button
-        role="tab"
-        id={`tab-${tab.id}`}
-        class:list={[
-          'crss-tab-bar__tab',
-          { 'crss-tab-bar__tab--active': tab.active },
-          { 'crss-tab-bar__tab--disabled': tab.disabled },
-        ]}
-        aria-selected={tab.active}
-        disabled={tab.disabled}
-        data-tab={tab.id}
-      >
-        {tab.label}
-      </button>
-    ))
-  }
-</nav>
+{
+  /* @eject-slot
+    @description Content injected before the tab bar. */
+}
+<slot name="before-unnamed-slot" />
+<div role="tablist" aria-label={ariaLabel}>
+{
+  tabs.map((tab) => (
+    <button
+      role="tab"
+      id={`tab-${tab.id}`}
+      class:list={[
+        'crss-tab-bar__tab',
+        { 'crss-tab-bar__tab--active': tab.active },
+        { 'crss-tab-bar__tab--disabled': tab.disabled },
+      ]}
+      aria-selected={tab.active}
+      disabled={tab.disabled}
+      data-tab={tab.id}
+    >
+      {tab.label}
+    </button>
+  ))
+}
+</div>
 
-<style>
-  .crss-tab-bar {
-    display: flex;
-    gap: var(--crss-space-xs);
-    border-bottom: 2px solid var(--crss-surface-2);
-    margin-bottom: var(--crss-space-lg);
-    overflow-x: auto;
-  }
+<slot />
+{
+  /* @eject-slot
+    @description Content injected after the tab bar. */
+}
+<slot name="after-unnamed-slot" />
 
-  .crss-tab-bar__tab {
-    padding: var(--crss-space-sm) var(--crss-space-md);
-    border: none;
-    background: none;
-    font-family: var(--crss-font-family);
-    font-size: var(--crss-font-size-sm);
-    font-weight: 500;
-    color: var(--crss-text-muted);
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    margin-bottom: -2px;
-    transition:
-      color 0.15s ease,
-      border-color 0.15s ease;
-    white-space: nowrap;
-  }
+<style is:global>
+  @layer crss-components {
+    .crss-tab-bar {
+      display: flex;
+      gap: var(--crss-comp-tab-gap);
+      border-bottom: 2px solid var(--crss-comp-tab-border-color);
+      margin-bottom: var(--crss-sys-space-lg);
+      overflow-x: auto;
+    }
 
-  .crss-tab-bar__tab:hover:not(:disabled) {
-    color: var(--crss-text-primary);
-  }
+    .crss-tab-bar__tab {
+      padding: var(--crss-comp-tab-padding-y) var(--crss-comp-tab-padding-x);
+      border: none;
+      background: none;
+      font-family: var(--crss-font-family);
+      font-size: var(--crss-comp-tab-font-size);
+      font-weight: 500;
+      color: var(--crss-comp-tab-color);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition:
+        color var(--crss-sys-transition-fast),
+        border-color var(--crss-sys-transition-fast);
+      white-space: nowrap;
+    }
 
-  .crss-tab-bar__tab--active {
-    color: var(--crss-brand-primary);
-    border-bottom-color: var(--crss-brand-primary);
-  }
+    .crss-tab-bar__tab:hover:not(:disabled) {
+      color: var(--crss-sys-color-text-primary);
+    }
 
-  .crss-tab-bar__tab--disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
+    .crss-tab-bar__tab--active {
+      color: var(--crss-comp-tab-active-color);
+      border-bottom-color: var(--crss-comp-tab-active-color);
+    }
+
+    .crss-tab-bar__tab--disabled {
+      opacity: var(--crss-comp-tab-disabled-opacity);
+      cursor: not-allowed;
+    }
   }
 </style>

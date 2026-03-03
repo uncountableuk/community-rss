@@ -7,10 +7,20 @@
  *
  * Provides named slots for customisation:
  * - `head` — additional `<head>` content (meta tags, scripts)
- * - `header` — replaces the default header/nav
- * - `footer` — adds a footer section
+ * - `header` — replaces the default header/nav (uses fallback content)
+ * - `below-header` — extension slot between header and main content
+ * - `before-unnamed-slot` — content injected before the default slot
+ * - (default) — page content
+ * - `after-unnamed-slot` — content injected after the default slot
+ * - `footer` — footer section (uses fallback content, empty by default)
  *
  * @since 0.1.0
+ */
+
+/*
+ * @eject-module
+ * @alias CoreBaseLayout
+ * @eject-dependency components/AuthButton
  */
 
 import AuthButton from '../components/AuthButton.astro';
@@ -22,8 +32,6 @@ interface Props {
 }
 
 const { title, description = 'Community RSS' } = Astro.props;
-const hasHeaderSlot = Astro.slots.has('header');
-const hasFooterSlot = Astro.slots.has('footer');
 ---
 
 <!doctype html>
@@ -33,33 +41,50 @@ const hasFooterSlot = Astro.slots.has('footer');
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
     <title>{title}</title>
+    {
+      /* @eject-slot
+        @description Add custom <meta>, <link>, or <script> tags to <head>. */
+    }
     <slot name="head" />
   </head>
   <body>
     {
-      hasHeaderSlot ? (
-        <slot name="header" />
-      ) : (
-        <header class="crss-header">
-          <nav class="crss-nav">
-            <a href="/" class="crss-nav-brand">
-              Community RSS
-            </a>
-            <AuthButton server:defer>
-              <div slot="fallback" class="crss-auth-skeleton" aria-hidden="true" />
-            </AuthButton>
-          </nav>
-        </header>
-      )
+      /* @eject-slot
+        @description Replace the default header/nav bar.
+        @additionalimport1 AuthButton
+        @importfrom1 @crss-lookup/components/AuthButton.astro */
     }
+    <slot name="header">
+      <header class="crss-header">
+        <nav class="crss-nav">
+          <a href="/" class="crss-nav-brand"> Community RSS </a>
+          <AuthButton server:defer>
+            <div slot="fallback" class="crss-auth-skeleton" aria-hidden="true"></div>
+          </AuthButton>
+        </nav>
+      </header>
+    </slot>
+    {
+      /* @eject-slot
+        @description Inject content between the header and the main page content. Useful for banners, announcements, or breadcrumbs. */
+    }
+    <slot name="below-header" />
+    {
+      /* @eject-slot
+        @description Content injected before the main content area. */
+    }
+    <slot name="before-unnamed-slot" />
     <slot />
     {
-      hasFooterSlot && (
-        <footer class="crss-footer">
-          <slot name="footer" />
-        </footer>
-      )
+      /* @eject-slot
+        @description Content injected after the main content area. */
     }
+    <slot name="after-unnamed-slot" />
+    {
+      /* @eject-slot
+        @description Replace the default footer. */
+    }
+    <slot name="footer" />
     <ConsentModal />
   </body>
 </html>
@@ -72,17 +97,17 @@ const hasFooterSlot = Astro.slots.has('footer');
 
   @layer crss-components {
     .crss-header {
-      border-bottom: 1px solid var(--crss-border);
-      background: var(--crss-surface-0);
+      border-bottom: 1px solid var(--crss-comp-header-border);
+      background: var(--crss-comp-header-bg);
     }
 
     .crss-nav {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      max-width: 1200px;
+      max-width: var(--crss-comp-nav-max-width);
       margin: 0 auto;
-      padding: var(--crss-space-sm) var(--crss-space-lg);
+      padding: var(--crss-sys-space-sm) var(--crss-sys-space-lg);
     }
 
     .crss-nav-brand {

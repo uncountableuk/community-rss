@@ -99,14 +99,17 @@ export const ALL: APIRoute = async ({ request, locals }) => {
                         await migrateGuestToUser(app.db, guestId, userId);
                     }
 
-                    // Clear the guest cookie by setting it expired in the response
+                    // Clear the guest cookie by appending an expiry Set-Cookie.
+                    // MUST use append() not set() — set() replaces ALL Set-Cookie
+                    // headers, which would wipe the better-auth session token and
+                    // leave the user anonymous after verification.
                     if (guestId) {
                         const newResponse = new Response(response.body, {
                             status: response.status,
                             statusText: response.statusText,
                             headers: new Headers(response.headers),
                         });
-                        newResponse.headers.set(
+                        newResponse.headers.append(
                             'Set-Cookie',
                             'crss_guest=; Path=/; Max-Age=0; SameSite=Lax',
                         );

@@ -9,6 +9,11 @@
  * @since 0.3.0
  */
 
+/*
+ * @eject-module
+ * @alias CoreConsentModal
+ */
+
 interface Props {
   /** Configurable message strings. @since 0.4.0 */
   messages?: {
@@ -32,109 +37,119 @@ const {
 } = Astro.props;
 ---
 
+{
+  /* @eject-slot
+    @description Content injected before the consent modal. */
+}
+<slot name="before-unnamed-slot" />
 <div
-  class="crss-consent-overlay"
-  id="crss-consent-overlay"
-  style="display: none;"
-  role="dialog"
-  aria-modal="true"
-  aria-labelledby="crss-consent-title"
+  class="crss-consent-overlay" id="crss-consent-overlay" style="display: none;" role="dialog" aria-modal="true"
+  aria-labelledby="crss-consent-title" 
 >
-  <div class="crss-consent-modal">
-    <h2 class="crss-consent-title" id="crss-consent-title">{modalTitle}</h2>
-    <p class="crss-consent-text">
-      {bodyText}
-    </p>
-    <p class="crss-consent-text crss-consent-text--secondary">
-      {detailText}
-    </p>
-    <div class="crss-consent-actions">
-      <button type="button" class="crss-btn crss-btn--accept" id="crss-consent-accept">
-        {acceptLabel}
-      </button>
-      <button type="button" class="crss-btn crss-btn--decline" id="crss-consent-decline">
-        {declineLabel}
-      </button>
-    </div>
+<div class="crss-consent-modal">
+  <h2 class="crss-consent-title" id="crss-consent-title">{modalTitle}</h2>
+  <p class="crss-consent-text">
+    {bodyText}
+  </p>
+  <p class="crss-consent-text crss-consent-text--secondary">
+    {detailText}
+  </p>
+  <div class="crss-consent-actions">
+    <button type="button" class="crss-btn crss-btn--accept" id="crss-consent-accept">
+      {acceptLabel}
+    </button>
+    <button type="button" class="crss-btn crss-btn--decline" id="crss-consent-decline">
+      {declineLabel}
+    </button>
   </div>
 </div>
+</div>
 
-<style>
-  .crss-consent-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 1000;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: var(--crss-space-md);
-  }
+<slot />
+{
+  /* @eject-slot
+    @description Content injected after the consent modal. */
+}
+<slot name="after-unnamed-slot" />
 
-  .crss-consent-modal {
-    background-color: var(--crss-surface-0);
-    border-radius: var(--crss-radius-lg);
-    padding: var(--crss-space-xl);
-    max-width: 480px;
-    width: 100%;
-    box-shadow: var(--crss-shadow-lg);
-  }
+<style is:global>
+  @layer crss-components {
+    .crss-consent-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background-color: var(--crss-comp-consent-overlay-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--crss-sys-space-md);
+    }
 
-  .crss-consent-title {
-    font-size: var(--crss-font-size-xl);
-    font-weight: 600;
-    color: var(--crss-text-primary);
-    margin-bottom: var(--crss-space-md);
-  }
+    .crss-consent-modal {
+      background-color: var(--crss-comp-consent-bg);
+      border-radius: var(--crss-comp-consent-radius);
+      padding: var(--crss-comp-consent-padding);
+      max-width: var(--crss-comp-consent-max-width);
+      width: 100%;
+      box-shadow: var(--crss-comp-consent-shadow);
+    }
 
-  .crss-consent-text {
-    font-size: var(--crss-font-size-base);
-    color: var(--crss-text-secondary);
-    line-height: 1.6;
-    margin-bottom: var(--crss-space-sm);
-  }
+    .crss-consent-title {
+      font-size: var(--crss-comp-consent-title-size);
+      font-weight: 600;
+      color: var(--crss-sys-color-text-primary);
+      margin-bottom: var(--crss-sys-space-md);
+    }
 
-  .crss-consent-text--secondary {
-    font-size: var(--crss-font-size-sm);
-    color: var(--crss-text-muted);
-    margin-bottom: var(--crss-space-lg);
-  }
+    .crss-consent-text {
+      font-size: var(--crss-font-size-base);
+      color: var(--crss-text-secondary);
+      line-height: 1.6;
+      margin-bottom: var(--crss-space-sm);
+    }
 
-  .crss-consent-actions {
-    display: flex;
-    gap: var(--crss-space-sm);
-    justify-content: flex-end;
-  }
+    .crss-consent-text--secondary {
+      font-size: var(--crss-font-size-sm);
+      color: var(--crss-text-muted);
+      margin-bottom: var(--crss-space-lg);
+    }
 
-  .crss-btn--accept {
-    padding: var(--crss-space-sm) var(--crss-space-lg);
-    background-color: var(--crss-brand-primary);
-    color: var(--crss-text-inverse);
-    border: none;
-    border-radius: var(--crss-radius-md);
-    font-size: var(--crss-font-size-sm);
-    cursor: pointer;
-    transition: background-color var(--crss-transition-fast);
-  }
+    .crss-consent-actions {
+      display: flex;
+      gap: var(--crss-space-sm);
+      justify-content: flex-end;
+    }
 
-  .crss-btn--accept:hover {
-    background-color: var(--crss-brand-accent);
-  }
+    .crss-btn--accept {
+      padding: var(--crss-space-sm) var(--crss-space-lg);
+      background-color: var(--crss-brand-primary);
+      color: var(--crss-text-inverse);
+      border: none;
+      border-radius: var(--crss-radius-md);
+      font-size: var(--crss-font-size-sm);
+      cursor: pointer;
+      transition: background-color var(--crss-transition-fast);
+    }
 
-  .crss-btn--decline {
-    padding: var(--crss-space-sm) var(--crss-space-lg);
-    background-color: transparent;
-    color: var(--crss-text-muted);
-    border: 1px solid var(--crss-surface-3);
-    border-radius: var(--crss-radius-md);
-    font-size: var(--crss-font-size-sm);
-    cursor: pointer;
-    transition: all var(--crss-transition-fast);
-  }
+    .crss-btn--accept:hover {
+      background-color: var(--crss-brand-accent);
+    }
 
-  .crss-btn--decline:hover {
-    background-color: var(--crss-surface-1);
-    color: var(--crss-text-secondary);
+    .crss-btn--decline {
+      padding: var(--crss-space-sm) var(--crss-space-lg);
+      background-color: transparent;
+      color: var(--crss-text-muted);
+      border: 1px solid var(--crss-surface-3);
+      border-radius: var(--crss-radius-md);
+      font-size: var(--crss-font-size-sm);
+      cursor: pointer;
+      transition: all var(--crss-transition-fast);
+    }
+
+    .crss-btn--decline:hover {
+      background-color: var(--crss-surface-1);
+      color: var(--crss-text-secondary);
+    }
   }
 </style>
 

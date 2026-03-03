@@ -18,6 +18,11 @@
  * @since 0.5.0
  */
 
+/*
+ * @eject-module
+ * @alias CoreHomepageCTA
+ */
+
 import { createAuth } from '../utils/build/auth';
 import type { AppContext } from '../types/context';
 
@@ -58,85 +63,96 @@ if (app) {
 ---
 
 {
-  showCta && (
-    <div id="crss-homepage-cta" class="crss-homepage-cta" aria-live="polite">
-      <div class="crss-homepage-cta__inner">
-        <p class="crss-homepage-cta__text">{ctaText}</p>
-        <div class="crss-homepage-cta__actions">
-          <a href="/auth/signup" class="crss-btn crss-btn--cta">
-            {createAccountLabel}
-          </a>
-          <a href="/auth/signin" class="crss-btn crss-btn--cta-secondary">
-            {signInLabel}
-          </a>
-        </div>
-      </div>
-    </div>
-  )
+  /* @eject-slot
+    @description Content injected before the CTA banner. */
 }
+<slot name="before-unnamed-slot" />
+{showCta && (
+  <div id="crss-homepage-cta" class="crss-homepage-cta" aria-live="polite">
+  <div class="crss-homepage-cta__inner">
+    <p class="crss-homepage-cta__text">{ctaText}</p>
+    <div class="crss-homepage-cta__actions">
+      <a href="/auth/signup" class="crss-btn crss-btn--cta">
+        {createAccountLabel}
+      </a>
+      <a href="/auth/signin" class="crss-btn crss-btn--cta-secondary">
+        {signInLabel}
+      </a>
+    </div>
+  </div>
+</div>
+  )}
+</slot>
+{
+  /* @eject-slot
+    @description Content injected after the CTA banner. */
+}
+<slot name="after-unnamed-slot" />
 
-<style>
-  .crss-homepage-cta__inner {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--crss-space-md);
-    padding: var(--crss-space-md) var(--crss-space-lg);
-    margin-bottom: var(--crss-space-lg);
-    background-color: var(--crss-surface-1);
-    border: 1px solid var(--crss-surface-3);
-    border-radius: var(--crss-radius-lg);
-  }
+<style is:global>
+  @layer crss-components {
+    .crss-homepage-cta__inner {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--crss-sys-space-md);
+      padding: var(--crss-comp-cta-padding);
+      margin-bottom: var(--crss-sys-space-lg);
+      background-color: var(--crss-comp-cta-bg);
+      border: 1px solid var(--crss-comp-cta-border);
+      border-radius: var(--crss-comp-cta-radius);
+    }
 
-  .crss-homepage-cta__text {
-    font-size: var(--crss-font-size-sm);
-    color: var(--crss-text-secondary);
-    margin: 0;
-  }
+    .crss-homepage-cta__text {
+      font-size: var(--crss-sys-font-size-sm);
+      color: var(--crss-comp-cta-text-color);
+      margin: 0;
+    }
 
-  .crss-homepage-cta__actions {
-    display: flex;
-    align-items: center;
-    gap: var(--crss-space-sm);
-    flex-shrink: 0;
-  }
+    .crss-homepage-cta__actions {
+      display: flex;
+      align-items: center;
+      gap: var(--crss-space-sm);
+      flex-shrink: 0;
+    }
 
-  .crss-btn--cta {
-    display: inline-flex;
-    align-items: center;
-    padding: var(--crss-space-xs) var(--crss-space-md);
-    background-color: var(--crss-brand-primary);
-    color: var(--crss-text-inverse);
-    border-radius: var(--crss-radius-md);
-    font-size: var(--crss-font-size-sm);
-    font-family: var(--crss-font-family);
-    text-decoration: none;
-    transition: background-color var(--crss-transition-fast);
-  }
+    .crss-btn--cta {
+      display: inline-flex;
+      align-items: center;
+      padding: var(--crss-space-xs) var(--crss-space-md);
+      background-color: var(--crss-brand-primary);
+      color: var(--crss-text-inverse);
+      border-radius: var(--crss-radius-md);
+      font-size: var(--crss-font-size-sm);
+      font-family: var(--crss-font-family);
+      text-decoration: none;
+      transition: background-color var(--crss-transition-fast);
+    }
 
-  .crss-btn--cta:hover {
-    background-color: var(--crss-brand-accent);
-  }
+    .crss-btn--cta:hover {
+      background-color: var(--crss-brand-accent);
+    }
 
-  .crss-btn--cta-secondary {
-    display: inline-flex;
-    align-items: center;
-    padding: var(--crss-space-xs) var(--crss-space-md);
-    background-color: transparent;
-    color: var(--crss-text-secondary);
-    border: 1px solid var(--crss-surface-3);
-    border-radius: var(--crss-radius-md);
-    font-size: var(--crss-font-size-sm);
-    font-family: var(--crss-font-family);
-    text-decoration: none;
-    transition:
-      background-color var(--crss-transition-fast),
-      color var(--crss-transition-fast);
-  }
+    .crss-btn--cta-secondary {
+      display: inline-flex;
+      align-items: center;
+      padding: var(--crss-space-xs) var(--crss-space-md);
+      background-color: transparent;
+      color: var(--crss-text-secondary);
+      border: 1px solid var(--crss-surface-3);
+      border-radius: var(--crss-radius-md);
+      font-size: var(--crss-font-size-sm);
+      font-family: var(--crss-font-family);
+      text-decoration: none;
+      transition:
+        background-color var(--crss-transition-fast),
+        color var(--crss-transition-fast);
+    }
 
-  .crss-btn--cta-secondary:hover {
-    background-color: var(--crss-surface-2);
-    color: var(--crss-text-primary);
+    .crss-btn--cta-secondary:hover {
+      background-color: var(--crss-surface-2);
+      color: var(--crss-text-primary);
+    }
   }
 </style>

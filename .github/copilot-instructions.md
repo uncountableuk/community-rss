@@ -16,7 +16,8 @@ architecture, code reuse, and adherence to established patterns.
 - **Licence**: GPL-3.0 — all contributions must be compatible
 - **Local dev**: Docker Compose (FreshRSS, MinIO, Mailpit) + Dev Container
 - **Architecture**: "Integration with overrides" — the package injects API
-  routes and middleware; developers own page routes (scaffolded via CLI)
+  routes, middleware, and page routes; developers customise via 4-level
+  progressive customisation (tokens → classes → eject → actions)
 
 ### Playground Architecture
 - The playground is **ephemeral** — gitignored and rebuilt on demand via
@@ -68,9 +69,26 @@ architecture, code reuse, and adherence to established patterns.
   `env`, and `config` — accessed via `context.locals.app` in route handlers
 - Environment variables are typed in `EnvironmentVariables` interface
   (`src/types/context.ts`) and read from `process.env`
-- **Route split**: API routes (11) are injected by the integration; page
-  routes (8) are scaffolded into the developer's project via
-  `npx @community-rss/core init` and are developer-owned
+- **Route split**: API routes (11) are always injected by the integration;
+  page routes (8) are conditionally injected — if a developer has a local
+  file at the same path, the framework's version is skipped. Use
+  `npx crss eject pages/<name>` to take local ownership of a page.
+- **Page rendering**: All pages use **server-side rendering (SSR)** by
+  default. Pages fetch data in frontmatter via `Astro.locals.app` (which
+  provides `db`, `config`, and `env`) and pass it to the template as
+  props. This ensures SEO, fast first paint, and correct HTTP status codes
+  (e.g., 404 for missing resources). The homepage follows this pattern:
+  articles are queried in frontmatter and passed to `FeedGrid`; infinite
+  scroll is a progressive enhancement that fetches subsequent pages as
+  server-rendered HTML. Any new page must follow the SSR pattern unless
+  explicitly approved. **CSR exception warning**: pages where data is
+  fetched client-side bypass the `crss-consumer-overrides` Vite plugin,
+  which only fires at server-render time. Any component used exclusively
+  inside client-side rendering (e.g., a JS card builder) is invisible to
+  ejected proxy overrides — developer customisations have no effect on
+  those cards. A CSR exception therefore means the affected components
+  cannot participate in the override system and must NOT be annotated as
+  ejectable for that page context.
 - Email templates: Astro Container API (`.astro`) is the primary rendering
   path, loaded via `virtual:crss-email-templates` Vite virtual module.
   Developer `.html` files with `{{variable}}` placeholders supported as a
@@ -99,14 +117,16 @@ architecture, code reuse, and adherence to established patterns.
 - Layer order: `crss-reset, crss-tokens, crss-base, crss-components, crss-utilities`
 - Defined in `src/styles/layers.css`
 - Consumer `theme.css` is un-layered so it always wins
-- Components use `@layer crss-components { ... }` only when declaring styles
-  outside scoped `<style>` blocks
+- Components use `<style is:global>` with `@layer crss-components { ... }`
+- All CSS class names use the `crss-` prefix — no unprefixed selectors
+- No `:global()` wrappers — `is:global` makes them redundant
 
 ### Astro Actions
 - Action handlers are exported from `packages/core/src/actions/` as pure
   functions with signature `(input, app: AppContext) => Promise<Result>`
-- Consumers register them in their scaffolded `src/actions/index.ts` via
-  Astro's `defineAction` with Zod validation
+- `src/actions/definitions.ts` exports `coreActions` — a map of all
+  framework actions with Zod schemas and handler wrappers
+- Consumers use `coreActions` spread pattern in `src/actions/index.ts`
 - The core package CANNOT import `astro:actions` — only consumer projects can
 - Action handlers are also exported from `@community-rss/core/actions`
 
@@ -118,15 +138,32 @@ architecture, code reuse, and adherence to established patterns.
 - Always provide a `slot="fallback"` for loading skeletons
 
 ### Proxy Component Pattern
-- Scaffolded components in developers' `src/components/` are **thin wrappers**
-  that import core components from `@community-rss/core/components/*`
-- Wrappers own the `<style>` block (survives package updates); core owns logic
-- No business logic, no API calls in wrappers — only styling and props
+- Ejected components/layouts/pages in developers' `src/` are **proxy wrappers**
+  that import core artefacts from `@community-rss/core/components/*` etc.
+- Proxies expose all available named slots as commented-out `{/* SLOT: <name> */}`
+  blocks with `<Fragment slot="...">` placeholders
+- Developers uncomment only the slots they need to override
+- Custom `<style>` block in the proxy survives package updates
+- No business logic, no API calls in proxies — only slot overrides and styling
+
+### Ejection
+- CLI: `npx crss eject <target>` creates proxy wrappers with commented slots
+- CLI: `npx crss eject all` ejects every known target
+- `SLOT:` markers in comments identify ejected files
+- `--force` flag fully overwrites files (resets all customizations)
+- Without `--force`, re-ejecting an existing proxy merges: managed imports
+  are refreshed, new slots are added, developer overrides are preserved
+- Annotation-driven: `@eject-module` and `@eject-slot` annotations in
+  `.astro` source files are the single source of truth for ejectable
+  artefacts and their slots — no external registry file needed
+- `eject.mjs` discovers ejectable targets by walking the filesystem and
+  parsing annotations at runtime via `parseAnnotations()`
 
 ### Protected Areas
 - Never modify files in `node_modules/@community-rss/core/`
 - Never fork or patch the core package — use scaffolded overrides
 - Never hand-edit injected API routes (`/api/v1/*`, `/api/auth/*`)
+- Never hand-edit injected page routes — use `npx crss eject` to customise
 - Use `theme.css`, `messages` props, and Action handlers for customisation
 
 ### API Design (Post-1.0.0 Critical)
@@ -143,6 +180,23 @@ architecture, code reuse, and adherence to established patterns.
   cross-directory imports (e.g., `../types/options`). Path aliases in source
   break consumers because Astro/Vite cannot resolve the core package's
   internal tsconfig aliases when the package is consumed as a workspace dep.
+- **Ejectable `.astro` imports in core source**: When one core component,
+  layout, or page imports another *ejectable* component or layout, use a
+  **relative import** (e.g., `import FeedCard from './FeedCard.astro'`).
+  The `crss-consumer-overrides` Vite plugin intercepts all relative `.astro`
+  imports that originate from inside the core `src/` directory and redirects
+  to the consumer's ejected proxy if one exists. This makes overrides cascade
+  automatically (eject `FeedCard` → it is picked up by `FeedGrid`, `BaseLayout`,
+  and every page) without requiring those parents to be re-ejected.
+  Non-ejectable imports (utils, db queries, types) are also relative paths.
+- **`@crss-lookup/<category>/<File>.astro` virtual prefix**: Available for
+  *consumer-authored* code (ejected proxy slot overrides, custom components)
+  that wants to import a sibling with the same consumer-override semantics.
+  Core source files do NOT use this prefix — they use relative imports
+  (intercepted automatically). `@importfromN` annotation values in core
+  `.astro` files use `@crss-lookup/` because those values end up as imports
+  inside consumer-authored proxy code, which runs in a context where the
+  plugin resolves the prefix correctly.
 - **Test code** (`packages/core/test/`): Use **path aliases** for all imports
   from source and fixtures. Vitest resolves aliases via its own config.
 - Core test aliases: `@utils/`, `@components/`, `@routes/`, `@db/`, `@core-types/`, `@cli/`
@@ -214,10 +268,13 @@ architecture, code reuse, and adherence to established patterns.
 - ❌ Hand-write SQL migration files — always generate via `drizzle-kit generate`
 - ❌ Implement custom session/auth logic — use better-auth patterns
 - ❌ Write misleading Implementation Notes — describe actual code, not intent
-- ❌ Inject page routes from the package — pages are developer-owned (scaffolded)
+- ❌ Scaffold page files from `init` — pages are served via conditional injection
 - ❌ Hard-code user-facing strings in components — use `messages`/`labels` props
 - ❌ Declare mock variables outside `vi.hoisted()` when used in `vi.mock()` factories
 - ❌ Use hardcoded hex/rgb colour values in components — use `--crss-*` tokens
 - ❌ Put styles outside `@layer` in framework CSS — consumer styles must win
 - ❌ Import `astro:actions` from the core package — only consumer projects can
 - ❌ Modify files in `node_modules/` or patch the core package
+- ❌ Use client-side rendering for pages that can be server-rendered — SSR is
+  the default for all pages; CSR requires explicit approval, and any approved
+  CSR page MUST document that the proxy override system is incompatible with it

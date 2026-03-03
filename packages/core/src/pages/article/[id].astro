@@ -1,0 +1,185 @@
+---
+/**
+ * Article detail page — renders a single article via SSR.
+ *
+ * Loads article data server-side in the frontmatter via the database
+ * query layer. The full article content is included in the initial
+ * HTML response for SEO and performance.
+ *
+ * Customise this page to fit your community's design.
+ *
+ * @route /article/[id]
+ * @since 0.2.0
+ */
+
+/*
+ * @eject-module
+ * @alias CoreArticle
+ * @eject-dependency layouts/BaseLayout
+ */
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getArticleById } from '../../db/queries/articles';
+import type { AppContext } from '../../types/context';
+
+const { id } = Astro.params;
+const app = (Astro.locals as { app?: AppContext }).app;
+
+if (!id || !app?.db) {
+  return new Response('Not Found', { status: 404 });
+}
+
+const article = await getArticleById(app.db, id);
+
+if (!article) {
+  return new Response('Not Found', { status: 404 });
+}
+
+const formattedDate = article.publishedAt
+  ? new Date(article.publishedAt).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    })
+  : '';
+
+const pageTitle = `${article.title} — Community RSS`;
+const pageDescription = article.summary || `Article by ${article.authorName || 'Unknown'}`;
+---
+
+<BaseLayout title={pageTitle} description={pageDescription}>
+  {
+    /* @eject-slot
+      @description Replace the entire page content. The core page's default <main> block will be hidden. */
+  }
+  <slot name="content">
+    <main class="crss-article-page">
+      <article class="crss-article">
+        <header class="crss-article__header">
+          <a href="/" class="crss-article__back">← Back to feed</a>
+          <div class="crss-article__meta">
+            {formattedDate && <time>{formattedDate}</time>}
+            <span>by {article.authorName || 'Unknown'}</span>
+          </div>
+          <h1 class="crss-article__title">{article.title}</h1>
+        </header>
+
+        <div class="crss-article__content" set:html={article.content || ''} />
+
+        <footer class="crss-article__footer">
+          {
+            article.originalLink && (
+              <a
+                class="crss-article__original-link"
+                href={article.originalLink}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Read original article →
+              </a>
+            )
+          }
+        </footer>
+      </article>
+    </main>
+  </slot>
+  {
+    /* @eject-slot
+      @description Content injected before the page's main area. */
+  }
+  <slot name="before-unnamed-slot" />
+  <slot />
+  {
+    /* @eject-slot
+      @description Content injected after the page's main area. */
+  }
+  <slot name="after-unnamed-slot" />
+</BaseLayout>
+
+<style is:global>
+  @layer crss-components {
+    .crss-article-page {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: var(--crss-space-xl) var(--crss-space-md);
+    }
+
+    .crss-article__back {
+      color: var(--crss-brand-primary);
+      text-decoration: none;
+      font-size: var(--crss-font-size-sm);
+      display: inline-block;
+      margin-bottom: var(--crss-space-lg);
+    }
+
+    .crss-article__back:hover {
+      text-decoration: underline;
+    }
+
+    .crss-article__meta {
+      display: flex;
+      gap: var(--crss-space-sm);
+      font-size: var(--crss-font-size-sm);
+      color: var(--crss-text-muted);
+      margin-bottom: var(--crss-space-md);
+    }
+
+    .crss-article__title {
+      font-size: var(--crss-font-size-3xl);
+      font-weight: 700;
+      line-height: 1.3;
+      margin-bottom: var(--crss-space-xl);
+      color: var(--crss-text-primary);
+    }
+
+    .crss-article__content {
+      line-height: 1.7;
+      font-size: var(--crss-font-size-base);
+      color: var(--crss-text-secondary);
+    }
+
+    .crss-article__content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: var(--crss-radius-sm);
+      margin: var(--crss-space-md) 0;
+    }
+
+    .crss-article__content a {
+      color: var(--crss-brand-primary);
+    }
+
+    .crss-article__content pre {
+      background: var(--crss-surface-1);
+      padding: var(--crss-space-md);
+      border-radius: var(--crss-radius-sm);
+      overflow-x: auto;
+      font-family: var(--crss-font-family-mono);
+      font-size: var(--crss-font-size-sm);
+    }
+
+    .crss-article__content blockquote {
+      border-left: 3px solid var(--crss-brand-primary);
+      padding-left: var(--crss-space-md);
+      margin: var(--crss-space-md) 0;
+      color: var(--crss-text-muted);
+      font-style: italic;
+    }
+
+    .crss-article__footer {
+      margin-top: var(--crss-space-xl);
+      padding-top: var(--crss-space-md);
+      border-top: 1px solid var(--crss-surface-2);
+    }
+
+    .crss-article__original-link {
+      color: var(--crss-brand-primary);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .crss-article__original-link:hover {
+      text-decoration: underline;
+    }
+  }
+</style>

@@ -6,7 +6,22 @@
  * and Terms of Service consent. Submits to `/api/v1/auth/signup`
  * which stores pending data and sends a welcome magic link.
  *
+ * Provides named slots for customisation:
+ * - `form` — replaces the entire sign-up form
+ * - `confirmation` — replaces the post-submission confirmation panel
+ * - `before-unnamed-slot` / `after-unnamed-slot` — generic wrapper slots
+ *
+ * **Warning:** The `<script>` block relies on specific element IDs
+ * (`crss-signup-form`, `crss-signup-btn`, etc.). If you replace the
+ * `form` slot, you must either keep those IDs or provide your own
+ * client-side logic.
+ *
  * @since 0.3.0
+ */
+
+/*
+ * @eject-module
+ * @alias CoreSignUpForm
  */
 
 interface Props {
@@ -50,12 +65,15 @@ const {
 } = Astro.props;
 ---
 
-<form
-  class="crss-signup-form"
-  id="crss-signup-form"
-  data-error-create={createFailed}
-  data-error-network={networkError}
->
+{
+  /* @eject-slot
+    @description Replace the sign-up form. Warning: The <script> block relies on specific element IDs. If you replace this slot, re-implement the same IDs or provide your own script. */
+}
+<slot name="form">
+  <form
+    class="crss-signup-form" id="crss-signup-form" data-error-create={createFailed}
+    data-error-network={networkError}
+  >
   <div class="crss-form-group">
     <label for="crss-signup-email" class="crss-form-label">{emailLabel}</label>
     <input
@@ -119,198 +137,223 @@ const {
     {footerText}
     <a href="/auth/signin" class="crss-form-link">{footerLinkText}</a>
   </p>
-</form>
+  </form>
+</slot>
 
-<!-- Confirmation panel — replaces the form after successful submission -->
-<div class="crss-signup-confirm" id="crss-signup-confirm" style="display: none;" role="status">
-  <div class="crss-signup-confirm__icon" aria-hidden="true">
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="40"
-      height="40"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="1.5"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    >
-      <rect x="2" y="4" width="20" height="16" rx="2"></rect>
-      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
-    </svg>
+
+{
+  /* @eject-slot
+    @description Content injected before the default slot. */
+}
+<slot name="before-unnamed-slot" />
+<slot />
+{
+  /* @eject-slot
+    @description Content injected after the default slot. */
+}
+<slot name="after-unnamed-slot" />
+
+{
+  /* @eject-slot
+    @description Replace the post-submission confirmation panel. Warning: The <script> block relies on specific element IDs. If you replace this slot, re-implement the same IDs or provide your own script. */
+}
+<slot name="confirmation">
+  <div class="crss-signup-confirm" id="crss-signup-confirm" style="display: none;" role="status">
+    <div class="crss-signup-confirm__icon" aria-hidden="true">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="40"
+        height="40"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+      </svg>
+    </div>
+    <h2 class="crss-signup-confirm__heading" id="crss-confirm-heading">{confirmHeading}</h2>
+    <p class="crss-signup-confirm__detail" id="crss-confirm-name-para">
+      Welcome, <strong id="crss-confirm-name"></strong>.
+    </p>
+    <p class="crss-signup-confirm__detail" id="crss-confirm-action">
+      We've sent a verification link to <strong id="crss-confirm-email"></strong>. Click it to
+      complete creating your account.
+    </p>
+    <p class="crss-signup-confirm__hint">
+      {confirmHint}
+      <a href="/auth/signup" class="crss-form-link">start over</a>.
+    </p>
   </div>
-  <h2 class="crss-signup-confirm__heading" id="crss-confirm-heading">{confirmHeading}</h2>
-  <p class="crss-signup-confirm__detail" id="crss-confirm-name-para">
-    Welcome, <strong id="crss-confirm-name"></strong>.
-  </p>
-  <p class="crss-signup-confirm__detail" id="crss-confirm-action">
-    We've sent a verification link to <strong id="crss-confirm-email"></strong>. Click it to
-    complete creating your account.
-  </p>
-  <p class="crss-signup-confirm__hint">
-    {confirmHint}
-    <a href="/auth/signup" class="crss-form-link">start over</a>.
-  </p>
-</div>
+</slot>
 
-<style>
-  .crss-signup-form {
-    display: flex;
-    flex-direction: column;
-    gap: var(--crss-space-md);
-    max-width: 400px;
-    width: 100%;
-  }
+<style is:global>
+  @layer crss-components {
+    .crss-signup-form {
+      display: flex;
+      flex-direction: column;
+      gap: var(--crss-comp-form-gap);
+      max-width: var(--crss-comp-form-max-width);
+      width: 100%;
+      background-color: var(--crss-comp-form-bg);
+      border: 1px solid var(--crss-comp-form-border);
+      border-radius: var(--crss-comp-form-radius);
+      padding: var(--crss-comp-form-padding);
+    }
 
-  .crss-form-group {
-    display: flex;
-    flex-direction: column;
-    gap: var(--crss-space-xs);
-  }
+    .crss-form-group {
+      display: flex;
+      flex-direction: column;
+      gap: var(--crss-space-xs);
+    }
 
-  .crss-form-group--checkbox {
-    flex-direction: row;
-    align-items: flex-start;
-  }
+    .crss-form-group--checkbox {
+      flex-direction: row;
+      align-items: flex-start;
+    }
 
-  .crss-form-label {
-    font-size: var(--crss-font-size-sm);
-    font-weight: 500;
-    color: var(--crss-text-primary);
-  }
+    .crss-form-label {
+      font-size: var(--crss-comp-form-label-size);
+      font-weight: 500;
+      color: var(--crss-comp-form-label-color);
+    }
 
-  .crss-form-input {
-    padding: var(--crss-space-sm) var(--crss-space-md);
-    border: 1px solid var(--crss-surface-3);
-    border-radius: var(--crss-radius-md);
-    font-size: var(--crss-font-size-base);
-    font-family: var(--crss-font-family);
-    color: var(--crss-text-primary);
-    background-color: var(--crss-surface-0);
-    transition: border-color var(--crss-transition-fast);
-  }
+    .crss-form-input {
+      padding: var(--crss-comp-form-input-padding);
+      border: 1px solid var(--crss-comp-form-input-border);
+      border-radius: var(--crss-comp-form-input-radius);
+      font-size: var(--crss-sys-font-size-base);
+      font-family: var(--crss-sys-font-family);
+      color: var(--crss-sys-color-text-primary);
+      background-color: var(--crss-comp-form-input-bg);
+      transition: border-color var(--crss-sys-transition-fast);
+    }
 
-  .crss-form-input:focus {
-    outline: none;
-    border-color: var(--crss-brand-primary);
-    box-shadow: var(--crss-comp-form-focus-ring, 0 0 0 3px var(--crss-focus-ring));
-  }
+    .crss-form-input:focus {
+      outline: none;
+      border-color: var(--crss-sys-color-primary);
+      box-shadow: var(--crss-comp-form-focus-ring);
+    }
 
-  .crss-form-input--readonly {
-    background-color: var(--crss-surface-1);
-    color: var(--crss-text-secondary);
-    cursor: not-allowed;
-  }
+    .crss-form-input--readonly {
+      background-color: var(--crss-surface-1);
+      color: var(--crss-text-secondary);
+      cursor: not-allowed;
+    }
 
-  .crss-form-checkbox-label {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--crss-space-xs);
-    font-size: var(--crss-font-size-sm);
-    color: var(--crss-text-primary);
-    cursor: pointer;
-  }
+    .crss-form-checkbox-label {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--crss-space-xs);
+      font-size: var(--crss-font-size-sm);
+      color: var(--crss-text-primary);
+      cursor: pointer;
+    }
 
-  .crss-form-checkbox {
-    margin-top: 2px;
-    accent-color: var(--crss-brand-primary);
-  }
+    .crss-form-checkbox {
+      margin-top: 2px;
+      accent-color: var(--crss-brand-primary);
+    }
 
-  .crss-form-link {
-    color: var(--crss-brand-primary);
-    text-decoration: underline;
-  }
+    .crss-form-link {
+      color: var(--crss-brand-primary);
+      text-decoration: underline;
+    }
 
-  .crss-form-link:hover {
-    color: var(--crss-brand-accent);
-  }
+    .crss-form-link:hover {
+      color: var(--crss-brand-accent);
+    }
 
-  .crss-btn--primary {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: var(--crss-space-sm) var(--crss-space-lg);
-    background-color: var(--crss-brand-primary);
-    color: var(--crss-text-inverse);
-    border: none;
-    border-radius: var(--crss-radius-md);
-    font-size: var(--crss-font-size-base);
-    font-family: var(--crss-font-family);
-    cursor: pointer;
-    transition: background-color var(--crss-transition-fast);
-  }
+    .crss-btn--primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--crss-space-sm) var(--crss-space-lg);
+      background-color: var(--crss-brand-primary);
+      color: var(--crss-text-inverse);
+      border: none;
+      border-radius: var(--crss-radius-md);
+      font-size: var(--crss-font-size-base);
+      font-family: var(--crss-font-family);
+      cursor: pointer;
+      transition: background-color var(--crss-transition-fast);
+    }
 
-  .crss-btn--primary:hover {
-    background-color: var(--crss-brand-accent);
-  }
+    .crss-btn--primary:hover {
+      background-color: var(--crss-brand-accent);
+    }
 
-  .crss-btn--primary:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
+    .crss-btn--primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
 
-  .crss-form-message {
-    padding: var(--crss-space-sm) var(--crss-space-md);
-    border-radius: var(--crss-radius-md);
-    font-size: var(--crss-font-size-sm);
-  }
+    .crss-form-message {
+      padding: var(--crss-space-sm) var(--crss-space-md);
+      border-radius: var(--crss-radius-md);
+      font-size: var(--crss-font-size-sm);
+    }
 
-  .crss-form-message--success {
-    background-color: var(--crss-comp-form-success-bg, var(--crss-success-bg));
-    color: var(--crss-comp-form-success-text, var(--crss-success-text));
-    border: 1px solid var(--crss-comp-form-success-border, var(--crss-success-border));
-  }
+    .crss-form-message--success {
+      background-color: var(--crss-comp-form-success-bg, var(--crss-success-bg));
+      color: var(--crss-comp-form-success-text, var(--crss-success-text));
+      border: 1px solid var(--crss-comp-form-success-border, var(--crss-success-border));
+    }
 
-  .crss-form-message--error {
-    background-color: var(--crss-comp-form-error-bg, var(--crss-error-bg));
-    color: var(--crss-comp-form-error-text, var(--crss-error-text));
-    border: 1px solid var(--crss-comp-form-error-border, var(--crss-error-border));
-  }
+    .crss-form-message--error {
+      background-color: var(--crss-comp-form-error-bg, var(--crss-error-bg));
+      color: var(--crss-comp-form-error-text, var(--crss-error-text));
+      border: 1px solid var(--crss-comp-form-error-border, var(--crss-error-border));
+    }
 
-  .crss-form-footer {
-    text-align: center;
-    font-size: var(--crss-font-size-sm);
-    color: var(--crss-text-secondary);
-  }
+    .crss-form-footer {
+      text-align: center;
+      font-size: var(--crss-font-size-sm);
+      color: var(--crss-text-secondary);
+    }
 
-  /* Confirmation panel */
-  .crss-signup-confirm {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--crss-space-md);
-    text-align: center;
-    max-width: 400px;
-    width: 100%;
-    padding: var(--crss-space-xl) var(--crss-space-lg);
-    background-color: var(--crss-surface-1);
-    border: 1px solid var(--crss-surface-3);
-    border-radius: var(--crss-radius-lg);
-  }
+    /* Confirmation panel */
+    .crss-signup-confirm {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--crss-sys-space-md);
+      text-align: center;
+      max-width: var(--crss-comp-form-max-width);
+      width: 100%;
+      padding: var(--crss-sys-space-xl) var(--crss-sys-space-lg);
+      background-color: var(--crss-sys-color-surface-1);
+      border: 1px solid var(--crss-sys-color-surface-3);
+      border-radius: var(--crss-sys-radius-lg);
+    }
 
-  .crss-signup-confirm__icon {
-    color: var(--crss-brand-primary);
-    margin-bottom: var(--crss-space-xs);
-  }
+    .crss-signup-confirm__icon {
+      color: var(--crss-brand-primary);
+      margin-bottom: var(--crss-space-xs);
+    }
 
-  .crss-signup-confirm__heading {
-    font-size: var(--crss-font-size-xl);
-    font-weight: 700;
-    color: var(--crss-text-primary);
-    margin: 0;
-  }
+    .crss-signup-confirm__heading {
+      font-size: var(--crss-font-size-xl);
+      font-weight: 700;
+      color: var(--crss-text-primary);
+      margin: 0;
+    }
 
-  .crss-signup-confirm__detail {
-    font-size: var(--crss-font-size-base);
-    color: var(--crss-text-primary);
-    margin: 0;
-    line-height: 1.6;
-  }
+    .crss-signup-confirm__detail {
+      font-size: var(--crss-font-size-base);
+      color: var(--crss-text-primary);
+      margin: 0;
+      line-height: 1.6;
+    }
 
-  .crss-signup-confirm__hint {
-    font-size: var(--crss-font-size-sm);
-    color: var(--crss-text-secondary);
-    margin: 0;
+    .crss-signup-confirm__hint {
+      font-size: var(--crss-font-size-sm);
+      color: var(--crss-text-secondary);
+      margin: 0;
+    }
   }
 </style>
 
@@ -356,8 +399,16 @@ const {
       if (response.ok) {
         const respData = (await response.json().catch(() => ({}))) as { exists?: boolean };
 
-        form.style.display = 'none';
+        // Guard: Astro SSR renders named-slot fallback content inside the first
+        // HTML element of the preceding slot (the <form>). Move the confirmation
+        // panel to be a sibling of the form BEFORE hiding it, otherwise
+        // form.style.display = 'none' hides the confirmation too.
         const confirm = document.getElementById('crss-signup-confirm');
+        if (confirm && form && form.contains(confirm) && form.parentNode) {
+          form.parentNode.insertBefore(confirm, form.nextSibling);
+        }
+
+        form.style.display = 'none';
         const confirmHeading = document.getElementById('crss-confirm-heading');
         const confirmNamePara = document.getElementById('crss-confirm-name-para');
         const confirmEmail = document.getElementById('crss-confirm-email');

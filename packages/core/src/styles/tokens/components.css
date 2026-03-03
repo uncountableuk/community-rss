@@ -87,15 +87,27 @@
 
         /* ─── Auth Button Tokens ──────────────────────────── */
         --crss-comp-auth-gap: var(--crss-sys-space-sm);
-        --crss-comp-auth-btn-padding-x: var(--crss-sys-space-md);
-        --crss-comp-auth-btn-padding-y: var(--crss-sys-space-xs);
-        --crss-comp-auth-btn-radius: var(--crss-sys-radius-md);
         --crss-comp-auth-btn-font-size: var(--crss-sys-font-size-sm);
         --crss-comp-auth-signin-bg: var(--crss-sys-color-primary);
         --crss-comp-auth-signin-color: var(--crss-sys-color-text-inverse);
         --crss-comp-auth-signout-bg: transparent;
         --crss-comp-auth-signout-color: var(--crss-sys-color-text-secondary);
         --crss-comp-auth-signout-border: var(--crss-sys-color-surface-3);
+
+        /* ─── CTA Tokens (HomepageCTA) ────────────────────── */
+        --crss-comp-cta-bg: var(--crss-sys-color-surface-1);
+        --crss-comp-cta-border: var(--crss-sys-color-surface-3);
+        --crss-comp-cta-radius: var(--crss-sys-radius-lg);
+        --crss-comp-cta-padding: var(--crss-sys-space-md) var(--crss-sys-space-lg);
+        --crss-comp-cta-text-color: var(--crss-sys-color-text-secondary);
+
+        /* ─── Header Tokens (BaseLayout) ──────────────────── */
+        --crss-comp-header-bg: var(--crss-sys-color-surface-0);
+        --crss-comp-header-border: var(--crss-sys-color-border);
+        --crss-comp-nav-max-width: 1200px;
+
+        /* ─── Form Layout Tokens ──────────────────────────── */
+        --crss-comp-form-max-width: 400px;
     }
 }
 

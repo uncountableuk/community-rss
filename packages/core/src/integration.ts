@@ -1,5 +1,5 @@
-import { existsSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, readdirSync, realpathSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { AstroIntegration } from 'astro';
 import type { CommunityRssOptions } from './types/options';
@@ -80,11 +80,12 @@ function generateEmailTemplateModule(devDir: string, pkgDir: string): string {
  *
  * This is the main entry point for consumers. It accepts an optional
  * configuration object and returns an Astro integration that injects
- * API routes, middleware, and scheduler lifecycle hooks into the
- * consumer's project.
+ * API routes, page routes, middleware, and scheduler lifecycle hooks
+ * into the consumer's project.
  *
- * Page routes are no longer injected — use `npx @community-rss/core init`
- * to scaffold pages into your project.
+ * Page routes are conditionally injected — if a developer has a local
+ * file at the same path (e.g., `src/pages/profile.astro`), the
+ * injected route is skipped so the developer's version takes priority.
  *
  * @param options - Framework configuration
  * @returns Astro integration instance
@@ -107,7 +108,9 @@ export function createIntegration(options: CommunityRssOptions = {}): AstroInteg
   return {
     name: 'community-rss',
     hooks: {
-      'astro:config:setup': ({ injectRoute, addMiddleware: registerMiddleware, injectScript, updateConfig, config: astroConfig }) => {
+      'astro:config:setup': ({ injectRoute, addMiddleware: registerMiddleware, injectScript, updateConfig, config: astroConfig, logger: setupLogger }) => {
+        // Logger may not be available in test environments
+        const logger = setupLogger ?? { info: () => { }, warn: () => { } };
         // Share resolved config with middleware via globalThis bridge
         setGlobalConfig(config);
 
@@ -128,21 +131,106 @@ export function createIntegration(options: CommunityRssOptions = {}): AstroInteg
         ].join('\n');
         injectScript('page-ssr', tokenImport);
 
+        // Inject the consumer's theme.css (un-layered overrides) after all
+        // framework styles so it wins the cascade automatically.
+        const astroRoot = astroConfig.root instanceof URL
+          ? fileURLToPath(astroConfig.root)
+          : String(astroConfig.root);
+        const cleanRoot = astroRoot.replace(/\/$/, '');
+        const themeCssPath = join(cleanRoot, 'src', 'styles', 'theme.css');
+        if (existsSync(themeCssPath)) {
+          injectScript('page-ssr', `import '${themeCssPath}';`);
+        }
+
         // --- Virtual module for Astro email templates ---
         // Scans the developer's email template directory and the package's
         // built-in templates, generating static imports that Vite compiles
         // through its pipeline (including the Astro transform). This allows
         // renderAstroEmail() to load .astro components at request time.
-        const astroRoot = astroConfig.root instanceof URL
-          ? fileURLToPath(astroConfig.root)
-          : String(astroConfig.root);
-        const cleanRoot = astroRoot.replace(/\/$/, '');
         const devTemplateDir = join(cleanRoot, config.emailTemplateDir);
         const pkgTemplateDir = fileURLToPath(new URL('./templates/email', import.meta.url));
+
+        // --- Consumer override resolution ---
+        // Two mechanisms work together:
+        //
+        // 1. Relative import interception from any core source file —
+        //    When a core component, layout, or page imports another ejectable
+        //    artefact via a relative path, this plugin checks if the consumer
+        //    has an ejected proxy at the corresponding path and redirects there.
+        //    This gives automatic cascading: eject FeedCard and it is picked up
+        //    by FeedGrid, BaseLayout, and every page without re-ejecting them.
+        //    Circular imports are prevented because ejected proxy files import
+        //    their core counterpart via the bare `@community-rss/core/...`
+        //    specifier (resolved by Node package exports, not this plugin).
+        //
+        // 2. `@crss-lookup/<category>/<File>.astro` virtual prefix —
+        //    Available for consumer-authored code (ejected proxy slot overrides,
+        //    custom components) that wants to import a sibling with the same
+        //    consumer-override semantics. Core source files use relative imports
+        //    (mechanism 1); this prefix is for consumer convenience.
+        const coreDir = fileURLToPath(new URL('.', import.meta.url));
+        const coreLayoutsDir = join(coreDir, 'layouts');
+        const coreComponentsDir = join(coreDir, 'components');
+        const consumerLayoutsDir = join(cleanRoot, 'src', 'layouts');
+        const consumerComponentsDir = join(cleanRoot, 'src', 'components');
 
         updateConfig({
           vite: {
             plugins: [{
+              name: 'crss-consumer-overrides',
+              enforce: 'pre' as const,
+              resolveId(source: string, importer: string | undefined) {
+                // ── @crss-lookup/ virtual prefix ───────────────────────
+                // Resolves from any importer — no importer guard needed.
+                if (source.startsWith('@crss-lookup/')) {
+                  const rest = source.slice('@crss-lookup/'.length);
+                  if (rest.startsWith('components/')) {
+                    const fileName = rest.slice('components/'.length);
+                    const consumerFile = join(consumerComponentsDir, fileName);
+                    if (existsSync(consumerFile)) return consumerFile;
+                    return join(coreComponentsDir, fileName);
+                  }
+                  if (rest.startsWith('layouts/')) {
+                    const fileName = rest.slice('layouts/'.length);
+                    const consumerFile = join(consumerLayoutsDir, fileName);
+                    if (existsSync(consumerFile)) return consumerFile;
+                    return join(coreLayoutsDir, fileName);
+                  }
+                  return; // unknown category — let Vite handle it
+                }
+
+                // ── Relative import interception from any core source file ─
+                // Intercepts relative .astro imports from pages, layouts, and
+                // components inside the core package's src/ directory so that
+                // consumer-ejected proxies cascade automatically.
+                // realpathSync is required because npm workspaces symlinks the
+                // package into node_modules, so Vite's importer path may be
+                // /app/node_modules/@community-rss/core/src/... rather than
+                // the real /app/packages/core/src/... path.
+                if (!importer || !source.endsWith('.astro')) return;
+                let realImporter: string;
+                try { realImporter = realpathSync(importer); } catch { return; }
+                if (!realImporter.startsWith(coreDir)) return;
+                // Exclude real node_modules (not the workspace symlink)
+                if (realImporter.includes('/node_modules/')) return;
+
+                const resolved = resolve(dirname(realImporter), source);
+
+                // Check if resolved path is inside core layouts
+                if (resolved.startsWith(coreLayoutsDir)) {
+                  const rel = resolved.slice(coreLayoutsDir.length);
+                  const consumerFile = join(consumerLayoutsDir, rel);
+                  if (existsSync(consumerFile)) return consumerFile;
+                }
+
+                // Check if resolved path is inside core components
+                if (resolved.startsWith(coreComponentsDir)) {
+                  const rel = resolved.slice(coreComponentsDir.length);
+                  const consumerFile = join(consumerComponentsDir, rel);
+                  if (existsSync(consumerFile)) return consumerFile;
+                }
+              },
+            }, {
               name: 'crss-email-templates',
               resolveId(id: string) {
                 if (id === 'virtual:crss-email-templates') {
@@ -224,6 +312,33 @@ export function createIntegration(options: CommunityRssOptions = {}): AstroInteg
           pattern: '/api/dev/seed',
           entrypoint: new URL('./routes/api/dev/seed.ts', import.meta.url).pathname,
         });
+
+        // --- Page Routes (conditionally injected) ---
+        // Pages are injected by default. If a developer has a local file
+        // at the corresponding path, the injection is skipped so the
+        // developer's version takes priority.
+        const pageRoutes = [
+          { pattern: '/', entrypoint: 'pages/index.astro', localPath: 'src/pages/index.astro' },
+          { pattern: '/profile', entrypoint: 'pages/profile.astro', localPath: 'src/pages/profile.astro' },
+          { pattern: '/terms', entrypoint: 'pages/terms.astro', localPath: 'src/pages/terms.astro' },
+          { pattern: '/article/[id]', entrypoint: 'pages/article/[id].astro', localPath: 'src/pages/article/[id].astro' },
+          { pattern: '/auth/signin', entrypoint: 'pages/auth/signin.astro', localPath: 'src/pages/auth/signin.astro' },
+          { pattern: '/auth/signup', entrypoint: 'pages/auth/signup.astro', localPath: 'src/pages/auth/signup.astro' },
+          { pattern: '/auth/verify', entrypoint: 'pages/auth/verify.astro', localPath: 'src/pages/auth/verify.astro' },
+          { pattern: '/auth/verify-email-change', entrypoint: 'pages/auth/verify-email-change.astro', localPath: 'src/pages/auth/verify-email-change.astro' },
+        ];
+
+        for (const route of pageRoutes) {
+          const userFile = new URL(`./${route.localPath}`, astroConfig.root);
+          if (!existsSync(userFile)) {
+            injectRoute({
+              pattern: route.pattern,
+              entrypoint: new URL(`./${route.entrypoint}`, import.meta.url).pathname,
+            });
+          } else {
+            logger.info(`  Skipping injected page ${route.pattern} — developer override detected`);
+          }
+        }
       },
 
       'astro:config:done': ({ config: astroConfig, logger }) => {

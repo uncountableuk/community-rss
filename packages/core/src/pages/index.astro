@@ -1,0 +1,246 @@
+---
+/**
+ * Homepage — displays the article feed grid with tab navigation.
+ *
+ * Articles are server-side rendered from the database on each request.
+ * Pagination is handled via the `?page=N` query parameter.
+ * A progressive-enhancement script intercepts the "Load more" link to
+ * append subsequent pages without a full navigation, while preserving
+ * the SSR fallback for no-JS environments.
+ *
+ * Customise this page to fit your community's design.
+ *
+ * @route /
+ */
+
+/*
+ * @eject-module
+ * @alias CoreIndex
+ * @eject-dependency layouts/BaseLayout
+ * @eject-dependency components/TabBar
+ * @eject-dependency components/FeedGrid
+ * @eject-dependency components/HomepageCTA
+ */
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import TabBar from '../components/TabBar.astro';
+import FeedGrid from '../components/FeedGrid.astro';
+import HomepageCTA from '../components/HomepageCTA.astro';
+import { getArticlesWithFeedTitle } from '../db/queries/articles';
+import type { AppContext } from '../types/context';
+
+const ARTICLES_PER_PAGE = 20;
+
+const rawPage = Astro.url.searchParams.get('page');
+const page = Math.max(1, parseInt(rawPage || '1', 10));
+const offset = (page - 1) * ARTICLES_PER_PAGE;
+
+const app = (Astro.locals as { app?: AppContext }).app;
+let articles: Awaited<ReturnType<typeof getArticlesWithFeedTitle>> = [];
+let hasMore = false;
+let loadError = false;
+
+if (app?.db) {
+  try {
+    // Fetch one extra row to probe whether a next page exists
+    const result = await getArticlesWithFeedTitle(app.db, ARTICLES_PER_PAGE + 1, offset);
+    hasMore = result.length > ARTICLES_PER_PAGE;
+    articles = result.slice(0, ARTICLES_PER_PAGE);
+  } catch (e) {
+    console.error('[community-rss] Failed to load articles:', e);
+    loadError = true;
+  }
+}
+---
+
+<BaseLayout title="Community RSS">
+  {
+    /* @eject-slot
+      @description Replace the entire page content. The core page's default <main> block will be hidden.
+      @additionalimport1 TabBar
+      @importfrom1 @crss-lookup/components/TabBar.astro
+      @additionalimport2 FeedGrid
+      @importfrom2 @crss-lookup/components/FeedGrid.astro
+      @additionalimport3 HomepageCTA
+      @importfrom3 @crss-lookup/components/HomepageCTA.astro */
+  }
+  <slot name="content">
+    <main class="crss-homepage">
+      <header class="crss-homepage__header">
+        <h1 class="crss-homepage__title">Community RSS</h1>
+      </header>
+
+      <!-- Sign-up CTA — server island renders only for unauthenticated visitors -->
+      <HomepageCTA server:defer>
+        <Fragment slot="fallback"></Fragment>
+      </HomepageCTA>
+
+      <TabBar />
+
+      {loadError && (
+        <div role="alert" class="crss-homepage__error">
+          <p>Failed to load articles. Please try again later.</p>
+        </div>
+      )}
+
+      {!loadError && articles.length === 0 && (
+        <div class="crss-homepage__empty">
+          <p>No articles yet. Articles will appear here once feeds have been synced.</p>
+        </div>
+      )}
+
+      {!loadError && articles.length > 0 && (
+        <>
+          <FeedGrid articles={articles} />
+
+          {hasMore && (
+            <div id="crss-load-more" class="crss-homepage__load-more">
+              <a
+                href={`/?page=${page + 1}`}
+                id="crss-load-more-link"
+                class="crss-btn crss-btn--secondary"
+              >
+                Load more
+              </a>
+            </div>
+          )}
+
+          <div id="infinite-scroll-sentinel" class="crss-homepage__sentinel"></div>
+        </>
+      )}
+    </main>
+  </slot>
+  {
+    /* @eject-slot
+      @description Content injected before the page's main area. */
+  }
+  <slot name="before-unnamed-slot" />
+  <slot />
+  {
+    /* @eject-slot
+      @description Content injected after the page's main area. */
+  }
+  <slot name="after-unnamed-slot" />
+</BaseLayout>
+
+<style is:global>
+  @layer crss-components {
+    .crss-homepage {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: var(--crss-space-lg) var(--crss-space-md);
+    }
+
+    .crss-homepage__header {
+      margin-bottom: var(--crss-space-lg);
+    }
+
+    .crss-homepage__title {
+      font-size: var(--crss-font-size-3xl);
+      font-weight: 700;
+      color: var(--crss-text-primary);
+    }
+
+    .crss-homepage__error,
+    .crss-homepage__empty {
+      text-align: center;
+      padding: var(--crss-space-3xl) var(--crss-space-md);
+      color: var(--crss-text-muted);
+      font-size: var(--crss-font-size-lg);
+    }
+
+    .crss-homepage__load-more {
+      display: flex;
+      justify-content: center;
+      padding: var(--crss-space-lg) 0;
+    }
+
+    .crss-homepage__loading-more {
+      text-align: center;
+      color: var(--crss-text-muted);
+      font-size: var(--crss-font-size-base);
+    }
+
+    .crss-homepage__sentinel {
+      height: 1px;
+    }
+  }
+</style>
+
+<script>
+  /**
+   * Progressive enhancement: infinite scroll via server-rendered HTML extraction.
+   *
+   * When the sentinel element enters the viewport, the script fetches the next
+   * page URL (from the "Load more" link's href), parses the full HTML response
+   * with DOMParser, extracts the FeedCard elements from #feed-grid, and appends
+   * them to the current grid. All cards remain server-rendered by FeedCard.astro
+   * — there is no client-side card-building function.
+   *
+   * No-JS fallback: the "Load more" <a> element works as a plain link navigation.
+   */
+  const sentinel = document.getElementById('infinite-scroll-sentinel');
+  const grid = document.getElementById('feed-grid');
+  const loadMoreContainer = document.getElementById('crss-load-more');
+
+  if (sentinel && grid && loadMoreContainer) {
+    let loadMoreLink = loadMoreContainer.querySelector<HTMLAnchorElement>('#crss-load-more-link');
+    let isLoading = false;
+
+    async function loadNextPage() {
+      if (!loadMoreLink || isLoading) return;
+      const url = loadMoreLink.href;
+      isLoading = true;
+      loadMoreContainer!.innerHTML =
+        '<p class="crss-homepage__loading-more">Loading more\u2026</p>';
+
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const html = await response.text();
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+
+        // Append server-rendered cards from the fetched page's grid
+        const nextGrid = doc.getElementById('feed-grid');
+        if (nextGrid) {
+          Array.from(nextGrid.children).forEach((card) => grid!.appendChild(card));
+        }
+
+        // Update load-more link for the page after next
+        const nextLink = doc.querySelector<HTMLAnchorElement>('#crss-load-more-link');
+        if (nextLink) {
+          loadMoreContainer!.innerHTML = '';
+          const newLink = document.createElement('a');
+          newLink.id = 'crss-load-more-link';
+          newLink.href = nextLink.href;
+          newLink.className = nextLink.className;
+          newLink.textContent = nextLink.textContent;
+          loadMoreContainer!.appendChild(newLink);
+          loadMoreLink = newLink;
+        } else {
+          // No more pages
+          loadMoreContainer!.remove();
+          sentinel!.remove();
+          observer.disconnect();
+          loadMoreLink = null;
+        }
+      } catch (e) {
+        console.error('[community-rss] Failed to load next page:', e);
+        // Restore link so user can retry
+        loadMoreContainer!.innerHTML =
+          `<a href="${loadMoreLink!.href}" id="crss-load-more-link" class="${loadMoreLink!.className}">Load more</a>`;
+        loadMoreLink = loadMoreContainer!.querySelector<HTMLAnchorElement>('#crss-load-more-link');
+      }
+
+      isLoading = false;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) loadNextPage();
+      },
+      { threshold: 0.1 },
+    );
+    observer.observe(sentinel);
+  }
+</script>

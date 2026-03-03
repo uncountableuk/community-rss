@@ -33,12 +33,68 @@ Before creating a new utility:
 - No hard-coded copy; framework strings default via optional props
 - Use CSS custom properties for all themeable values (no hard-coded colours)
 - Provide sensible visual defaults that consumers can override
+- Use `<style is:global>` with `@layer crss-components { ... }` for styles
+- All CSS class names must use the `crss-` prefix (e.g., `.crss-feed-card`)
+- No `:global()` wrappers — `is:global` makes them redundant
+- All visual values must reference `--crss-comp-*` or `--crss-sys-*` tokens
+
+## Slot Architecture
+All core components, layouts, and pages expose named slots for the
+proxy ejection system. When adding or modifying slots:
+
+- **Generic wrapper slots**: Every component/layout/page MUST have
+  `before-unnamed-slot` and `after-unnamed-slot` extension slots
+- **Structural slots**: Complex components expose meaningful sections
+  (e.g., `header`, `body`, `footer` on ArticleModal; `form`, `confirmation`
+  on SignUpForm)
+- **Content super-slot**: All pages wrap their `<main>` content in
+  `<slot name="content">...</slot>` with existing markup as fallback
+- **Default slot**: Use `<slot />` as a passthrough for the unnamed slot
+- Use slot fallback content (not `Astro.slots.has()`) for conditional
+  rendering — Astro forwarding causes `has()` to return true for empty
+  forwarded slots
+- Slot order matters: appears in annotation order in the generated proxy
+- `slot-registry.mjs` was deleted in Phase 15d — do NOT recreate it;
+  annotations in source files are the single source of truth
+
+## Page Rendering
+- All pages MUST use **server-side rendering (SSR)**. Data is fetched in the
+  Astro frontmatter via `Astro.locals.app` (which provides `db`, `env`,
+  `config`) and passed to the template as props.
+- Progressive enhancement scripts (e.g., infinite scroll) may run client-side
+  but must not be the primary data-fetch mechanism.
+- CSR pages (where data is fetched entirely client-side from API routes) are
+  **prohibited** except when explicitly approved for a specific documented reason.
+- **Critical**: CSR pages are incompatible with the proxy ejection/override
+  system. The `crss-consumer-overrides` Vite plugin only resolves imports at
+  server-render time. Client-side card builders (like the old
+  `createArticleCard()`) bypass `FeedCard.astro` entirely, so ejected overrides
+  have no effect. When a CSR exception is granted, this limitation must be
+  explicitly documented and the page MUST NOT advertise its components as
+  ejectable.
 
 ## Import Standards
 - **Source code** (`src/`): Use **relative imports** for all cross-directory
   imports (e.g., `../types/options`). Path aliases in source code break
   consumers because Astro/Vite cannot resolve the core package's internal
   tsconfig aliases when consumed as a workspace dependency.
+- **Ejectable `.astro` imports in core source**: Use **relative imports** for
+  all intra-package `.astro` imports, including imports between ejectable
+  components, layouts, and pages:
+  ```astro
+  import FeedCard from './FeedCard.astro';
+  import BaseLayout from '../layouts/BaseLayout.astro';
+  ```
+  The `crss-consumer-overrides` Vite plugin (scope: all of core `src/`)
+  intercepts these relative imports and redirects to the consumer's ejected
+  proxy when one exists. This gives automatic cascading — ejecting `FeedCard`
+  is picked up by `FeedGrid` and every page without re-ejecting them.
+  Non-ejectable imports (utils, db queries, types) are also relative paths.
+- **`@crss-lookup/<category>/<File>.astro` virtual prefix**: For use in
+  *consumer-authored* code only (ejected proxy slot content, custom components).
+  Core source files do NOT use this prefix — they use relative imports.
+  `@importfromN` annotation values in core `.astro` files use `@crss-lookup/`
+  because those values are injected into *consumer-authored* proxy files.
 - Same-directory imports may use relative paths (`./sibling`)
 - **Test code** uses path aliases — see the testing instructions for details.
 
@@ -107,17 +163,26 @@ Before creating a new utility:
 ## Route Architecture
 - **API routes** (11) are injected by the integration into `/api/v1/...`
   and `/api/auth/[...all]`
-- **Page routes** (8) are developer-owned, scaffolded via
-  `npx @community-rss/core init` — never injected by the integration
-- Pages fetch data client-side from API routes
+- **Page routes** (8) are injected conditionally by the integration. If a
+  developer has a local file at the corresponding path, the framework
+  skips injection for that route. Pages are not scaffolded by `init`.
+- To take ownership of a page: `npx crss eject pages/<name>`
+- **Pages use server-side rendering (SSR) by default.** Data is fetched in
+  the Astro frontmatter via `Astro.locals.app` (which provides `db`,
+  `config`, and `env`) and passed directly to the template. This ensures
+  SEO, correct HTTP status codes (e.g., 404 for missing resources), and
+  fast first paint. The **homepage is the sole approved CSR exception**
+  (dynamic tab switching). New pages must follow the SSR pattern.
 - Components accept configurable `messages`/`labels` props for all
   user-facing strings
 
 ## Astro Actions
 - Action handlers are pure functions in `src/actions/` with signature:
   `(input: T, app: AppContext) => Promise<Result>`
-- Consumers register them via `defineAction` + Zod in their scaffolded
-  `src/actions/index.ts`
+- `src/actions/definitions.ts` exports `coreActions` — a map of all
+  framework actions with Zod schemas and handlers
+- Consumers use `coreActions` spread in their `src/actions/index.ts`:
+  `...wrapCoreActions(coreActions)` + `defineAction()` wrapper
 - The core package CANNOT import `astro:actions` — only consumer projects can
 - Action handlers are exported from `@community-rss/core/actions`
 - Client-side code calls `actions.fetchArticles(input)` through Astro's

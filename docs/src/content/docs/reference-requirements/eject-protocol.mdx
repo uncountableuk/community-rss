@@ -1,0 +1,447 @@
+---
+title: Eject Protocol
+description: How framework developers must author components, layouts, and pages to support the npx crss eject command.
+sidebar:
+  order: 8
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+This document defines the **Eject Protocol** — the contract that every framework developer must follow when authoring components, layouts, and pages inside `packages/core/src/`. It governs how source files are annotated so that the `npx crss eject` command can generate correct, merge-safe proxy wrappers for end developers.
+
+<Aside type="caution">
+This is an internal framework author requirement. End developers using `@community-rss/core` do not need to follow this protocol — they only consume the output of `npx crss eject`.
+</Aside>
+
+
+## 1. Overview
+
+The ejection system has two actors:
+
+| Actor | Role |
+|-------|------|
+| **Framework developer** | Embeds structured annotations in `.astro` source files to declare what is ejectable and how. |
+| **End developer** | Runs `npx crss eject <target>` to get a proxy wrapper, then customises it without touching the core. |
+
+The CLI script `packages/core/src/cli/eject.mjs` reads annotations at runtime. The annotations embedded in source are the single source of truth for what is ejectable, under what alias, and which named slots developers can override.
+
+---
+
+## 2. File-Level Annotation — `@eject-module`
+
+Every `.astro` file that should be ejectable **must** declare an `@eject-module` comment block inside its frontmatter. Files without this annotation are invisible to the eject CLI.
+
+### Syntax
+
+```astro
+---
+/*
+ * @eject-module
+ * @alias CoreFeedCard
+ * @eject-dependency layouts/BaseLayout
+ * @eject-dependency components/AuthButton
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import AuthButton from '../components/AuthButton.astro';
+---
+```
+
+### Fields
+
+| Field | Required | Description |
+|-------|:--------:|-------------|
+| `@eject-module` | Yes | Marks the file as ejectable. |
+| `@alias` | Yes | The name used for the core import in the generated proxy (e.g., `CoreFeedCard`). Convention: `Core` + PascalCase component name. |
+| `@eject-dependency <category/name>` | No | When this target is ejected, also auto-eject this dependency as a proxy if it does not already exist in the developer's project. Format: `components/AuthButton`, `layouts/BaseLayout`. |
+
+### Naming Convention
+
+The `@alias` value follows the pattern `Core` + the component's PascalCase name:
+
+```
+BaseLayout        →  @alias CoreBaseLayout
+FeedCard          →  @alias CoreFeedCard
+ArticleModal      →  @alias CoreArticleModal
+auth/signin       →  @alias CoreSignin
+```
+
+The alias becomes the import name in the generated proxy:
+
+```astro
+import CoreFeedCard from '@community-rss/core/components/FeedCard.astro';
+...
+<CoreFeedCard {...props}>
+  ...
+</CoreFeedCard>
+```
+
+### Placement Rules
+
+- The comment block must be in the **frontmatter** (between the `---` delimiters).
+- It must appear **before** any `import` statements so the parser finds it reliably.
+- The comment uses `/* ... */` style (not `//` line comments).
+- A file may only have one `@eject-module` block.
+
+---
+
+## 3. Slot-Level Annotation — `@eject-slot`
+
+Every named `<slot>` that should appear in the generated proxy wrapper **must** be preceded by an `@eject-slot` JSX comment expression in the template body. Unannotated named slots are not surfaced to end developers.
+
+### Syntax
+
+```astro
+{
+  /* @eject-slot
+      @description Replace the default header/nav bar.
+      @additionalimport1 AuthButton
+      @importfrom1 @community-rss/core/components/AuthButton.astro */
+}
+<slot name="header">
+  <header class="crss-header">
+    <AuthButton server:defer />
+  </header>
+</slot>
+```
+
+### Fields
+
+| Field | Required | Description |
+|-------|:--------:|-------------|
+| `@eject-slot` | Yes | Marks the immediately following `<slot name="...">` as ejectable. |
+| `@description` | Yes | Human-readable explanation of what this slot controls. Shown in the generated proxy as documentation. |
+| `@additionalimportN <Name>` | No | A component/symbol name that developers will need imported when they override this slot. **Must be paired** with a matching `@importfromN`. |
+| `@importfromN <path>` | No | The import path for the paired `@additionalimportN`. |
+
+<Aside type="tip">
+The `N` suffix creates a pair. `@additionalimport1` matches `@importfrom1`. You may declare multiple pairs (`1`, `2`, etc.) for slots that require multiple imports. All declared additional imports are unconditionally included in the proxy's managed import block.
+</Aside>
+
+### Self-closing vs. Content Slots
+
+**Prefer block-form slots** with default content over self-closing slots. The default content inside the `<slot>` tag becomes the visible example inside the commented block in the generated proxy, helping developers understand what they are overriding:
+
+```astro
+<!-- Good: developer sees the default implementation inside the comment -->
+{/* @eject-slot @description Replace the page footer. */}
+<slot name="footer">
+  <footer class="crss-footer">
+    <p>&copy; 2025 Community RSS</p>
+  </footer>
+</slot>
+
+<!-- Acceptable but less informative: self-closing produces an empty example -->
+{/* @eject-slot @description Inject content after the heading. */}
+<slot name="after-heading" />
+```
+
+### Unnamed Default Slot
+
+The unnamed `<slot />` (default slot) does not require an annotation. If the source file contains an unnamed slot, the generated proxy automatically includes a `<slot />` passthrough. The parser detects its presence after stripping all annotated named slots from the template.
+
+### Placement Rule
+
+The `@eject-slot` comment expression must be the **immediately preceding sibling element** of the `<slot>` tag — no other elements between them. The parser scans the text immediately after the annotation's closing `*/}` to find the next `<slot name="...">`.
+
+---
+
+## 4. Real-World Example
+
+Below is an abridged version of `packages/core/src/layouts/BaseLayout.astro` showing the complete annotation pattern:
+
+```astro
+---
+/**
+ * Base layout for Community RSS pages.
+ * @since 0.1.0
+ */
+
+/*
+ * @eject-module
+ * @alias CoreBaseLayout
+ * @eject-dependency components/AuthButton
+ */
+
+import AuthButton from '../components/AuthButton.astro';
+import ConsentModal from '../components/ConsentModal.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = 'Community RSS' } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    ...
+    {
+      /* @eject-slot
+          @description Add custom <meta>, <link>, or <script> tags to <head>. */
+    }
+    <slot name="head" />
+  </head>
+  <body>
+    {
+      /* @eject-slot
+          @description Replace the default header/nav bar.
+          @additionalimport1 AuthButton
+          @importfrom1 @community-rss/core/components/AuthButton.astro */
+    }
+    <slot name="header">
+      <header class="crss-header">
+        <nav class="crss-nav">
+          <a href="/" class="crss-nav-brand">Community RSS</a>
+          <AuthButton server:defer>
+            <div slot="fallback" class="crss-auth-skeleton" aria-hidden="true"></div>
+          </AuthButton>
+        </nav>
+      </header>
+    </slot>
+    {
+      /* @eject-slot
+          @description Inject content between the header and the main page content. */
+    }
+    <slot name="below-header" />
+    <slot />
+    {
+      /* @eject-slot
+          @description Footer section (empty by default). */
+    }
+    <slot name="footer" />
+  </body>
+</html>
+```
+
+---
+
+## 5. The Eject Algorithm
+
+This section describes exactly what `eject.mjs` does when a developer runs `npx crss eject <target>`. Understanding this is essential for framework authors to predict the output their annotations will produce.
+
+### Phase 1 — Discovery
+
+`discoverCategory(category)` walks the relevant subdirectory under `packages/core/src/` (e.g., `src/components/`, `src/pages/`, `src/layouts/`) using `findAstroFiles()`, then filters the results to only files whose content includes the string `@eject-module`. The result is a list of registry keys like `components/FeedCard`, `pages/profile`.
+
+The CLI uses these lists to populate:
+- The `--help` output ("Available pages: ...")
+- The `ejectAll()` loop which ejects every known target
+
+### Phase 2 — Annotation Parsing (`parseAnnotations`)
+
+Given an absolute path to a source `.astro` file, `parseAnnotations()` returns a `ParsedAnnotations` object or `null` if the file has no `@eject-module` annotation.
+
+#### Step-by-step
+
+1. **Split frontmatter / template** — The file is split on the `---` delimiters. Everything between the first pair of `---` markers is the frontmatter; everything after is the template.
+
+2. **Extract `@eject-module` block** — A regex finds the `/* ... @eject-module ... */` comment in the frontmatter. From it, `@alias` and any `@eject-dependency` values are parsed.
+
+3. **Extract props definition** — The frontmatter is scanned line-by-line. `import` statements, runtime assignments (`const`, `let`, `var`), and comment blocks are all skipped. Only `interface` and `type` declarations are retained as `propsDefinition`. These are reproduced verbatim in the proxy's frontmatter so the proxy is type-safe.
+
+4. **Extract `@eject-slot` annotations** — A regex iterates over all `{/* @eject-slot ... */}` expression blocks in the template. For each one, the following fields are parsed from the annotation body:
+   - `@description` — everything up to the next `@`-tag or end.
+   - `@additionalimportN` / `@importfromN` pairs — collected into an array.
+   
+   Immediately after the annotation block, the template text is searched for the next `<slot name="...">` tag. If the slot has content (non-self-closing), the content is extracted, dedented, and stored as `defaultContent`.
+
+5. **Detect unnamed slot** — After stripping all JSX comment expressions and all named slots from the template, the parser checks whether a bare `<slot />` or `<slot>` remains. This sets the `hasUnnamedSlot` flag.
+
+6. **Derive core path** — The file's path relative to `packages/core/src/` is computed and prepended with `@community-rss/core/` to form the import path used in the proxy (e.g., `@community-rss/core/components/FeedCard.astro`).
+
+#### `ParsedAnnotations` shape
+
+```typescript
+interface ParsedAnnotations {
+  alias: string;              // e.g., 'CoreBaseLayout'
+  dependencies: string[];     // e.g., ['components/AuthButton']
+  propsDefinition: string;    // Verbatim interface/type declarations
+  slots: SlotAnnotation[];    // One entry per @eject-slot
+  hasUnnamedSlot: boolean;
+  corePath: string;           // e.g., '@community-rss/core/layouts/BaseLayout.astro'
+}
+
+interface SlotAnnotation {
+  name: string;               // Slot name attribute value
+  description: string;
+  defaultContent: string;     // Dedented content from <slot>...</slot>
+  additionalImports: Array<{ name: string; from: string }>;
+}
+```
+
+### Phase 3 — Proxy Generation (`generateProxy`)
+
+`generateProxy(annotations, registryKey)` builds the proxy file string from the parsed annotations.
+
+#### Frontmatter
+
+The proxy frontmatter contains:
+
+1. A JSDoc comment explaining what the file is and reminding the developer to uncomment slots they want to customise.
+2. A **managed import block**, delimited by `@start-eject-import` and `@end-eject-import` markers:
+   - The core component import (using `@alias` as the local name and `corePath` as the source).
+   - All `additionalImport` entries gathered unconditionally from all slots (even inactive ones), to ensure imports are always present for overriding any slot.
+3. The props type definition copied verbatim from `propsDefinition` (if any).
+4. `const props = Astro.props;` — ensures all props are forwarded.
+
+#### Template body
+
+For each slot annotation, a **commented slot block** is generated:
+
+```
+  {/*
+    =========================================
+    SLOT: header
+    Replace the default header/nav bar.
+    =========================================
+  <Fragment slot="header">
+    <header class="crss-header">
+      ...default content...
+    </header>
+  </Fragment>
+  */}
+```
+
+The default content (if any) from the source slot is embedded inside the commented `<Fragment>` as a reference implementation. This pattern is idempotent — re-ejecting later replaces it with an updated version.
+
+If `hasUnnamedSlot` is true, an uncommented `<slot />` passthrough is appended after all named slot blocks.
+
+#### Closing structure
+
+The proxy wraps everything in `<CoreX {...props}>...</CoreX>` and appends an empty `<style>` block for developer customisation.
+
+#### Example output
+
+```astro
+---
+/**
+ * BaseLayout proxy wrapper — developer-owned wrapper around
+ * the core BaseLayout layout.
+ *
+ * Uncomment any slot below to override that section.
+ * The core layout handles all logic.
+ *
+ * @since 0.6.0
+ */
+/*
+ * @start-eject-import
+ */
+import CoreBaseLayout from '@community-rss/core/layouts/BaseLayout.astro';
+import AuthButton from '@community-rss/core/components/AuthButton.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const props = Astro.props;
+/*
+ * @end-eject-import
+ */
+---
+
+<CoreBaseLayout {...props}>
+  {/*
+    =========================================
+    SLOT: head
+    Add custom <meta>, <link>, or <script> tags to <head>.
+    =========================================
+  <Fragment slot="head">
+
+  </Fragment>
+  */}
+
+  {/*
+    =========================================
+    SLOT: header
+    Replace the default header/nav bar.
+    =========================================
+  <Fragment slot="header">
+    <header class="crss-header">
+      <nav class="crss-nav">
+        <a href="/" class="crss-nav-brand">Community RSS</a>
+        <AuthButton server:defer>
+          <div slot="fallback" class="crss-auth-skeleton" aria-hidden="true"></div>
+        </AuthButton>
+      </nav>
+    </header>
+  </Fragment>
+  */}
+
+  <slot />
+</CoreBaseLayout>
+
+<style>
+  /* Add your custom styles here */
+</style>
+```
+
+### Phase 4 — Dependency Auto-Ejection
+
+When ejecting a page, after the page proxy is written, `eject()` iterates over `annotations.dependencies`. For each dependency:
+
+- If the dependency is a **layout**, it generates a layout proxy via `generateLayoutProxy()` and writes it to `src/layouts/<name>.astro` — **only if the file does not already exist**. (Never overwrites existing files for dependencies, regardless of `--force`.)
+- If the dependency is a **component**, the same logic applies for `src/components/<name>.astro`.
+
+This ensures that when a developer ejects a page that imports a layout or component, they automatically get proxy wrappers for those too — without anything silently pointing at the internal package paths.
+
+### Phase 5 — Re-ejection (`reEject`)
+
+When a developer runs `npx crss eject` on a file they have already ejected (and the file contains `SLOT:` or `@start-eject-import` markers), the algorithm enters re-eject mode instead of overwriting.
+
+#### Step-by-step
+
+1. **Parse existing file (`parseEjectedFile`)** — The current file content is analysed to extract:
+   - **Active slots** — `<Fragment slot="name">...</Fragment>` blocks that are **not** inside a `{/* ... */}` comment (i.e., are uncommented and therefore functionally active). Located by stripping all JSX comments from the content then searching for `<Fragment slot="...">` tags.
+   - **Style content** — The contents of the `<style>` block, if it contains anything other than the default placeholder comment.
+   - **Extra imports** — Any `import` statements in the frontmatter that are **outside** the managed `@start-eject-import` / `@end-eject-import` block and do not import from `@community-rss/core/`. These are developer-added imports that must be preserved.
+
+2. **Generate fresh proxy** — A fresh proxy is built from the current annotations using the same `generateProxy()` logic. This ensures the managed import block and slot comments always reflect the latest upstream source.
+
+3. **Rebuild frontmatter** — The new frontmatter reuses the managed import block from the fresh proxy, appends any developer extra imports, and preserves any extra frontmatter code (non-import, non-`const props` statements).
+
+4. **Merge slot blocks** — For each slot in the annotations:
+   - If the developer has an **active fragment** for this slot (detected in step 1), the slot block in the fresh proxy is _replaced_ with the developer's active `<Fragment>` element, placed immediately after the commented reference block. This preserves the developer's override while also updating the reference comment.
+   - If no active fragment exists, the slot appears as a standard commented block (showing the updated default content).
+
+5. **Handle orphan fragments** — Slots that the developer had previously overridden but that no longer exist in the current annotations are silently dropped. Because the algorithm only processes slots that appear in the current `annotations.slots` array, any fragment for a removed slot simply does not appear in the output.
+
+6. **Preserve style content** — If the developer has custom style content, it is re-injected into the `<style>` block of the merged output.
+
+#### Idempotency guarantee
+
+Running `npx crss eject` multiple times on the same file is safe. Active developer fragments are detected, preserved, and re-inserted outside the comment blocks on every run. The command can be triggered freely after every package update to pick up new slots while keeping all existing customisations intact.
+
+---
+
+## 6. Checklist for Framework Authors
+
+Before committing a new or modified `.astro` file to `packages/core/src/`:
+
+- [ ] **Is this file ejectable?** If yes, add an `@eject-module` block.
+- [ ] **Is the `@alias` correct?** Follows `Core` + PascalCase convention.
+- [ ] **Are dependencies declared?** Every layout or component that the page's proxy will need to import must be listed via `@eject-dependency`.
+- [ ] **Are all configurable sections annotated?** Every named slot that a developer might reasonably want to replace should have an `@eject-slot` + `@description`.
+- [ ] **Do slots have default content?** Block-form slots with content better serve developers than self-closing slots.
+- [ ] **Are `@additionalimport` pairs correct?** Any component referenced inside a slot's default content should be declared so the proxy import block is complete.
+- [ ] **Does the proxy type-check?** The `propsDefinition` extraction only picks up `interface` and `type` declarations. If the component uses complex runtime expressions that affect the proxy shape, verify the generated output type-checks.
+- [ ] **Has `npx crss eject <target>` been tested locally?** Verify the generated proxy file is correct and compiles without errors in the playground.
+
+---
+
+## 7. Constraints and Limitations
+
+- **Annotations are in the source tree only.** When the package is published to npm, `src/` is included in the package. The parser reads live source files from the installed package directory at annotation-parse time.
+- **Only named slots are ejectable.** The unnamed default slot is always passed through automatically; it cannot carry a description or default content in this system.
+- **Actions are template-based, not annotation-based.** The `actions` eject target uses a static file template from `src/cli/templates/actions/index.ts`, not the annotation parser. The checklist above does not apply to action files.
+- **API routes cannot be ejected.** Routes under `src/pages/api/` are excluded from discovery by the `discoverPages()` filter. They are always served from the core package and cannot be overridden via ejection (use custom Astro routes instead).
+
+---
+
+## 8. Related Documents
+
+- [Developer Experience Requirements](developer-experience) — End developer perspective on the ejection workflow and progressive customisation hierarchy.
+- [Framework Requirements](framework) — The Proxy Component Pattern and Route Precedence requirements that motivate this protocol.
+- [Contributing: Eject Annotations](../contributing/eject-annotations) — Quick-reference annotation syntax card for framework contributors.

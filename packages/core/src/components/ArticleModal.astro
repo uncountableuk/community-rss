@@ -5,7 +5,18 @@
  * Supports deep linking via pushState, next/previous navigation,
  * and close via button or overlay click.
  *
+ * Provides named slots for customisation:
+ * - `header` — replaces the modal header (meta + close button)
+ * - `body` — replaces the title + content area
+ * - `footer` — replaces the modal footer (original link + nav)
+ * - `before-unnamed-slot` / `after-unnamed-slot` — generic wrapper slots
+ *
  * @since 0.2.0
+ */
+
+/*
+ * @eject-module
+ * @alias CoreArticleModal
  */
 
 interface Props {
@@ -59,7 +70,11 @@ const formattedDate = publishedAt
   aria-labelledby="modal-title"
 >
   <div class="crss-modal">
-    <header class="crss-modal__header">
+    {
+      /* @eject-slot
+        @description Replace the modal header (meta info + close button). */
+    }
+    <slot name="header">
       <div class="crss-modal__meta">
         {feedTitle && <span class="crss-modal__source">{feedTitle}</span>}
         {formattedDate && <time class="crss-modal__date">{formattedDate}</time>}
@@ -80,185 +95,209 @@ const formattedDate = publishedAt
           ></line></svg
         >
       </button>
-    </header>
-
-    <h1 class="crss-modal__title" id="modal-title">{title}</h1>
-
-    <div class="crss-modal__content" set:html={content} />
-
-    <footer class="crss-modal__footer">
-      {
-        originalLink && (
-          <a
-            href={originalLink}
-            class="crss-modal__original-link"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {readOriginalLabel}
-          </a>
-        )
-      }
-      <nav class="crss-modal__nav" aria-label="Article navigation">
-        <button class="crss-modal__nav-btn" data-modal-prev aria-label={previousLabel}
-          >{previousLabel}</button
-        >
-        <button class="crss-modal__nav-btn" data-modal-next aria-label={nextLabel}
-          >{nextLabel}</button
-        >
-      </nav>
-    </footer>
+    </slot>
   </div>
+
+  {
+    /* @eject-slot
+        @description Replace the article title + content area. */
+  }
+  <slot name="body"> id="modal-title">{title}</slot>
+
+  <div class="crss-modal__content" set:html={content} />
 </div>
 
-<style>
-  .crss-modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: var(--crss-comp-modal-overlay-bg, var(--crss-overlay-bg));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    padding: var(--crss-space-md);
-    backdrop-filter: blur(4px);
-  }
+{
+  /* @eject-slot
+        @description Content injected before the default slot. */
+}
+<slot name="before-unnamed-slot" />
+<slot />
+{
+  /* @eject-slot
+        @description Content injected after the default slot. */
+}
+<slot name="after-unnamed-slot" />
 
-  .crss-modal {
-    background: var(--crss-surface-0);
-    border-radius: var(--crss-radius-lg);
-    max-width: 800px;
-    width: 100%;
-    max-height: 90vh;
-    overflow-y: auto;
-    padding: var(--crss-space-xl);
-    position: relative;
-  }
+{
+  /* @eject-slot
+        @description Replace the modal footer (original link + navigation). */
+}
+<slot name="footer">
+  <footer class="crss-modal__footer">
+    {
+      originalLink && (
+        <a
+          href={originalLink}
+          class="crss-modal__original-link"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {readOriginalLabel}
+        </a>
+      )
+    }
+    <nav class="crss-modal__nav" aria-label="Article navigation">
+      <button class="crss-modal__nav-btn" data-modal-prev aria-label={previousLabel}
+        >{previousLabel}</button
+      >
+      <button class="crss-modal__nav-btn" data-modal-next aria-label={nextLabel}>{nextLabel}</button
+      >
+    </nav>
+  </footer>
+</slot>
 
-  .crss-modal__header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: var(--crss-space-md);
-  }
+<style is:global>
+  @layer crss-components {
+    .crss-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--crss-comp-modal-overlay-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: var(--crss-sys-space-md);
+      backdrop-filter: blur(4px);
+    }
 
-  .crss-modal__meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--crss-space-sm);
-    font-size: var(--crss-font-size-sm);
-    color: var(--crss-text-muted);
-  }
+    .crss-modal {
+      background: var(--crss-comp-modal-bg);
+      border-radius: var(--crss-comp-modal-radius);
+      max-width: var(--crss-comp-modal-max-width);
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: var(--crss-comp-modal-padding);
+      box-shadow: var(--crss-comp-modal-shadow);
+      position: relative;
+    }
 
-  .crss-modal__source {
-    font-weight: 600;
-    color: var(--crss-brand-primary);
-  }
+    .crss-modal__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: var(--crss-sys-space-md);
+    }
 
-  .crss-modal__close {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--crss-text-muted);
-    padding: var(--crss-space-xs);
-    border-radius: var(--crss-radius-sm);
-    transition:
-      color 0.15s ease,
-      background 0.15s ease;
-    flex-shrink: 0;
-  }
+    .crss-modal__meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--crss-sys-space-sm);
+      font-size: var(--crss-comp-modal-meta-size);
+      color: var(--crss-sys-color-text-muted);
+    }
 
-  .crss-modal__close:hover {
-    color: var(--crss-text-primary);
-    background: var(--crss-surface-1);
-  }
+    .crss-modal__source {
+      font-weight: 600;
+      color: var(--crss-sys-color-primary);
+    }
 
-  .crss-modal__title {
-    font-size: var(--crss-font-size-2xl);
-    font-weight: 700;
-    line-height: 1.3;
-    margin-bottom: var(--crss-space-lg);
-    color: var(--crss-text-primary);
-  }
+    .crss-modal__close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--crss-sys-color-text-muted);
+      padding: var(--crss-sys-space-xs);
+      border-radius: var(--crss-sys-radius-sm);
+      transition:
+        color var(--crss-sys-transition-fast),
+        background var(--crss-sys-transition-fast);
+      flex-shrink: 0;
+    }
 
-  .crss-modal__content {
-    line-height: 1.7;
-    font-size: var(--crss-font-size-base);
-    color: var(--crss-text-secondary);
-  }
+    .crss-modal__close:hover {
+      color: var(--crss-sys-color-text-primary);
+      background: var(--crss-sys-color-surface-1);
+    }
 
-  .crss-modal__content :global(img) {
-    max-width: 100%;
-    height: auto;
-    border-radius: var(--crss-radius-sm);
-    margin: var(--crss-space-md) 0;
-  }
+    .crss-modal__title {
+      font-size: var(--crss-comp-modal-title-size);
+      font-weight: 700;
+      line-height: 1.3;
+      margin-bottom: var(--crss-sys-space-lg);
+      color: var(--crss-sys-color-text-primary);
+    }
 
-  .crss-modal__content :global(a) {
-    color: var(--crss-brand-primary);
-    text-decoration: underline;
-  }
+    .crss-modal__content {
+      line-height: 1.7;
+      font-size: var(--crss-sys-font-size-base);
+      color: var(--crss-sys-color-text-secondary);
+    }
 
-  .crss-modal__content :global(pre) {
-    background: var(--crss-surface-1);
-    padding: var(--crss-space-md);
-    border-radius: var(--crss-radius-sm);
-    overflow-x: auto;
-    font-family: var(--crss-font-family-mono);
-    font-size: var(--crss-font-size-sm);
-  }
+    .crss-modal__content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: var(--crss-sys-radius-sm);
+      margin: var(--crss-sys-space-md) 0;
+    }
 
-  .crss-modal__content :global(blockquote) {
-    border-left: 3px solid var(--crss-brand-primary);
-    padding-left: var(--crss-space-md);
-    margin: var(--crss-space-md) 0;
-    color: var(--crss-text-muted);
-    font-style: italic;
-  }
+    .crss-modal__content a {
+      color: var(--crss-sys-color-primary);
+      text-decoration: underline;
+    }
 
-  .crss-modal__footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: var(--crss-space-xl);
-    padding-top: var(--crss-space-md);
-    border-top: 1px solid var(--crss-surface-2);
-    flex-wrap: wrap;
-    gap: var(--crss-space-md);
-  }
+    .crss-modal__content pre {
+      background: var(--crss-sys-color-surface-1);
+      padding: var(--crss-sys-space-md);
+      border-radius: var(--crss-sys-radius-sm);
+      overflow-x: auto;
+      font-family: var(--crss-sys-font-family-mono);
+      font-size: var(--crss-sys-font-size-sm);
+    }
 
-  .crss-modal__original-link {
-    color: var(--crss-brand-primary);
-    text-decoration: none;
-    font-size: var(--crss-font-size-sm);
-    font-weight: 500;
-  }
+    .crss-modal__content blockquote {
+      border-left: 3px solid var(--crss-sys-color-primary);
+      padding-left: var(--crss-sys-space-md);
+      margin: var(--crss-sys-space-md) 0;
+      color: var(--crss-sys-color-text-muted);
+      font-style: italic;
+    }
 
-  .crss-modal__original-link:hover {
-    text-decoration: underline;
-  }
+    .crss-modal__footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: var(--crss-sys-space-xl);
+      padding-top: var(--crss-sys-space-md);
+      border-top: 1px solid var(--crss-sys-color-surface-2);
+      flex-wrap: wrap;
+      gap: var(--crss-sys-space-md);
+    }
 
-  .crss-modal__nav {
-    display: flex;
-    gap: var(--crss-space-sm);
-  }
+    .crss-modal__original-link {
+      color: var(--crss-sys-color-primary);
+      text-decoration: none;
+      font-size: var(--crss-sys-font-size-sm);
+      font-weight: 500;
+    }
 
-  .crss-modal__nav-btn {
-    background: var(--crss-surface-1);
-    border: 1px solid var(--crss-surface-2);
-    border-radius: var(--crss-radius-sm);
-    padding: var(--crss-space-xs) var(--crss-space-md);
-    font-family: var(--crss-font-family);
-    font-size: var(--crss-font-size-sm);
-    color: var(--crss-text-secondary);
-    cursor: pointer;
-    transition:
-      background 0.15s ease,
-      color 0.15s ease;
-  }
+    .crss-modal__original-link:hover {
+      text-decoration: underline;
+    }
 
-  .crss-modal__nav-btn:hover {
-    background: var(--crss-surface-2);
-    color: var(--crss-text-primary);
+    .crss-modal__nav {
+      display: flex;
+      gap: var(--crss-sys-space-sm);
+    }
+
+    .crss-modal__nav-btn {
+      background: var(--crss-sys-color-surface-1);
+      border: 1px solid var(--crss-sys-color-surface-2);
+      border-radius: var(--crss-sys-radius-sm);
+      padding: var(--crss-sys-space-xs) var(--crss-sys-space-md);
+      font-family: var(--crss-sys-font-family);
+      font-size: var(--crss-sys-font-size-sm);
+      color: var(--crss-sys-color-text-secondary);
+      cursor: pointer;
+      transition:
+        background var(--crss-sys-transition-fast),
+        color var(--crss-sys-transition-fast);
+    }
+
+    .crss-modal__nav-btn:hover {
+      background: var(--crss-sys-color-surface-2);
+      color: var(--crss-sys-color-text-primary);
+    }
   }
 </style>

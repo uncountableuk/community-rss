@@ -1,95 +1,40 @@
 /**
  * Astro Actions — Community RSS
  *
- * Type-safe RPC handlers powered by @community-rss/core.
- * These Actions wrap the framework's business logic and can be called
- * from client-side code via `actions.fetchArticles(input)`.
+ * Uses the `coreActions` spread pattern to wire all framework actions
+ * automatically. Add your custom actions below the spread.
  *
- * The existing /api/v1/* routes remain functional for backward
- * compatibility. Actions provide an additional typed layer on top.
+ * When the framework adds new actions in future versions, they
+ * appear here automatically after `npm update`.
  *
  * @see https://docs.astro.build/en/guides/actions/
- * @since 0.5.0
+ * @since 0.6.0
  */
 import { defineAction } from 'astro:actions';
-import { z } from 'astro:schema';
-import {
-    fetchArticlesHandler,
-    checkEmailHandler,
-    submitSignupHandler,
-    updateProfileHandler,
-    changeEmailHandler,
-    confirmEmailChangeHandler,
-} from '@community-rss/core/actions';
+import { coreActions } from '@community-rss/core/actions';
+
+/**
+ * Transform coreActions into Astro defineAction calls.
+ * Each entry has { input, handler } — we wrap them with defineAction.
+ */
+function wrapCoreActions(actions: Record<string, { input: any; handler: any }>) {
+    const wrapped: Record<string, any> = {};
+    for (const [name, def] of Object.entries(actions)) {
+        wrapped[name] = defineAction({
+            input: def.input,
+            handler: def.handler,
+        });
+    }
+    return wrapped;
+}
 
 export const server = {
-    fetchArticles: defineAction({
-        input: z.object({
-            page: z.number().optional(),
-            limit: z.number().optional(),
-            feedId: z.string().optional(),
-            sort: z.string().optional(),
-        }),
-        handler: async (input, context) => {
-            const app = context.locals.app;
-            return fetchArticlesHandler(input, app);
-        },
-    }),
+    ...wrapCoreActions(coreActions),
 
-    checkEmail: defineAction({
-        input: z.object({
-            email: z.string().email(),
-        }),
-        handler: async (input, context) => {
-            const app = context.locals.app;
-            return checkEmailHandler(input, app);
-        },
-    }),
-
-    submitSignup: defineAction({
-        input: z.object({
-            email: z.string().email(),
-            name: z.string().min(1).max(100),
-            termsAccepted: z.boolean(),
-        }),
-        handler: async (input, context) => {
-            const app = context.locals.app;
-            return submitSignupHandler(input, app);
-        },
-    }),
-
-    updateProfile: defineAction({
-        input: z.object({
-            userId: z.string(),
-            name: z.string().optional(),
-            bio: z.string().optional(),
-        }),
-        handler: async (input, context) => {
-            const app = context.locals.app;
-            return updateProfileHandler(input, app);
-        },
-    }),
-
-    changeEmail: defineAction({
-        input: z.object({
-            userId: z.string(),
-            currentEmail: z.string().email(),
-            currentName: z.string().optional(),
-            newEmail: z.string().email(),
-        }),
-        handler: async (input, context) => {
-            const app = context.locals.app;
-            return changeEmailHandler(input, app);
-        },
-    }),
-
-    confirmEmailChange: defineAction({
-        input: z.object({
-            token: z.string().min(1),
-        }),
-        handler: async (input, context) => {
-            const app = context.locals.app;
-            return confirmEmailChangeHandler(input, app);
-        },
-    }),
+    // === Your custom actions below ===
+    // Example:
+    // myCustomAction: defineAction({
+    //     input: z.object({ ... }),
+    //     handler: async (input, context) => { ... },
+    // }),
 };

@@ -9,6 +9,11 @@
  * @since 0.3.0
  */
 
+/*
+ * @eject-module
+ * @alias CoreMagicLinkForm
+ */
+
 interface Props {
   /** Configurable message strings. @since 0.4.0 */
   messages?: {
@@ -33,128 +38,140 @@ const {
 } = Astro.props;
 ---
 
+{
+  /* @eject-slot
+    @description Content injected before the magic link form. */
+}
+<slot name="before-unnamed-slot" />
 <form
-  class="crss-magic-link-form"
-  id="crss-magic-link-form"
-  data-error-text={errorText}
+  class="crss-magic-link-form" id="crss-magic-link-form" data-error-text={errorText}
   data-network-error-text={networkErrorText}
 >
-  <div class="crss-form-group">
-    <label for="crss-email-input" class="crss-form-label">{emailLabel}</label>
-    <input
-      type="email"
-      id="crss-email-input"
-      name="email"
-      class="crss-form-input"
-      placeholder={emailPlaceholder}
-      required
-      autocomplete="email"
-    />
-  </div>
+<div class="crss-form-group">
+  <label for="crss-email-input" class="crss-form-label">{emailLabel}</label>
+  <input
+    type="email"
+    id="crss-email-input"
+    name="email"
+    class="crss-form-input"
+    placeholder={emailPlaceholder}
+    required
+    autocomplete="email"
+  />
+</div>
 
-  <button
-    type="submit"
-    class="crss-btn crss-btn--primary"
-    id="crss-submit-btn"
-    data-default-text={submitLabel}
-  >
-    {submitLabel}
-  </button>
+<button
+  type="submit"
+  class="crss-btn crss-btn--primary"
+  id="crss-submit-btn"
+  data-default-text={submitLabel}
+>
+  {submitLabel}
+</button>
 
-  <div
-    class="crss-form-message crss-form-message--success"
-    id="crss-success-msg"
-    style="display: none;"
-  >
-    {successText}
-  </div>
+<div
+  class="crss-form-message crss-form-message--success"
+  id="crss-success-msg"
+  style="display: none;"
+>
+  {successText}
+</div>
 
-  <div
-    class="crss-form-message crss-form-message--error"
-    id="crss-error-msg"
-    style="display: none;"
-  >
-  </div>
+<div class="crss-form-message crss-form-message--error" id="crss-error-msg" style="display: none;">
+</div>
 </form>
 
-<style>
-  .crss-magic-link-form {
-    display: flex;
-    flex-direction: column;
-    gap: var(--crss-space-md);
-    max-width: 400px;
-    width: 100%;
-  }
+<slot />
+{
+  /* @eject-slot
+    @description Content injected after the magic link form. */
+}
+<slot name="after-unnamed-slot" />
 
-  .crss-form-group {
-    display: flex;
-    flex-direction: column;
-    gap: var(--crss-space-xs);
-  }
+<style is:global>
+  @layer crss-components {
+    .crss-magic-link-form {
+      display: flex;
+      flex-direction: column;
+      gap: var(--crss-comp-form-gap);
+      max-width: var(--crss-comp-form-max-width);
+      width: 100%;
+      background-color: var(--crss-comp-form-bg);
+      border: 1px solid var(--crss-comp-form-border);
+      border-radius: var(--crss-comp-form-radius);
+      padding: var(--crss-comp-form-padding);
+    }
 
-  .crss-form-label {
-    font-size: var(--crss-font-size-sm);
-    font-weight: 500;
-    color: var(--crss-text-primary);
-  }
+    .crss-form-group {
+      display: flex;
+      flex-direction: column;
+      gap: var(--crss-space-xs);
+    }
 
-  .crss-form-input {
-    padding: var(--crss-space-sm) var(--crss-space-md);
-    border: 1px solid var(--crss-surface-3);
-    border-radius: var(--crss-radius-md);
-    font-size: var(--crss-font-size-base);
-    font-family: var(--crss-font-family);
-    color: var(--crss-text-primary);
-    background-color: var(--crss-surface-0);
-    transition: border-color var(--crss-transition-fast);
-  }
+    .crss-form-label {
+      font-size: var(--crss-comp-form-label-size);
+      font-weight: 500;
+      color: var(--crss-comp-form-label-color);
+    }
 
-  .crss-form-input:focus {
-    outline: none;
-    border-color: var(--crss-brand-primary);
-    box-shadow: var(--crss-comp-form-focus-ring, 0 0 0 3px var(--crss-focus-ring));
-  }
+    .crss-form-input {
+      padding: var(--crss-comp-form-input-padding);
+      border: 1px solid var(--crss-comp-form-input-border);
+      border-radius: var(--crss-comp-form-input-radius);
+      font-size: var(--crss-sys-font-size-base);
+      font-family: var(--crss-sys-font-family);
+      color: var(--crss-sys-color-text-primary);
+      background-color: var(--crss-comp-form-input-bg);
+      transition: border-color var(--crss-sys-transition-fast);
+    }
 
-  .crss-btn--primary {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: var(--crss-space-sm) var(--crss-space-lg);
-    background-color: var(--crss-brand-primary);
-    color: var(--crss-text-inverse);
-    border: none;
-    border-radius: var(--crss-radius-md);
-    font-size: var(--crss-font-size-base);
-    font-family: var(--crss-font-family);
-    cursor: pointer;
-    transition: background-color var(--crss-transition-fast);
-  }
+    .crss-form-input:focus {
+      outline: none;
+      border-color: var(--crss-sys-color-primary);
+      box-shadow: var(--crss-comp-form-focus-ring);
+    }
 
-  .crss-btn--primary:hover {
-    background-color: var(--crss-brand-accent);
-  }
+    .crss-btn--primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--crss-space-sm) var(--crss-space-lg);
+      background-color: var(--crss-brand-primary);
+      color: var(--crss-text-inverse);
+      border: none;
+      border-radius: var(--crss-radius-md);
+      font-size: var(--crss-font-size-base);
+      font-family: var(--crss-font-family);
+      cursor: pointer;
+      transition: background-color var(--crss-transition-fast);
+    }
 
-  .crss-btn--primary:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
+    .crss-btn--primary:hover {
+      background-color: var(--crss-brand-accent);
+    }
 
-  .crss-form-message {
-    padding: var(--crss-space-sm) var(--crss-space-md);
-    border-radius: var(--crss-radius-md);
-    font-size: var(--crss-font-size-sm);
-  }
+    .crss-btn--primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
 
-  .crss-form-message--success {
-    background-color: var(--crss-comp-form-success-bg, var(--crss-success-bg));
-    color: var(--crss-comp-form-success-text, var(--crss-success-text));
-    border: 1px solid var(--crss-comp-form-success-border, var(--crss-success-border));
-  }
+    .crss-form-message {
+      padding: var(--crss-space-sm) var(--crss-space-md);
+      border-radius: var(--crss-radius-md);
+      font-size: var(--crss-font-size-sm);
+    }
 
-  .crss-form-message--error {
-    background-color: var(--crss-comp-form-error-bg, var(--crss-error-bg));
-    color: var(--crss-comp-form-error-text, var(--crss-error-text));
-    border: 1px solid var(--crss-comp-form-error-border, var(--crss-error-border));
+    .crss-form-message--success {
+      background-color: var(--crss-comp-form-success-bg, var(--crss-success-bg));
+      color: var(--crss-comp-form-success-text, var(--crss-success-text));
+      border: 1px solid var(--crss-comp-form-success-border, var(--crss-success-border));
+    }
+
+    .crss-form-message--error {
+      background-color: var(--crss-comp-form-error-bg, var(--crss-error-bg));
+      color: var(--crss-comp-form-error-text, var(--crss-error-text));
+      border: 1px solid var(--crss-comp-form-error-border, var(--crss-error-border));
+    }
   }
 </style>
 
