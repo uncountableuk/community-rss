@@ -36,6 +36,9 @@
       ],
       "@actions/*": [
         "./src/actions/*"
+      ],
+      "@cli/*": [
+        "./src/cli/*"
       ]
     },
     "types": [

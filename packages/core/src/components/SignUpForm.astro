@@ -404,8 +404,8 @@ const {
         // panel to be a sibling of the form BEFORE hiding it, otherwise
         // form.style.display = 'none' hides the confirmation too.
         const confirm = document.getElementById('crss-signup-confirm');
-        if (confirm && form.contains(confirm)) {
-          form.after(confirm);
+        if (confirm && form && form.contains(confirm) && form.parentNode) {
+          form.parentNode.insertBefore(confirm, form.nextSibling);
         }
 
         form.style.display = 'none';

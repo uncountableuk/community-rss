@@ -1,8 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { eject, ejectAll, discoverComponents, discoverLayouts, discoverPages } from '@cli/eject.mjs';
+// @ts-ignore - JavaScript module without types
+import { ejectAll, discoverComponents, discoverLayouts, discoverPages } from '../../src/cli/eject.mjs';
 import {
-    existsSync,
-    mkdirSync,
     mkdtempSync,
     readFileSync,
     rmSync,
@@ -96,7 +95,7 @@ describe('eject all', () => {
         writeFileSync(filePath, content);
 
         // Eject all again without force — should re-eject, not skip
-        const { created, messages } = ejectAll({ cwd: tempDir, force: false });
+        const { created } = ejectAll({ cwd: tempDir, force: false });
 
         // File should be re-ejected (in created, not skipped)
         expect(created).toContain('src/components/FeedCard.astro');
