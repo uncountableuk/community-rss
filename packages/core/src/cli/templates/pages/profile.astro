@@ -57,6 +57,8 @@ import BaseLayout from '@community-rss/core/layouts/BaseLayout.astro';
             <p class="crss-pending-notice" id="email-pending-notice" style="display: none;">
               Verification link sent to <strong id="pending-email-value"></strong>. Check your inbox
               to confirm the change.
+              <br><a href="#" id="resend-verification" class="crss-resend-link">Resend Verification Email</a>
+              <span class="crss-inline-status" id="resend-status"></span>
             </p>
             <div class="crss-inline-editor" id="editor-email" style="display: none;">
               <p class="crss-email-change-info">
@@ -270,6 +272,14 @@ import BaseLayout from '@community-rss/core/layouts/BaseLayout.astro';
       border-radius: var(--crss-radius-md);
       padding: var(--crss-space-xs) var(--crss-space-md);
       margin-top: var(--crss-space-xs);
+    }
+    .crss-resend-link {
+      color: var(--crss-success-text, #065f46);
+      text-decoration: underline;
+      font-weight: 500;
+    }
+    .crss-resend-link:hover {
+      font-weight: bold;
     }
     .crss-email-change-info {
       font-size: var(--crss-font-size-sm);
@@ -612,6 +622,40 @@ import BaseLayout from '@community-rss/core/layouts/BaseLayout.astro';
     }
   }
 
+  async function resendVerificationEmail() {
+    const resendLink = document.getElementById('resend-verification') as HTMLAnchorElement;
+    const resendStatus = document.getElementById('resend-status');
+    if (!profileData?.pendingEmail || !resendLink || !resendStatus) return;
+    resendLink.style.pointerEvents = 'none';
+    resendLink.textContent = 'Sending...';
+    resendStatus.textContent = '';
+    resendStatus.className = 'crss-inline-status';
+    try {
+      const response = await fetch('/api/v1/profile/change-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: profileData.pendingEmail }),
+        credentials: 'include',
+      });
+      if (response.ok) {
+        resendLink.style.display = 'none';
+        resendStatus.textContent = '✓ Verification email resent';
+      } else {
+        const data = (await response.json().catch(() => ({}))) as Record<string, string>;
+        resendStatus.textContent = data.message || 'Resend failed';
+        resendStatus.className = 'crss-inline-status crss-inline-status--error';
+      }
+    } catch {
+      resendStatus.textContent = 'Network error';
+      resendStatus.className = 'crss-inline-status crss-inline-status--error';
+    } finally {
+      resendLink.style.pointerEvents = '';
+      if (resendLink.style.display !== 'none') {
+        resendLink.textContent = 'Resend Verification Email';
+      }
+    }
+  }
+
   document.querySelectorAll<HTMLButtonElement>('.crss-edit-btn[data-field]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const field = btn.dataset.field as 'name' | 'bio' | 'email';
@@ -656,6 +700,11 @@ import BaseLayout from '@community-rss/core/layouts/BaseLayout.astro';
       e.preventDefault();
       requestEmailChange();
     }
+  });
+
+  document.getElementById('resend-verification')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    resendVerificationEmail();
   });
 
   loadProfile();
