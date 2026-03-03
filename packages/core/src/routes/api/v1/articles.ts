@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { getArticles } from '../../../db/queries/articles';
+import { getArticlesWithFeedTitle } from '../../../db/queries/articles';
 import type { AppContext } from '../../../types/context';
 
 /**
@@ -27,7 +27,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
             );
         }
 
-        const articles = await getArticles(app.db, limit, offset);
+        const articles = await getArticlesWithFeedTitle(app.db, limit, offset);
 
         return new Response(
             JSON.stringify({

@@ -2,8 +2,10 @@
 /**
  * Homepage — displays the article feed grid with tab navigation.
  *
- * Articles are loaded client-side from the /api/v1/articles endpoint.
- * Infinite scrolling loads additional pages as the user scrolls.
+ * Articles are server-side rendered from the database on each request.
+ * Pagination is handled via the `?page=N` query parameter.
+ * A progressive-enhancement script handles infinite scroll by fetching
+ * subsequent pages as HTML and extracting the server-rendered cards.
  *
  * Customise this page to fit your community's design.
  *
@@ -13,6 +15,30 @@ import BaseLayout from '@community-rss/core/layouts/BaseLayout.astro';
 import TabBar from '@community-rss/core/components/TabBar.astro';
 import FeedGrid from '@community-rss/core/components/FeedGrid.astro';
 import HomepageCTA from '@community-rss/core/components/HomepageCTA.astro';
+import { getArticlesWithFeedTitle } from '@community-rss/core/db/queries/articles';
+import type { AppContext } from '@community-rss/core/types/context';
+
+const ARTICLES_PER_PAGE = 20;
+
+const rawPage = Astro.url.searchParams.get('page');
+const page = Math.max(1, parseInt(rawPage || '1', 10));
+const offset = (page - 1) * ARTICLES_PER_PAGE;
+
+const app = (Astro.locals as { app?: AppContext }).app;
+let articles: Awaited<ReturnType<typeof getArticlesWithFeedTitle>> = [];
+let hasMore = false;
+let loadError = false;
+
+if (app?.db) {
+  try {
+    const result = await getArticlesWithFeedTitle(app.db, ARTICLES_PER_PAGE + 1, offset);
+    hasMore = result.length > ARTICLES_PER_PAGE;
+    articles = result.slice(0, ARTICLES_PER_PAGE);
+  } catch (e) {
+    console.error('[community-rss] Failed to load articles:', e);
+    loadError = true;
+  }
+}
 ---
 
 <BaseLayout title="Community RSS">
@@ -28,18 +54,37 @@ import HomepageCTA from '@community-rss/core/components/HomepageCTA.astro';
 
     <TabBar />
 
-    <!-- Initial empty grid — articles loaded client-side from the API -->
-    <FeedGrid articles={[]} />
+    {loadError && (
+      <div role="alert" class="crss-homepage__error">
+        <p>Failed to load articles. Please try again later.</p>
+      </div>
+    )}
 
-    <div id="crss-empty-state" class="crss-homepage__empty" style="display: none;">
-      <p>No articles yet. Articles will appear here once feeds have been synced.</p>
-    </div>
+    {!loadError && articles.length === 0 && (
+      <div class="crss-homepage__empty">
+        <p>No articles yet. Articles will appear here once feeds have been synced.</p>
+      </div>
+    )}
 
-    <div id="crss-loading-state" class="crss-homepage__loading">
-      <p>Loading articles...</p>
-    </div>
+    {!loadError && articles.length > 0 && (
+      <>
+        <FeedGrid articles={articles} />
 
-    <div id="infinite-scroll-sentinel" class="crss-homepage__sentinel"></div>
+        {hasMore && (
+          <div id="crss-load-more" class="crss-homepage__load-more">
+            <a
+              href={`/?page=${page + 1}`}
+              id="crss-load-more-link"
+              class="crss-btn crss-btn--secondary"
+            >
+              Load more
+            </a>
+          </div>
+        )}
+
+        <div id="infinite-scroll-sentinel" class="crss-homepage__sentinel"></div>
+      </>
+    )}
   </main>
 </BaseLayout>
 
@@ -62,12 +107,23 @@ import HomepageCTA from '@community-rss/core/components/HomepageCTA.astro';
     }
 
     .crss-homepage__error,
-    .crss-homepage__empty,
-    .crss-homepage__loading {
+    .crss-homepage__empty {
       text-align: center;
       padding: var(--crss-space-3xl) var(--crss-space-md);
       color: var(--crss-text-muted);
       font-size: var(--crss-font-size-lg);
+    }
+
+    .crss-homepage__load-more {
+      display: flex;
+      justify-content: center;
+      padding: var(--crss-space-lg) 0;
+    }
+
+    .crss-homepage__loading-more {
+      text-align: center;
+      color: var(--crss-text-muted);
+      font-size: var(--crss-font-size-base);
     }
 
     .crss-homepage__sentinel {
@@ -77,146 +133,68 @@ import HomepageCTA from '@community-rss/core/components/HomepageCTA.astro';
 </style>
 
 <script>
-  interface ArticleResponse {
-    data: Array<{
-      id: string;
-      title: string;
-      summary?: string;
-      feedTitle?: string;
-      publishedAt?: string;
-      authorName?: string;
-      heartCount?: number;
-      starCount?: number;
-    }>;
-    pagination?: {
-      hasMore?: boolean;
-    };
-  }
-
-  function createArticleCard(article: any): HTMLElement {
-    const card = document.createElement('article');
-    card.className = 'crss-feed-card';
-    card.dataset.articleId = article.id;
-
-    const link = document.createElement('a');
-    link.href = `/article/${article.id}`;
-    link.className = 'crss-feed-card__link';
-    link.setAttribute('data-article-link', '');
-
-    const header = document.createElement('header');
-    header.className = 'crss-feed-card__header';
-
-    if (article.feedTitle) {
-      const source = document.createElement('span');
-      source.className = 'crss-feed-card__source';
-      source.textContent = article.feedTitle;
-      header.appendChild(source);
-    }
-
-    if (article.publishedAt) {
-      const time = document.createElement('time');
-      time.className = 'crss-feed-card__date';
-      time.textContent = new Date(article.publishedAt).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      });
-      header.appendChild(time);
-    }
-
-    const title = document.createElement('h3');
-    title.className = 'crss-feed-card__title';
-    title.textContent = article.title;
-
-    link.appendChild(header);
-    link.appendChild(title);
-
-    if (article.summary) {
-      const summary = document.createElement('p');
-      summary.className = 'crss-feed-card__summary';
-      summary.textContent = article.summary;
-      link.appendChild(summary);
-    }
-
-    const footer = document.createElement('footer');
-    footer.className = 'crss-feed-card__footer';
-
-    const author = document.createElement('span');
-    author.className = 'crss-feed-card__author';
-    author.textContent = article.authorName || 'Unknown';
-
-    const interactions = document.createElement('div');
-    interactions.className = 'crss-feed-card__interactions';
-
-    const heartsSpan = document.createElement('span');
-    heartsSpan.className = 'crss-feed-card__hearts';
-    heartsSpan.setAttribute('title', 'Hearts');
-    heartsSpan.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg><span>${article.heartCount || 0}</span>`;
-
-    const starsSpan = document.createElement('span');
-    starsSpan.className = 'crss-feed-card__stars';
-    starsSpan.setAttribute('title', 'Stars');
-    starsSpan.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg><span>${article.starCount || 0}</span>`;
-
-    interactions.appendChild(heartsSpan);
-    interactions.appendChild(starsSpan);
-    footer.appendChild(author);
-    footer.appendChild(interactions);
-    link.appendChild(footer);
-    card.appendChild(link);
-
-    return card;
-  }
-
-  // Load articles from the API
-  const grid = document.getElementById('feed-grid');
-  const loadingState = document.getElementById('crss-loading-state');
-  const emptyState = document.getElementById('crss-empty-state');
+  /**
+   * Progressive enhancement: infinite scroll via server-rendered HTML extraction.
+   *
+   * Fetches the next page as a full HTML document, extracts the server-rendered
+   * FeedCard elements from #feed-grid, and appends them to the live grid.
+   * No-JS fallback: the "Load more" link navigates normally.
+   */
   const sentinel = document.getElementById('infinite-scroll-sentinel');
-  let currentPage = 1;
-  let isLoading = false;
-  let hasMore = true;
+  const grid = document.getElementById('feed-grid');
+  const loadMoreContainer = document.getElementById('crss-load-more');
 
-  async function loadArticles(page: number) {
-    isLoading = true;
-    try {
-      const response = await fetch(`/api/v1/articles?page=${page}&limit=20`);
-      const data: ArticleResponse = await response.json();
+  if (sentinel && grid && loadMoreContainer) {
+    let loadMoreLink = loadMoreContainer.querySelector<HTMLAnchorElement>('#crss-load-more-link');
+    let isLoading = false;
 
-      if (loadingState) loadingState.style.display = 'none';
+    async function loadNextPage() {
+      if (!loadMoreLink || isLoading) return;
+      const url = loadMoreLink.href;
+      isLoading = true;
+      loadMoreContainer!.innerHTML =
+        '<p class="crss-homepage__loading-more">Loading more\u2026</p>';
 
-      if (data.data && data.data.length > 0) {
-        for (const article of data.data) {
-          grid?.appendChild(createArticleCard(article));
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const html = await response.text();
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+
+        const nextGrid = doc.getElementById('feed-grid');
+        if (nextGrid) {
+          Array.from(nextGrid.children).forEach((card) => grid!.appendChild(card));
         }
-        hasMore = data.pagination?.hasMore ?? false;
-      } else if (page === 1) {
-        if (emptyState) emptyState.style.display = 'block';
-        hasMore = false;
-      } else {
-        hasMore = false;
+
+        const nextLink = doc.querySelector<HTMLAnchorElement>('#crss-load-more-link');
+        if (nextLink) {
+          loadMoreContainer!.innerHTML = '';
+          const newLink = document.createElement('a');
+          newLink.id = 'crss-load-more-link';
+          newLink.href = nextLink.href;
+          newLink.className = nextLink.className;
+          newLink.textContent = nextLink.textContent;
+          loadMoreContainer!.appendChild(newLink);
+          loadMoreLink = newLink;
+        } else {
+          loadMoreContainer!.remove();
+          sentinel!.remove();
+          observer.disconnect();
+          loadMoreLink = null;
+        }
+      } catch (e) {
+        console.error('[community-rss] Failed to load next page:', e);
+        loadMoreContainer!.innerHTML =
+          `<a href="${loadMoreLink!.href}" id="crss-load-more-link" class="${loadMoreLink!.className}">Load more</a>`;
+        loadMoreLink = loadMoreContainer!.querySelector<HTMLAnchorElement>('#crss-load-more-link');
       }
-    } catch (e) {
-      console.error('[community-rss] Failed to load articles:', e);
-      if (loadingState && page === 1) {
-        loadingState.querySelector('p')!.textContent =
-          'Failed to load articles. Please try again later.';
-      }
+
+      isLoading = false;
     }
-    isLoading = false;
-  }
 
-  // Initial load
-  loadArticles(1);
-
-  // Infinite scroll
-  if (sentinel && grid) {
     const observer = new IntersectionObserver(
-      async (entries) => {
-        if (entries[0].isIntersecting && !isLoading && hasMore) {
-          currentPage++;
-          await loadArticles(currentPage);
-        }
+      (entries) => {
+        if (entries[0].isIntersecting) loadNextPage();
       },
       { threshold: 0.1 },
     );

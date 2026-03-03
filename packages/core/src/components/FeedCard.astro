@@ -16,13 +16,13 @@
 interface Props {
   id: string;
   title: string;
-  summary?: string;
-  authorName?: string;
-  publishedAt?: Date;
-  originalLink?: string;
-  feedTitle?: string;
-  heartCount?: number;
-  starCount?: number;
+  summary?: string | null;
+  authorName?: string | null;
+  publishedAt?: Date | null;
+  originalLink?: string | null;
+  feedTitle?: string | null;
+  heartCount?: number | null;
+  starCount?: number | null;
   /** Configurable label strings. @since 0.4.0 */
   labels?: {
     hearts?: string;
@@ -34,14 +34,18 @@ const {
   id,
   title,
   summary,
-  authorName = 'Unknown',
+  authorName: _authorName,
   publishedAt,
   // originalLink is part of the public Props API but rendered only in the modal, not the card
   feedTitle,
-  heartCount = 0,
-  starCount = 0,
+  heartCount: _heartCount,
+  starCount: _starCount,
   labels: { hearts: heartsLabel = 'Hearts', stars: starsLabel = 'Stars' } = {},
 } = Astro.props;
+
+const authorName = _authorName ?? 'Unknown';
+const heartCount = _heartCount ?? 0;
+const starCount = _starCount ?? 0;
 
 const formattedDate = publishedAt
   ? new Date(publishedAt).toLocaleDateString('en-US', {

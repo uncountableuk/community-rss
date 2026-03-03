@@ -95,6 +95,10 @@ export { renderEmailTemplate, renderAstroEmail, resolveSubject, DEFAULT_EMAIL_SU
 // Database exports
 export { createDatabase, closeDatabase } from './src/db/connection';
 
+// Database query helpers
+export { getArticlesWithFeedTitle } from './src/db/queries/articles';
+export type { ArticleWithFeedTitle } from './src/db/queries/articles';
+
 // Scheduler exports
 export { startScheduler, stopScheduler, isSchedulerRunning } from './src/utils/build/scheduler';
 

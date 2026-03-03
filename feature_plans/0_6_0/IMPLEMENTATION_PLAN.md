@@ -2069,3 +2069,96 @@ changes made:
    check in conditional page injection must exclusively use `new URL()`
    for path construction — never `path.join()` or string concatenation.
    Explicit task added to Phase 4; dedicated risk register entry added.
+
+---
+
+### Phase 16: Cascading Override Fixes (`crss-lookup-alias`) — ✅ Completed
+
+Feature plan: `feature_plans/0_6_0/crss-lookup-alias/FEATURE_PLAN.md`
+
+**Problem solved:** Ejected `FeedCard.astro` overrides were invisible on the
+homepage because `FeedGrid` imported `FeedCard` via a relative path that
+bypassed the `crss-consumer-overrides` Vite plugin. The plugin previously
+only intercepted imports originating from the core `pages/` directory.
+
+**What was implemented:**
+- Extended `crss-consumer-overrides` plugin scope from `corePagesDir` to all
+  of `coreDir` (`packages/core/src/`). A single guard line change:
+  `if (!importer.startsWith(coreDir)) return;`
+- Added `realpathSync()` resolution so the symlinked npm workspace path
+  (`/app/node_modules/@community-rss/core`) resolves to the real package
+  location (`/app/packages/core`) before the `startsWith` comparison.
+- Added `@crss-lookup/<category>/<File>.astro` virtual prefix support in
+  the same `resolveId` hook — for use in consumer-authored code and
+  `@importfromN` annotation values. Core source files do NOT use this
+  prefix (relative imports are intercepted instead).
+- Updated `eject.mjs`: excluded `@crss-lookup/` specifiers from
+  `extraImports` filter and legacy re-eject regex (treated as managed
+  framework imports, not developer-added imports).
+
+**Phase 2 Pivot (attempted `@crss-lookup/` in core source, then reverted):**
+- Initially migrated all intra-core `.astro` imports to `@crss-lookup/`
+  prefix; runtime error appeared: Astro 5 / Vite 6 `RunnableDevEnvironment`
+  bypasses `resolveId` for unknown virtual specifiers during SSR module
+  loading. Reverted all core `.astro` files back to relative imports.
+- The expanded plugin scope (intercepting all relative `.astro` imports
+  from `coreDir`) provides the cascade without the virtual prefix.
+- `@importfromN` annotation values remain as `@crss-lookup/` because those
+  values land in *consumer* proxy code which runs through the normal Vite
+  build path where the prefix is resolved correctly.
+
+**Tests:** All 611 tests pass. 4 test assertions updated to reflect new
+`@crss-lookup/` import paths in generated proxy `@importfromN` annotation output.
+
+---
+
+### Phase 17: Homepage SSR Migration — ✅ Completed
+
+Feature plan: `feature_plans/0_6_0/homepage-ssr/FEATURE_PLAN.md`
+
+**Problem solved:** The homepage rendered article cards entirely client-side
+via a `createArticleCard()` JavaScript function — a 130-line duplicate of
+`FeedCard.astro`. Developers who ejected `FeedCard.astro` saw no change on
+the homepage because the JS builder never called the Astro component.
+
+**What was implemented:**
+
+- **New DB query**: `getArticlesWithFeedTitle(db, limit, offset)` in
+  `src/db/queries/articles.ts` — a Drizzle `leftJoin` on `feeds` that
+  returns `ArticleWithFeedTitle[]`. Exported from `packages/core/index.ts`.
+- **Homepage SSR**: `src/pages/index.astro` frontmatter queries the DB,
+  computes `hasMore` by fetching `limit + 1` rows, handles errors. Template
+  renders conditional states (error / empty / grid) entirely in Astro.
+  `FeedGrid` receives server-fetched articles; `FeedCard.astro` renders
+  every card including those loaded by the infinite scroll enhancement.
+- **Progressive enhancement**: `IntersectionObserver` + `DOMParser` extracts
+  server-rendered `FeedCard` elements from the fetched next page's `#feed-grid`
+  and appends them — no client card builder. No-JS fallback: `#crss-load-more-link`
+  `<a>` navigates normally.
+- **FeedCard.astro Props**: all optional props accept `null | undefined`;
+  destructuring uses `??` coercions (`_authorName ?? 'Unknown'`, etc.).
+- **API route**: `GET /api/v1/articles` updated to `getArticlesWithFeedTitle`
+  so the response includes `feedTitle`. Backward-compatible additive change.
+- **CLI template**: `src/cli/templates/pages/index.astro` rewritten to mirror
+  the SSR pattern exactly (consumer-facing imports via `@community-rss/core/...`).
+- **AI instructions updated**: `copilot-instructions.md` now documents that
+  CSR exception pages are incompatible with the proxy override system;
+  `implementation.instructions.md` has a new `## Page Rendering` section
+  with the SSR-first rule and the CSR/override incompatibility explanation.
+
+**Type/test fixes during implementation:**
+- `ArticleWithFeedTitle.originalLink` changed to `string | null` (Drizzle
+  infers nullable after a `leftJoin` on a non-null column).
+- `FeedCard.Props` all optional fields changed to accept `null`.
+- `articles.test.ts` mock updated from `getArticles` → `getArticlesWithFeedTitle`.
+- Removed unused `generatePageProxy`, `existsSync` imports from
+  `eject-reejection.test.ts`; removed unused `AstroConfig` from `integration.ts`.
+
+**Tests:** All 611 tests pass.
+
+**Tests to write (Phase 5 of feature plan, not yet complete):**
+- `test/db/queries/articles-with-feed-title.test.ts` — happy path with joined
+  feedTitle, null feedTitle when feed missing, pagination (limit/offset),
+  ordering by publishedAt desc, empty result set.
+
+**All 621 tests pass** (48 test files). 10 new tests in `articles-with-feed-title.test.ts`.

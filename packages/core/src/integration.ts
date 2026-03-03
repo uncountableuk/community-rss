@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, realpathSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { AstroIntegration, AstroConfig } from 'astro';
+import type { AstroIntegration } from 'astro';
 import type { CommunityRssOptions } from './types/options';
 import { resolveOptions } from './types/options';
 import { startScheduler, stopScheduler } from './utils/build/scheduler';

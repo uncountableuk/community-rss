@@ -77,9 +77,18 @@ architecture, code reuse, and adherence to established patterns.
   default. Pages fetch data in frontmatter via `Astro.locals.app` (which
   provides `db`, `config`, and `env`) and pass it to the template as
   props. This ensures SEO, fast first paint, and correct HTTP status codes
-  (e.g., 404 for missing resources). The **homepage is the sole approved
-  exception** — it uses client-side rendering for dynamic tab switching.
-  Any new page must follow the SSR pattern unless explicitly approved.
+  (e.g., 404 for missing resources). The homepage follows this pattern:
+  articles are queried in frontmatter and passed to `FeedGrid`; infinite
+  scroll is a progressive enhancement that fetches subsequent pages as
+  server-rendered HTML. Any new page must follow the SSR pattern unless
+  explicitly approved. **CSR exception warning**: pages where data is
+  fetched client-side bypass the `crss-consumer-overrides` Vite plugin,
+  which only fires at server-render time. Any component used exclusively
+  inside client-side rendering (e.g., a JS card builder) is invisible to
+  ejected proxy overrides — developer customisations have no effect on
+  those cards. A CSR exception therefore means the affected components
+  cannot participate in the override system and must NOT be annotated as
+  ejectable for that page context.
 - Email templates: Astro Container API (`.astro`) is the primary rendering
   path, loaded via `virtual:crss-email-templates` Vite virtual module.
   Developer `.html` files with `{{variable}}` placeholders supported as a
@@ -267,4 +276,5 @@ architecture, code reuse, and adherence to established patterns.
 - ❌ Import `astro:actions` from the core package — only consumer projects can
 - ❌ Modify files in `node_modules/` or patch the core package
 - ❌ Use client-side rendering for pages that can be server-rendered — SSR is
-  the default; CSR requires explicit approval (homepage is the sole exception)
+  the default for all pages; CSR requires explicit approval, and any approved
+  CSR page MUST document that the proxy override system is incompatible with it

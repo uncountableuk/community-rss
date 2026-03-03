@@ -53,8 +53,25 @@ proxy ejection system. When adding or modifying slots:
 - Use slot fallback content (not `Astro.slots.has()`) for conditional
   rendering — Astro forwarding causes `has()` to return true for empty
   forwarded slots
-- Always update `src/cli/slot-registry.mjs` when adding/changing slots
-- Slot order matters: appears in registry order in the generated proxy
+- Slot order matters: appears in annotation order in the generated proxy
+- `slot-registry.mjs` was deleted in Phase 15d — do NOT recreate it;
+  annotations in source files are the single source of truth
+
+## Page Rendering
+- All pages MUST use **server-side rendering (SSR)**. Data is fetched in the
+  Astro frontmatter via `Astro.locals.app` (which provides `db`, `env`,
+  `config`) and passed to the template as props.
+- Progressive enhancement scripts (e.g., infinite scroll) may run client-side
+  but must not be the primary data-fetch mechanism.
+- CSR pages (where data is fetched entirely client-side from API routes) are
+  **prohibited** except when explicitly approved for a specific documented reason.
+- **Critical**: CSR pages are incompatible with the proxy ejection/override
+  system. The `crss-consumer-overrides` Vite plugin only resolves imports at
+  server-render time. Client-side card builders (like the old
+  `createArticleCard()`) bypass `FeedCard.astro` entirely, so ejected overrides
+  have no effect. When a CSR exception is granted, this limitation must be
+  explicitly documented and the page MUST NOT advertise its components as
+  ejectable.
 
 ## Import Standards
 - **Source code** (`src/`): Use **relative imports** for all cross-directory

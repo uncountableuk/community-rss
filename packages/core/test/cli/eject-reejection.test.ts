@@ -3,12 +3,10 @@ import {
     eject,
     generateComponentProxy,
     generateLayoutProxy,
-    generatePageProxy,
     parseEjectedFile,
     mergeSlotContent,
 } from '@cli/eject.mjs';
 import {
-    existsSync,
     mkdirSync,
     mkdtempSync,
     readFileSync,

@@ -3,7 +3,7 @@ import { GET } from '@routes/api/v1/articles';
 
 // Mock the DB queries module
 vi.mock('../../../../src/db/queries/articles', () => ({
-    getArticles: vi.fn().mockResolvedValue([
+    getArticlesWithFeedTitle: vi.fn().mockResolvedValue([
         {
             id: 'article-1',
             title: 'Test Article 1',
