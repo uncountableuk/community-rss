@@ -48,7 +48,7 @@ immediately before the `<slot>` tag:
   /* @eject-slot
       @description Replace the default header/nav bar.
       @additionalimport1 AuthButton
-      @importfrom1 @community-rss/core/components/AuthButton.astro */
+      @importfrom1 @crss-lookup/components/AuthButton.astro */
 }
 <slot name="header">
   <header>Default header content</header>
@@ -63,6 +63,11 @@ immediately before the `<slot>` tag:
 - `@additionalimportN <Name>` + `@importfromN <path>` — Paired import
   declarations needed when overriding this slot. The `N` suffix must match
   between the two (e.g., `@additionalimport1` / `@importfrom1`).
+  The `@importfromN` path **must** use the `@crss-lookup/` prefix for any
+  ejectable component or layout (e.g., `@crss-lookup/components/AuthButton.astro`).
+  This ensures that if the developer has also ejected that dependency, their
+  override is automatically used. Direct `@community-rss/core/` paths are
+  reserved for the proxy's own core-component import only.
 
 ## Rules
 
@@ -119,7 +124,7 @@ immediately before the `<slot>` tag:
 {/* @eject-slot
     @description Human-readable description of the slot.
     @additionalimport1 ComponentName
-    @importfrom1 @community-rss/core/components/ComponentName.astro */}
+    @importfrom1 @crss-lookup/components/ComponentName.astro */}
 <slot name="slot-name">Default content</slot>
 ```
 
@@ -129,7 +134,7 @@ immediately before the `<slot>` tag:
   /* @eject-slot
       @description Human-readable description of the slot.
       @additionalimport1 ComponentName
-      @importfrom1 @community-rss/core/components/ComponentName.astro */
+      @importfrom1 @crss-lookup/components/ComponentName.astro */
 }
 <slot name="slot-name">Default content</slot>
 ```

@@ -210,9 +210,9 @@ const props = Astro.props;
             const merged = mergeSlotContent(fresh, parsed);
 
             // AuthButton import should be present (always live in annotation-driven system)
-            expect(merged).toContain('import AuthButton from \'@community-rss/core/components/AuthButton.astro\';');
+            expect(merged).toContain('import AuthButton from \'@crss-lookup/components/AuthButton.astro\';');
             // Should not have the commented version
-            expect(merged).not.toContain('// import AuthButton from \'@community-rss/core/components/AuthButton.astro\';');
+            expect(merged).not.toContain('// import AuthButton from \'@crss-lookup/components/AuthButton.astro\';');
             // Active header slot should be preserved
             expect(merged).toContain('<Fragment slot="header">');
             expect(merged).toContain('<AuthButton />');
@@ -235,7 +235,7 @@ const props = Astro.props;
             const merged = mergeSlotContent(fresh, parsed);
 
             // AuthButton import should always be present (unconditional)
-            expect(merged).toContain('import AuthButton from \'@community-rss/core/components/AuthButton.astro\';');
+            expect(merged).toContain('import AuthButton from \'@crss-lookup/components/AuthButton.astro\';');
             // Footer should be preserved
             expect(merged).toContain('<Fragment slot="footer">');
         });

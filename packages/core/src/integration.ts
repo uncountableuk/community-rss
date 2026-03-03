@@ -1,4 +1,4 @@
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, readdirSync, realpathSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { AstroIntegration, AstroConfig } from 'astro';
@@ -151,19 +151,24 @@ export function createIntegration(options: CommunityRssOptions = {}): AstroInteg
         const pkgTemplateDir = fileURLToPath(new URL('./templates/email', import.meta.url));
 
         // --- Consumer override resolution ---
-        // When a developer ejects a layout or component proxy into their
-        // project (e.g., src/layouts/BaseLayout.astro), injected pages
-        // should use the consumer's version instead of the core's internal
-        // copy. This Vite plugin intercepts relative imports from the
-        // core's injected page files and redirects them to the consumer's
-        // local file when one exists.
+        // Two mechanisms work together:
         //
-        // Circular resolution is avoided because the consumer's proxy
-        // imports from `@community-rss/core/layouts/*` (a bare package
-        // specifier), which resolves via package.json exports — NOT
-        // through this plugin (which only intercepts from core pages).
+        // 1. Relative import interception from any core source file —
+        //    When a core component, layout, or page imports another ejectable
+        //    artefact via a relative path, this plugin checks if the consumer
+        //    has an ejected proxy at the corresponding path and redirects there.
+        //    This gives automatic cascading: eject FeedCard and it is picked up
+        //    by FeedGrid, BaseLayout, and every page without re-ejecting them.
+        //    Circular imports are prevented because ejected proxy files import
+        //    their core counterpart via the bare `@community-rss/core/...`
+        //    specifier (resolved by Node package exports, not this plugin).
+        //
+        // 2. `@crss-lookup/<category>/<File>.astro` virtual prefix —
+        //    Available for consumer-authored code (ejected proxy slot overrides,
+        //    custom components) that wants to import a sibling with the same
+        //    consumer-override semantics. Core source files use relative imports
+        //    (mechanism 1); this prefix is for consumer convenience.
         const coreDir = fileURLToPath(new URL('.', import.meta.url));
-        const corePagesDir = join(coreDir, 'pages');
         const coreLayoutsDir = join(coreDir, 'layouts');
         const coreComponentsDir = join(coreDir, 'components');
         const consumerLayoutsDir = join(cleanRoot, 'src', 'layouts');
@@ -175,23 +180,53 @@ export function createIntegration(options: CommunityRssOptions = {}): AstroInteg
               name: 'crss-consumer-overrides',
               enforce: 'pre' as const,
               resolveId(source: string, importer: string | undefined) {
-                if (!importer || !source.endsWith('.astro')) return;
-                // Only intercept imports originating from core's injected pages
-                if (!importer.startsWith(corePagesDir)) return;
+                // ── @crss-lookup/ virtual prefix ───────────────────────
+                // Resolves from any importer — no importer guard needed.
+                if (source.startsWith('@crss-lookup/')) {
+                  const rest = source.slice('@crss-lookup/'.length);
+                  if (rest.startsWith('components/')) {
+                    const fileName = rest.slice('components/'.length);
+                    const consumerFile = join(consumerComponentsDir, fileName);
+                    if (existsSync(consumerFile)) return consumerFile;
+                    return join(coreComponentsDir, fileName);
+                  }
+                  if (rest.startsWith('layouts/')) {
+                    const fileName = rest.slice('layouts/'.length);
+                    const consumerFile = join(consumerLayoutsDir, fileName);
+                    if (existsSync(consumerFile)) return consumerFile;
+                    return join(coreLayoutsDir, fileName);
+                  }
+                  return; // unknown category — let Vite handle it
+                }
 
-                const resolved = resolve(dirname(importer), source);
+                // ── Relative import interception from any core source file ─
+                // Intercepts relative .astro imports from pages, layouts, and
+                // components inside the core package's src/ directory so that
+                // consumer-ejected proxies cascade automatically.
+                // realpathSync is required because npm workspaces symlinks the
+                // package into node_modules, so Vite's importer path may be
+                // /app/node_modules/@community-rss/core/src/... rather than
+                // the real /app/packages/core/src/... path.
+                if (!importer || !source.endsWith('.astro')) return;
+                let realImporter: string;
+                try { realImporter = realpathSync(importer); } catch { return; }
+                if (!realImporter.startsWith(coreDir)) return;
+                // Exclude real node_modules (not the workspace symlink)
+                if (realImporter.includes('/node_modules/')) return;
+
+                const resolved = resolve(dirname(realImporter), source);
 
                 // Check if resolved path is inside core layouts
                 if (resolved.startsWith(coreLayoutsDir)) {
-                  const relative = resolved.slice(coreLayoutsDir.length);
-                  const consumerFile = join(consumerLayoutsDir, relative);
+                  const rel = resolved.slice(coreLayoutsDir.length);
+                  const consumerFile = join(consumerLayoutsDir, rel);
                   if (existsSync(consumerFile)) return consumerFile;
                 }
 
                 // Check if resolved path is inside core components
                 if (resolved.startsWith(coreComponentsDir)) {
-                  const relative = resolved.slice(coreComponentsDir.length);
-                  const consumerFile = join(consumerComponentsDir, relative);
+                  const rel = resolved.slice(coreComponentsDir.length);
+                  const consumerFile = join(consumerComponentsDir, rel);
                   if (existsSync(consumerFile)) return consumerFile;
                 }
               },

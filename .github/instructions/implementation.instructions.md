@@ -61,6 +61,23 @@ proxy ejection system. When adding or modifying slots:
   imports (e.g., `../types/options`). Path aliases in source code break
   consumers because Astro/Vite cannot resolve the core package's internal
   tsconfig aliases when consumed as a workspace dependency.
+- **Ejectable `.astro` imports in core source**: Use **relative imports** for
+  all intra-package `.astro` imports, including imports between ejectable
+  components, layouts, and pages:
+  ```astro
+  import FeedCard from './FeedCard.astro';
+  import BaseLayout from '../layouts/BaseLayout.astro';
+  ```
+  The `crss-consumer-overrides` Vite plugin (scope: all of core `src/`)
+  intercepts these relative imports and redirects to the consumer's ejected
+  proxy when one exists. This gives automatic cascading — ejecting `FeedCard`
+  is picked up by `FeedGrid` and every page without re-ejecting them.
+  Non-ejectable imports (utils, db queries, types) are also relative paths.
+- **`@crss-lookup/<category>/<File>.astro` virtual prefix**: For use in
+  *consumer-authored* code only (ejected proxy slot content, custom components).
+  Core source files do NOT use this prefix — they use relative imports.
+  `@importfromN` annotation values in core `.astro` files use `@crss-lookup/`
+  because those values are injected into *consumer-authored* proxy files.
 - Same-directory imports may use relative paths (`./sibling`)
 - **Test code** uses path aliases — see the testing instructions for details.
 

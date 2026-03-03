@@ -171,6 +171,23 @@ architecture, code reuse, and adherence to established patterns.
   cross-directory imports (e.g., `../types/options`). Path aliases in source
   break consumers because Astro/Vite cannot resolve the core package's
   internal tsconfig aliases when the package is consumed as a workspace dep.
+- **Ejectable `.astro` imports in core source**: When one core component,
+  layout, or page imports another *ejectable* component or layout, use a
+  **relative import** (e.g., `import FeedCard from './FeedCard.astro'`).
+  The `crss-consumer-overrides` Vite plugin intercepts all relative `.astro`
+  imports that originate from inside the core `src/` directory and redirects
+  to the consumer's ejected proxy if one exists. This makes overrides cascade
+  automatically (eject `FeedCard` → it is picked up by `FeedGrid`, `BaseLayout`,
+  and every page) without requiring those parents to be re-ejected.
+  Non-ejectable imports (utils, db queries, types) are also relative paths.
+- **`@crss-lookup/<category>/<File>.astro` virtual prefix**: Available for
+  *consumer-authored* code (ejected proxy slot overrides, custom components)
+  that wants to import a sibling with the same consumer-override semantics.
+  Core source files do NOT use this prefix — they use relative imports
+  (intercepted automatically). `@importfromN` annotation values in core
+  `.astro` files use `@crss-lookup/` because those values end up as imports
+  inside consumer-authored proxy code, which runs in a context where the
+  plugin resolves the prefix correctly.
 - **Test code** (`packages/core/test/`): Use **path aliases** for all imports
   from source and fixtures. Vitest resolves aliases via its own config.
 - Core test aliases: `@utils/`, `@components/`, `@routes/`, `@db/`, `@core-types/`, `@cli/`

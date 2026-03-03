@@ -577,7 +577,8 @@ export function parseEjectedFile(content) {
             const trimmed = line.trim();
             if (
                 trimmed.startsWith('import ') &&
-                !trimmed.includes('@community-rss/core/')
+                !trimmed.includes('@community-rss/core/') &&
+                !trimmed.includes('@crss-lookup/')
             ) {
                 extraImports.push(line);
             }
@@ -592,7 +593,8 @@ export function parseEjectedFile(content) {
                 const trimmed = line.trim();
                 if (
                     trimmed.startsWith('import ') &&
-                    !trimmed.includes('@community-rss/core/')
+                    !trimmed.includes('@community-rss/core/') &&
+                    !trimmed.includes('@crss-lookup/')
                 ) {
                     extraImports.push(line);
                 }
@@ -648,7 +650,7 @@ export function mergeSlotContent(freshProxy, parsed) {
         } else {
             // Legacy fallback: insert after the core import
             result = result.replace(
-                /(import\s+\w+\s+from\s+'@community-rss\/core\/[^']+';)/,
+                /(import\s+\w+\s+from\s+'(?:@community-rss\/core\/|@crss-lookup\/)[^']+';)/,
                 `$1\n${importBlock}`,
             );
         }

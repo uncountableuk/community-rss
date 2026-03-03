@@ -44,7 +44,7 @@ describe('generateProxy', () => {
         it('should include additional imports unconditionally for BaseLayout', () => {
             const proxy = generateLayoutProxy('BaseLayout');
             expect(proxy).toContain(
-                "import AuthButton from '@community-rss/core/components/AuthButton.astro'",
+                "import AuthButton from '@crss-lookup/components/AuthButton.astro'",
             );
         });
 

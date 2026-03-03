@@ -79,7 +79,7 @@ describe('parseAnnotations', () => {
             expect(headerSlot!.additionalImports.length).toBeGreaterThan(0);
             expect(headerSlot!.additionalImports[0].name).toBe('AuthButton');
             expect(headerSlot!.additionalImports[0].from).toBe(
-                '@community-rss/core/components/AuthButton.astro',
+                '@crss-lookup/components/AuthButton.astro',
             );
         });
 
