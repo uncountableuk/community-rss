@@ -6,7 +6,6 @@ const {
     mockLimit,
     mockOrderBy,
     mockLeftJoin,
-    mockFrom,
     mockSelect,
 } = vi.hoisted(() => {
     const mockAll = vi.fn().mockResolvedValue([]);
@@ -16,7 +15,7 @@ const {
     const mockLeftJoin = vi.fn(() => ({ orderBy: mockOrderBy }));
     const mockFrom = vi.fn(() => ({ leftJoin: mockLeftJoin }));
     const mockSelect = vi.fn(() => ({ from: mockFrom }));
-    return { mockAll, mockOffset, mockLimit, mockOrderBy, mockLeftJoin, mockFrom, mockSelect };
+    return { mockAll, mockOffset, mockLimit, mockOrderBy, mockLeftJoin, mockSelect };
 });
 
 vi.mock('@db/schema', () => ({
